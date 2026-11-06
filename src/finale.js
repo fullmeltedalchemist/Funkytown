@@ -78,6 +78,24 @@ export class ReelEdit {
   }
 }
 
+export class BaitWatch {
+  baited=false;
+  tracked=false;
+  angle='';
+  elapsed=0;
+  sighting='';
+  tick(dt){
+    if(!this.baited||!this.angle||this.sighting)return;
+    this.elapsed+=dt;
+    if(this.elapsed>=(this.angle==='bank'?12:6))this.sighting=this.angle==='bank'?'echo':'thief';
+  }
+  aim(angle){
+    if(!this.tracked)return false;
+    this.angle=angle;this.elapsed=0;this.sighting='';
+    return true;
+  }
+}
+
 export class Finale {
   constructor(mechanics,rescue,bag,pipeline,models,water,notice){
     Object.assign(this,{mechanics,rescue,bag,water});
@@ -181,6 +199,7 @@ export class Finale {
       return this.flood>.24?'Post office advisory: ford closed. Use the high bank path.':'Post office advisory: crews are working at the spillway.';
     });
     const supply=plots[1];
+    this.installBaitWatch(supply,pipeline,models);
     const reelBench=point(supply.x-4.3,supply.z+2.7,.95);
     this.model(reelBench,pipeline,models.receiver,.62);
     const edit=new ReelEdit();
@@ -227,6 +246,68 @@ export class Finale {
       });
     }
   }
+  installBaitWatch(supply,pipeline,models){
+    const watch=this.baitWatch=new BaitWatch();
+    const crate=point(supply.x+2,supply.z+4,.65);
+    const tracks=point(supply.x+3.7,supply.z+2.7,.35);
+    const stand=point(supply.x+1,supply.z+1.3,1.03);
+    this.model(crate,pipeline,models.lantern,.5);
+    const camera=this.model(stand,pipeline,models.receiver,.48);
+    const prints=new T.Group();
+    prints.position.copy(tracks);
+    const dirt=new T.MeshStandardMaterial({color:0x3b3024,roughness:1});
+    const pad=new T.CircleGeometry(.068,12);
+    for(let i=0;i<5;i++){
+      const x=i%2?.11:-.11,z=(i-2)*.23;
+      for(const [dx,dz,scale] of [[0,0,1],[-.045,-.078,.42],[0,-.095,.48],[.045,-.078,.42]]){
+        const mark=new T.Mesh(pad,dirt);
+        mark.rotation.x=-Math.PI/2;
+        mark.position.set(x+dx,height(tracks.x+x+dx,tracks.z+z+dz)-tracks.y+.025,z+dz);
+        mark.scale.setScalar(scale);prints.add(mark);
+      }
+    }
+    prints.visible=false;this.scene.add(prints);
+    const done=()=>this.bag.records.has('bait-echo');
+    const visit=(p,name,action)=>{
+      const c=this.mechanics.world.createCollider(R.ColliderDesc.ball(.38).setTranslation(...p.toArray())
+        .setSensor(true).setCollisionGroups((128<<16)|2));
+      this.mechanics.tag(c,{name,action});
+    };
+    visit(crate,'Set bait behind Bellwether Supply',()=>{
+      if(done())return 'The Echo left the bait untouched.';
+      if(watch.baited)return 'The bait is set. Look for prints along the side of the building.';
+      watch.baited=true;prints.visible=true;
+      return 'Bait set. Check the prints beside the store before you aim the field camera.';
+    });
+    visit(tracks,'Inspect tracks behind the store',()=>{
+      if(!watch.baited)return 'Set bait at the lantern marker first.';
+      watch.tracked=true;
+      return 'Small pawprints lead to the crate. A second trail begins halfway down the creek bank and has no return prints.';
+    });
+    visit(stand,'Aim or review the bait camera',()=>{
+      if(done())return 'The Echo recording is filed in your backpack.';
+      if(!watch.tracked)return 'Inspect the tracks by the store to pick a camera angle.';
+      chooseAtStation('Night at the Bait Shop',
+        'The crate gives you a close shot of the bait. The creek bank is farther out, where the second trail begins.',
+        [['Aim at the bait crate','crate'],['Aim at the creek bank','bank'],['Review recording','review']],
+        action=>{
+          if(action!=='review'){
+            if(watch.angle!==action)watch.aim(action);
+            camera.rotation.y=action==='bank'?Math.PI:.65;
+            return {message:'Camera aimed. '+(action==='bank'?'Give it twelve seconds.':'Give it six seconds.')};
+          }
+          if(!watch.angle)return {message:'Choose a camera angle first.'};
+          if(!watch.sighting)return {message:'Still recording. Check again in '+Math.max(1,Math.ceil((watch.angle==='bank'?12:6)-watch.elapsed))+' seconds.'};
+          if(watch.sighting==='thief'){
+            this.bag.record('bait-thief','Bait thief recording','A raccoon lifted the bait and left the pawprints behind Bellwether Supply.');
+            return {message:'A raccoon raids the crate. You can keep the recording and aim at the creek to investigate the second trail.'};
+          }
+          this.bag.record('bait-echo','Creek bank Echo recording','A figure appears at the end of the trackway. In the next frame it is gone, with no return prints.');
+          return {done:true,message:'A figure flickers into view at the creek and disappears. The recording is filed in your backpack.'};
+        });
+      return '';
+    });
+  }
   model(point,pipeline,source,scale=1){
     const model=pipeline.prepare(source,{position:point.toArray(),scale});
     this.scene.add(model);return model;
@@ -241,6 +322,7 @@ export class Finale {
     try{localStorage.setItem(key,JSON.stringify({stage,choice:this.choice,pulleyRigged:this.pulleyRigged}));}catch{}
   }
   tick(dt){
+    this.baitWatch.tick(dt);
     this.water.uniforms.current.value+=dt*this.mechanics.creekFlow;
     if(this.rescue.stage!==4)return;
     this.boom.rotation.y=T.MathUtils.lerp(this.boom.rotation.y,this.boomAligned||this.stage>0?-.16:.95,1-Math.exp(-dt*3));
