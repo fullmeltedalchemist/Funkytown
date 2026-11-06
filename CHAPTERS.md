@@ -13,3 +13,12 @@ Cross into the Echo Grid and follow the memory toward a distorted Vale House. Gr
 Return to town carrying the real recording. Use the journal, the post office warning, and the spillway gauge to open the safe crossing. Decide whether to shut the arch behind Mom or leave it accessible to recover the missing townspeople. A short return through Vale House shows the consequences of the choice.
 
 Chapters 2–4 are design beats for implementation. The current Echo Grid memory is an early version of the reveal in Chapter 3.
+
+
+## Playable objective pass
+
+- After reading the journal, carry the field receiver to the camp tuning stand and tune to channel 5 to unlock the lodge letter.
+- Use the lodge letter to set three sluice valves around the creek and open the Echo Grid arch.
+- Start the 42-second Echo Grid trial, hit the three lit receivers in sequence with physical projectiles, then recover the memory. Restart at the receiver if time runs out.
+
+This pass establishes the playable loop. The missing-person investigation, expanded grappling route, and branching Chapter 4 ending are still planned.

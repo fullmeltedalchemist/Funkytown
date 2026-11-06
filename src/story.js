@@ -1,3 +1,4 @@
+import {Missions} from './missions.js';
 import {campLantern,documentProp} from './props.js';
 import * as T from 'three';
 import R from 'rapier';
@@ -95,9 +96,9 @@ export class Story {
     }
     sign(town,'FOXGLOVE CAMP',new T.Vector3(cabinX,cabinY+2.55,cabinZ+4.71));
     this.clue(transformed(vale,-2.37,1.16,-1.38),0,'Read field journal',0,
-      'Mom’s journal: “The door below Foxglove hears a familiar voice. Mine stopped being the only one.”');
+      'Mom’s journal: “Take the receiver to camp. Channel 5. The door below Foxglove heard my voice, then answered twice.”');
     this.clue(new T.Vector3(cabinX-2.37,cabinY+1.16,cabinZ-1.38),0,'Read Mom’s letter',1,
-      '“The arch kept the moment I crossed. Find that memory, and you’ll know where I went.”');
+      '“Set the three sluices to 2, 1, 3. The arch kept the moment I crossed. Find that memory.”');
     this.shader=realityMaterial();
     const gateX=cabinX,gateZ=cabinZ-11,gateY=height(gateX,gateZ);
     this.gates=[new T.Vector3(gateX,gateY,gateZ),new T.Vector3(140,0,11)];
@@ -120,6 +121,7 @@ export class Story {
       '“I went through to close it from the far side. The door opens both ways now. Come find me.”');
     mechanics.crate([144,.55,1],1);
     sign(realm,'THE ECHO GRID',new T.Vector3(140,2.55,-13.5));
+    this.missions=new Missions(this,pipeline,models);
   }
   advance(state){
     this.state=state;
@@ -132,6 +134,8 @@ export class Story {
       .setTranslation(point.x,point.y+.16,point.z).setSensor(true).setCollisionGroups((128<<16)|2));
     this.mechanics.tag(collider,{name,action:()=>{
       if(this.state<stage)return 'There’s another clue to find first.';
+      if(this.state===1&&stage===1&&this.missions.frequency!==5)return 'Carry and tune the field receiver before reading the letter.';
+      if(this.state===3&&stage===3&&!this.missions.passed)return 'Finish the signal trial to stabilize this memory.';
       if(this.state===stage)this.advance(stage+1);
       return message;
     }});
@@ -160,6 +164,8 @@ export class Story {
        Math.abs(position.y-gate.y)>2.4)return null;
     this.wait=1.2;
     if(this.area===0&&this.state<2)return {notice:'The arch is sealed. Read the letter in the lodge.'};
+    if(this.area===0&&this.state===2&&!this.missions.calibrated())return {notice:'Set the three sluices before crossing.'};
+    if(this.area===1)this.missions.relayTime=0;
     this.area=1-this.area;
     this.mechanics.changeArea(this.area);
     if(this.state===2)this.advance(3);
@@ -171,11 +177,11 @@ export class Story {
     const target=this.waypoint();
     const distance=target?Math.round(Math.hypot(position.x-target.x,position.z-target.z)):0;
     if(this.state===3&&this.area===0)return 'Return through the violet arch to reach the memory';
-    return steps[this.state]+(target?' · '+distance+' m':'');
+    return (this.missions.objective()||steps[this.state])+(target?' · '+distance+' m':'');
   }
   waypoint(){
     if(this.state===3&&this.area===0)return this.targets[2];
-    return this.targets[this.state]??null;
+    return this.missions.target()??this.targets[this.state]??null;
   }
   animate(time){
     this.shader.uniforms.time.value=time;

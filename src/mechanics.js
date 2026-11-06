@@ -20,6 +20,7 @@ const fluidMaterial=new T.MeshBasicMaterial({color:0xd2e6df,transparent:true,opa
 
 export class Mechanics {
   items=new Map();
+  onImpact=new Map();
   fixed=new Map();
   drops=[];
   carried=null;
@@ -46,14 +47,14 @@ export class Mechanics {
     return {visual,collider};
   }
   tag(collider,interaction){this.fixed.set(collider.handle,interaction);}
-  dynamic({position,shape,visual,kind='prop',name,size,life=Infinity,area=this.area}){
+  dynamic({position,shape,visual,kind='prop',name,size,life=Infinity,area=this.area,home=null}){
     const body=this.world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(...position).setCcdEnabled(kind!=='water'));
     const bit=bits[kind];
     const mask=kind==='round'?bits.world|bits.prop|bits.car:kind==='water'?all&~(bits.water|bits.round):all;
     shape.setCollisionGroups(groups(bit,mask));
     if(kind==='round'||size)shape.setActiveEvents(R.ActiveEvents.COLLISION_EVENTS);
     const collider=this.world.createCollider(shape,body);
-    const item={body,collider,visual,kind,name,size,life,area,mask,speed:0};
+    const item={body,collider,visual,kind,name,size,life,area,mask,home,speed:0};
     this.items.set(collider.handle,item);
     if(visual){visual.position.set(...position);this.scenes[area].add(visual);}
     return item;
@@ -108,12 +109,13 @@ export class Mechanics {
       this.anchor=null;this.driving=true;this.walker.body.setEnabled(false);
       return 'Wagon controls: steer and accelerate with movement. Space or Jump drifts. Use exits.';
     }
-    if(target?.kind==='prop'){
-      this.carried=target;target.body.setGravityScale(0,true);
-      target.collider.setCollisionGroups(groups(bits.held,all&~(bits.player|bits.round)));
-      return 'Carrying '+target.name+'.';
-    }
+    if(target?.kind==='prop')return this.grab(target);
     return '';
+  }
+  grab(target){
+    this.carried=target;target.body.setGravityScale(0,true);
+    target.collider.setCollisionGroups(groups(bits.held,all&~(bits.player|bits.round)));
+    return 'Carrying '+target.name+'.';
   }
   release(velocity){
     const item=this.carried;if(!item)return;
@@ -237,8 +239,8 @@ export class Mechanics {
     this.events.drainCollisionEvents((a,b,started)=>{
       if(!started)return;
       const one=this.items.get(a),two=this.items.get(b);
-      if(one?.kind==='round')spent.add(one);
-      if(two?.kind==='round')spent.add(two);
+      if(one?.kind==='round'&&!spent.has(one)){spent.add(one);this.onImpact.get(b)?.();}
+      if(two?.kind==='round'&&!spent.has(two)){spent.add(two);this.onImpact.get(a)?.();}
       if(one?.size&&one!==this.carried&&(one.speed>6.5||two?.kind==='round'))broken.add(one);
       if(two?.size&&two!==this.carried&&(two.speed>6.5||one?.kind==='round'))broken.add(two);
     });
@@ -249,6 +251,9 @@ export class Mechanics {
       const p=item.body.translation();
       if(item===this.car&&(p.y<-10||Math.abs(p.x)>57||Math.abs(p.z)>57)){
         item.body.setTranslation(new T.Vector3(...this.carHome),true);
+        item.body.setLinvel({x:0,y:0,z:0},true);
+      }else if(item.home&&(p.y<-10||Math.abs(p.x)>58||Math.abs(p.z)>58)){
+        item.body.setTranslation(item.home,true);
         item.body.setLinvel({x:0,y:0,z:0},true);
       }else if(item.life<=0||p.y<-18)this.remove(item);
       else if(item.visual){item.visual.position.copy(p);item.visual.quaternion.copy(item.body.rotation());}

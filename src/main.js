@@ -172,6 +172,7 @@ async function boot(){
         if(mechanics.driving)world.step(mechanics.events);
         else walker.step({...move,pull:mechanics.anchor},yaw,mechanics.events);
         mechanics.after();
+        story.missions.tick(STEP);
         if(!mechanics.driving){
           const transition=story.transition(walker.current,STEP);
           if(transition){

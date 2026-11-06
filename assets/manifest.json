@@ -5,9 +5,15 @@
     "birch": "./assets/tree2.glb",
     "maple": "./assets/tree3.glb",
     "underbrush": "./assets/bush.glb",
-    "rocks": "./assets/rocks.glb"
+    "rocks": "./assets/rocks.glb",
+    "receiver": "./assets/field-receiver.glb",
+    "valve": "./assets/sluice-valve.glb"
   },
   "placements": [
-    { "model": "cabin", "anchor": "rangerCabin", "collider": "authored" }
+    {
+      "model": "cabin",
+      "anchor": "rangerCabin",
+      "collider": "authored"
+    }
   ]
 }

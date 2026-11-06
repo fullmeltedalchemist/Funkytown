@@ -49,6 +49,12 @@ export function documentProp(letter){
     mesh(root,new T.BoxGeometry(.32,.023,.335),cover,0,.012,0);
     mesh(root,new T.BoxGeometry(.29,.034,.305),leaves,0,.039,0);
     const page=mesh(root,new T.PlaneGeometry(.285,.3),paper,0,.057,0);
+    new T.TextureLoader().load('./assets/foxglove-survey.jpg',texture=>{
+      texture.colorSpace=T.SRGBColorSpace;
+      paper.map?.dispose();
+      paper.map=texture;
+      paper.needsUpdate=true;
+    });
     page.rotation.x=-Math.PI/2;
     mesh(root,new T.BoxGeometry(.023,.066,.34),cover,-.153,.029,0);
     for(let i=0;i<4;i++)mesh(root,new T.BoxGeometry(.276,.001,.002),cover,.006,.028+i*.006,.153);
