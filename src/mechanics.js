@@ -136,10 +136,20 @@ export class Mechanics {
   grapple(camera){
     if(this.driving)return '';
     if(this.anchor){this.anchor=null;return 'Hook released.';}
-    const hit=this.aim(camera,31);
-    if(!hit||hit.collider.parent()?.isDynamic())return 'Aim the hook at solid terrain or a structure.';
     const direction=camera.getWorldDirection(new T.Vector3());
-    this.anchor=camera.position.clone().addScaledVector(direction,hit.timeOfImpact).addScaledVector(vec(hit.normal),.51);
+    const hit=this.aim(camera,42);
+    const visible=[];
+    for(const root of this.scenes[this.area].children){
+      if(!root.userData.grappleSurface)continue;
+      root.traverseVisible(node=>{if(node.isMesh)visible.push(node);});
+    }
+    const surface=new T.Raycaster(camera.position,direction,0,42).intersectObjects(visible,false)[0];
+    if(surface&&(!hit||surface.distance<=hit.timeOfImpact+.25)){
+      this.anchor=surface.point.clone().addScaledVector(direction,-.55);
+    }else{
+      if(!hit||hit.collider.isSensor()||hit.collider.parent()?.isDynamic())return 'Aim at a tree, roof, wall, or solid terrain.';
+      this.anchor=camera.position.clone().addScaledVector(direction,hit.timeOfImpact).addScaledVector(vec(hit.normal),.51);
+    }
     return 'Hook attached. Tap Hook or press G again to release.';
   }
   drawWater(now){

@@ -72,6 +72,7 @@ export class AssetPipeline {
           .setTranslation(center.x,center.y,center.z));
       }
     }
+    root.userData.grappleSurface=options.collider==='authored';
     this.scene.add(root);
     return root;
   }
@@ -117,6 +118,7 @@ export class AssetPipeline {
         parent.copy(pivot.matrix);
         batch.setMatrixAt(i,local.multiplyMatrices(parent,node.matrixWorld));
       }
+      batch.userData.grappleSurface=solid;
       batch.castShadow=solid;
       batch.receiveShadow=true;
       this.scene.add(batch);

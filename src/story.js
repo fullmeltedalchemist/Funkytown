@@ -1,3 +1,4 @@
+import {campLantern,documentProp} from './props.js';
 import * as T from 'three';
 import R from 'rapier';
 import {cabinX,cabinY,cabinZ,height,plots} from './terrain.js';
@@ -134,7 +135,14 @@ export class Story {
       if(this.state===stage)this.advance(stage+1);
       return message;
     }});
-    const gem=marker(scenes[area],point.clone().add(new T.Vector3(0,.29,0)),0xf4c87e);
+    if(stage<2){
+      const prop=documentProp(stage===1);
+      prop.position.copy(point);
+      prop.rotation.y=stage===0?plots[0].yaw:0;
+      scenes[area].add(prop);
+    }
+    const gem=marker(scenes[area],point.clone().add(new T.Vector3(0,.37,0)),0xf4c87e);
+    if(stage<2)gem.scale.setScalar(.29);
     this.markers.push({gem,y:gem.position.y,stage});
   }
   arch(point,area){
@@ -190,6 +198,10 @@ export function buildCampEquipment(mechanics){
   for(const {x:cx,z:cz,yaw} of plots){
     const dx=4.6*Math.sin(yaw),dz=4.6*Math.cos(yaw);
     mechanics.crate([cx+dx,height(cx+dx,cz+dz+1.1)+.35,cz+dz+1.1]);
+  }
+  for(const [lx,lz] of [[cabinX+2,cabinZ+4.2],[plots[0].x-3.6,plots[0].z+1.35]]){
+    mechanics.dynamic({position:[lx,height(lx,lz)+.43,lz],shape:R.ColliderDesc.cylinder(.15,.11),
+      visual:campLantern(),name:'Camp lantern'});
   }
   const post=mechanics.staticBox([.20,2.18,.20],[x,y+1.1,z+2.15],0x654c40);
   const valve=mechanics.staticBox([.39,.33,.29],[x,y+1.45,z+2.33],0x759794);

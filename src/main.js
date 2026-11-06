@@ -46,7 +46,7 @@ function forest(pipeline,models){
     const x=(rnd()-.5)*106,z=(rnd()-.5)*106;
     const d=trailDistance(x,z);
     const yard=Math.max(Math.abs(x-cabinX),Math.abs(z-cabinZ));
-    if(d<2.7||yard<7.9||plots.some(p=>Math.hypot(x-p.x,z-p.z)<7))continue;
+    if(inCreek(x,z)||d<2.7||yard<7.9||plots.some(p=>Math.hypot(x-p.x,z-p.z)<7))continue;
     if(d<6.5||rnd()<.47){
       place('underbrush',x,z,.55+rnd()*.62,.035);
       continue;

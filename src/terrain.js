@@ -2,12 +2,15 @@ import * as T from 'three';
 import R from 'rapier';
 
 const {lerp,smoothstep}=T.MathUtils;
-export const trailX=(z)=>Math.sin(z*.076)*6.1+Math.sin(z*.16)*1.4;
+export const trailX=(z)=>Math.sin(z*.076)*6.1+Math.sin(z*.16)*1.4-3.6*Math.exp(-((z-26)**2)/61);
 const creekZ=(x)=>-1+3.3*Math.sin(x*.095);
 export const cabinZ=-28;
 export const cabinX=trailX(cabinZ);
 const ridge=(z)=>5.1*Math.exp(-((z-31)**2)/430)+2.0*Math.exp(-((z+28)**2)/265);
-const creek=(x,z)=>Math.exp(-((z-creekZ(x))**2)/22);
+const pool=(x)=>Math.exp(-((x+10)**2)/95);
+const creekWidth=(x)=>4.2+6.9*pool(x);
+const creek=(x,z)=>Math.exp(-(((z-creekZ(x))/creekWidth(x))**2));
+const ford=(x,z)=>1-smoothstep(Math.abs(x-trailX(z)),1.3,3.8);
 function hills(x,z){
   return 5.7*Math.exp(-((x+32)**2+(z+20)**2)/600)+
     7.6*Math.exp(-((x-31)**2+(z-20)**2)/650)+
@@ -18,7 +21,7 @@ function rawHeight(x,z){
   const distance=Math.abs(x-trailX(z));
   const outside=smoothstep(distance,2.1,9);
   const ripple=.68*Math.sin(x*.19+z*.12)*Math.cos(z*.24)+.22*Math.sin(x*.51-z*.41);
-  return ridge(z)-2.67*creek(x,z)+(ripple+hills(x,z))*outside;
+  return ridge(z)-(2.92+pool(x)*1.45)*creek(x,z)+(ripple+hills(x,z))*outside+ford(x,z)*creek(x,z)*.63;
 }
 export const cabinY=rawHeight(cabinX,cabinZ)+.07;
 export const plots=[{name:'Vale House',x:12,z:26,yaw:-Math.PI/2,scale:.82},
@@ -35,7 +38,7 @@ export function height(x,z){
   return result;
 }
 export const spawn=[trailX(38),height(trailX(38),38)+1.1,38];
-export const inCreek=(x,z)=>Math.abs(z-creekZ(x))<2.5&&height(x,z)<-1.71;
+export const inCreek=(x,z)=>Math.abs(z-creekZ(x))<creekWidth(x)*1.35&&height(x,z)<-1.71;
 export const trailDistance=(x,z)=>Math.abs(x-trailX(z));
 export function makeTerrain(scene,world,textures){
   const size=114,cells=152;
@@ -50,7 +53,9 @@ export function makeTerrain(scene,world,textures){
     pos.setY(i,y);
     uv.setXY(i,x*.43,z*.43);
     const grain=.5+.5*Math.sin(x*.47+z*.31)*Math.cos(z*.77-x*.35);
-    const near=1-smoothstep(trailDistance(x,z)+.27*Math.sin(z*1.5),.95,2.35);
+    const front=plots[0].x-4.4;
+    const spur=x>trailX(26)-.4&&x<front+.65?Math.abs(z-26)*1.35:Infinity;
+    const near=1-smoothstep(Math.min(trailDistance(x,z),spur)+.27*Math.sin(z*1.5),.95,2.35);
     temp.copy(moss).lerp(needle,grain*.66);
     temp.lerp(stone,creek(x,z)*.63).lerp(dirt,near*.85);
     temp.multiplyScalar(.78+.24*grain).toArray(color,i*3);
@@ -67,7 +72,7 @@ export function makeTerrain(scene,world,textures){
   const points=[],indices=[];
   for(let i=0;i<=112;i++){
     const x=-55+i*110/112,z=creekZ(x);
-    const width=2.8+.5*Math.sin(x*.18);
+    const width=creekWidth(x)*1.35;
     points.push(x,-1.68,z-width,x,-1.68,z+width);
     const a=i*2;
     if(i<112)indices.push(a,a+1,a+2,a+1,a+3,a+2);
