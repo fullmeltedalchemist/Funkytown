@@ -1,3 +1,4 @@
+import {openRigging} from './rigging.js';
 import * as T from 'three';
 import R from 'rapier';
 import {cabinX,cabinZ,height,inCreek,trailX} from './terrain.js';
@@ -69,7 +70,7 @@ function campfire(scene,base){
 }
 
 export class Rescue {
-  constructor(mechanics,story,bag){
+  constructor(mechanics,story,bag,notice){
     this.mechanics=mechanics;this.story=story;
     let saved=0;try{saved=Number(localStorage.getItem('bellwether-rescue-v1'));}catch{}
     this.stage=Number.isInteger(saved)&&saved>=0&&saved<=4?saved:0;
@@ -104,6 +105,17 @@ export class Rescue {
       return '“Dispatch said east bank. The tape mentions two bells. Check the numbered markers for yourself.”';
     },true);
     const east=this.route[1],west=this.route[2];
+    const rig=point(this.fire.x+1.6,this.fire.z+1.5);
+    this.marker(rig,0xc3a375,'Practice rescue rig',()=>{
+      if(this.stage<1)return 'Speak to the woman at the bank before using the practice line.';
+      if(bag.records.has('spare-pulley'))return 'The practice run is complete. Your spare pulley is in the gear section.';
+      openRigging(()=>{
+        bag.record('spare-pulley','Spare rescue pulley','Recovered after bringing the dummy across without a collision.','Gear');
+        bag.record('rigging-clue','Rescue rig test','A rig overloaded near the rock shelf, but the recovered line has clean cuts instead of torn fibers.');
+        notice('The Line That Held complete. Pulley and rigging evidence added to the bag.');
+      });
+      return '';
+    });
     this.marker(east,0x929784,'East rescue marker',()=>{this.checkedEast=true;return 'East station: one bell. The dispatch claimed this was the pickup point.';});
     this.marker(west,0x9b7b55,'West rescue marker',()=>{
       if(this.stage<2)return 'Two bells hang from a weathered rescue post.';

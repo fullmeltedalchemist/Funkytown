@@ -89,14 +89,19 @@ export class Bag {
       const empty=document.createElement('li');empty.textContent='Empty. Look for small keepsakes near the trail and camp.';this.list.append(empty);
       return;
     }
-    for(const {name,description,category} of this.records.values()){
-      const row=document.createElement('li'),title=document.createElement('strong');
-      title.textContent=category+' · '+name;row.append(title,document.createTextNode(description));this.list.append(row);
-    }
-    for(const item of finds){
-      if(!this.ids.has(item.id))continue;
-      const row=document.createElement('li'),title=document.createElement('strong');
-      title.textContent=item.name;row.append(title,document.createTextNode(item.description));this.list.append(row);
-    }
+    const renderSection=(label,items)=>{
+      if(!items.length)return;
+      const section=document.createElement('li'),heading=document.createElement('h3'),list=document.createElement('ul');
+      heading.textContent=label;
+      section.append(heading,list);
+      for(const {name,description} of items){
+        const row=document.createElement('li'),title=document.createElement('strong');
+        title.textContent=name;row.append(title,document.createTextNode(description));list.append(row);
+      }
+      this.list.append(section);
+    };
+    const records=[...this.records.values()];
+    for(const category of ['Gear','Evidence','Cargo'])renderSection(category,records.filter(item=>(item.category||'Evidence')===category));
+    renderSection('Keepsakes',finds.filter(item=>this.ids.has(item.id)));
   }
 }
