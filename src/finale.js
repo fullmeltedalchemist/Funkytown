@@ -90,6 +90,16 @@ export class Finale {
       });
       return '';
     });
+    const post=plots[2];
+    const bulletin=point(post.x+3.9,post.z-2.1,.95);
+    this.bulletin=bulletin;
+    this.model(bulletin,pipeline,models.receiver,.55);
+    this.station(bulletin,'Check the post office radio',()=>{
+      if(this.choice==='public')return 'The postmaster cuts into the broadcast. “I logged Cal’s parcel the morning after the rescue. If the sheriff wants that ledger, he can ask me in front of everyone.”';
+      if(this.choice==='private')return 'The public channel is quiet. On the ranger’s frequency: “I have Cal’s tape locked up. Meet me at dawn, before the sheriff starts his rounds.”';
+      if(this.stage>0)return 'Post office advisory: the ford has reopened. Keep clear of the intake while the ranger checks the gate seals.';
+      return this.flood>.24?'Post office advisory: ford closed. Use the high bank path.':'Post office advisory: crews are working at the spillway.';
+    });
     for(const [i,choice] of ['public','private'].entries()){
       const p=this.lookout.clone().add(new T.Vector3(i?1.7:-1.7,0,.5));
       this.model(p,pipeline,i?models.lantern:models.receiver,.72);
@@ -133,7 +143,7 @@ export class Finale {
   }
   objective(){
     if(this.rescue.stage!==4||this.rescue.story.area!==0)return null;
-    if(this.choice)return {text:'Chapter 1 complete · '+(this.choice==='public'?'the town heard the tape':'the ranger heard the tape privately'),target:null};
+    if(this.choice)return {text:'Chapter 1 complete · '+(this.choice==='public'?'the town heard the tape':'the ranger heard the tape privately')+' · check the post office radio',target:this.bulletin};
     if(this.stage===0){
       if(!this.boomAligned)return {text:'Grapple the brass ring to secure the spillway boom',target:this.boomPoint};
       const index=this.gates.findIndex((n,i)=>n!==[2,0,1][i]);
@@ -186,6 +196,13 @@ export class MailRoute {
       if(packed!=='letter')return 'Pick up the Vale House letter at the post office.';
       delivered=true;packed='';persist();
       return 'Letter delivered. A note on the porch says the camp caretaker moved to the west bunkhouse.';
+    });
+    const neighbor=point(vale.x-4.1,vale.z+3.3,.9);
+    station(neighbor,'Read the neighbor’s delivery note',()=>{
+      if(complete)return 'The neighbor has crossed the missing parcel off their list.';
+      if(!delivered)return '“Postal carrier: please leave Vale’s letter on the porch before taking the camp parcel uphill.”';
+      forwarded=true;persist();
+      return '“I helped the caretaker move to the west bunkhouse. Take the path around the main cabin. The old porch is empty.”';
     });
     station(oldAddress,'Read the forwarding slip',()=>{
       if(complete)return 'The caretaker has already received the parcel.';
