@@ -16,7 +16,7 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 
 ## Backpack
 
-- [ ] Gear, Evidence, Cargo, and Keepsakes: entries are labeled. Add distinct inventory views.
+- [x] Field Bag organizes Gear, Evidence, Cargo, and Keepsakes into separate sections. Verified in production source.
 - [ ] Quick slot and world tools: flashlight is live. Add pulley, receiver batteries, and camera.
 - [ ] Evidence: ranger compares Cal’s letter with the tape. Add manual comparison and more conversations. Keep essential evidence safe.
 - [ ] Cargo: one-slot mail packing is live. Add bulky hand and wagon cargo and job-specific packing choices.
@@ -35,7 +35,8 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 ## Side quests
 
 - [ ] Last Delivery: packing, Vale House delivery, forwarding slip, relocated delivery, and Cal’s letter are live. Verify full route in-game and add the neighbor clue path.
-- [ ] The Line That Held: rig the rescue dummy, manage slack, reset failures, and earn a pulley and clue.
+- [x] The Line That Held: choose anchors, manage slack and tension, reset after failure, and earn the pulley and clue. Logic tests passed and production source verified.
+- [ ] Playtest the rigging dialog and rewards in-game on phone.
 - [ ] The Wrong Reel: scrub and splice damaged footage, undo bad splices, and recover evidence.
 - [ ] Night at the Bait Shop: bait, tracks, move the camera, catch the ordinary thief or stay for the Echo.
 
