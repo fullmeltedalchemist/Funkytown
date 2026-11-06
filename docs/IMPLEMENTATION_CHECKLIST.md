@@ -29,11 +29,12 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 - [ ] Postmaster: sort, load, deliver, close, and reroute after flooding.
 - [x] Ranger camp rounds: stops at the fire, rescue gear, and Cal’s marker. Dialogue reflects the current stop. Production deploy verified.
 - [x] Ranger: visible gear repair with a handheld wrench. Verified in production source.
-- [ ] Ranger: distinct rescue course inspection animation.
+- [x] Ranger: distinct inspection animation at Cal’s marker on the rescue route. Production source verified.
 - [ ] Projectionist: move reels and set up movie night.
 - [ ] Sheriff: patrol and head to lookout for the confrontation.
 - [x] Post office radio reacts to the flooded ford, reopening, and each ending choice. Production source verified.
-- [ ] Playtest radio prompts and add in-person villager reactions.
+- [x] Ranger reacts in person to ford flooding, drainage, and both ending choices. Production source verified.
+- [ ] Playtest radio and ranger prompts. Add reactions for other villagers.
 
 ## Side quests
 
