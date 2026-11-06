@@ -89,7 +89,7 @@ export class Rescue {
         if(!bag.records.has('timeline-conflict'))bag.record('timeline-conflict','The missing day','Cal’s letter was postmarked a day after the official rescue date. The original tape runs beyond the official transcript.');
         return 'You show the ranger the letter and tape. He taps the postmark: “The report is a day early. And they cut the recording short.”';
       }
-      if(this.stage!==1)return 'The ranger checks the rescue line for wear.';
+      if(this.stage!==1)return 'The ranger is '+(this.rangerActivity??'checking the rescue line')+'.';
       this.save(2);
       return '“Dispatch said east bank. The tape mentions two bells. Check the numbered markers for yourself.”';
     },true);
@@ -143,7 +143,7 @@ export class Rescue {
   }
   objective(){
     if(this.story.state<4||this.story.area!==0)return null;
-    const goals=['Meet the woman on the bank','Find the ranger by the campfire','Reconstruct the rescue · compare the bank markers','Follow the frayed line to its anchor','Cut line recovered · the spillway investigation is next'];
+    const goals=['Meet the woman on the bank','Find the ranger on his camp rounds','Reconstruct the rescue · compare the bank markers','Follow the frayed line to its anchor','Cut line recovered · the spillway investigation is next'];
     const targets=[this.bank,this.ranger.root.position,this.route[this.checkedEast?2:1],this.evidence,null];
     return {text:goals[this.stage],target:targets[this.stage]};
   }
@@ -152,13 +152,27 @@ export class Rescue {
     this.mother.visible=enabled;
     this.ranger.root.visible=enabled;
     this.animateFire(time);
-    const cycle=(time%46)/46, t=.5-.5*Math.cos(cycle*Math.PI*2);
-    const from=this.route[0],to=point(from.x+2.4,from.z-2.1);
+    const camp=this.route[0];
+    this.rangerStops??=[
+      [camp,'warming his hands by the fire',6],
+      [point(camp.x+2.4,camp.z-2.1),'checking the rescue gear',9],
+      [point(camp.x+3.5,camp.z+2.8),'checking Cal’s marker',8]
+    ];
     const root=this.ranger.root;
-    root.position.lerpVectors(from,to,t);
-    root.position.y=height(root.position.x,root.position.z);
-    root.rotation.y=cycle<.5?2.28:-.86;
-    this.ranger.legs.forEach((leg,i)=>leg.rotation.x=Math.sin(time*7+i*Math.PI)*.23);
+    let elapsed=time%47;
+    for(const [i,[stop,activity,wait]] of this.rangerStops.entries()){
+      const next=this.rangerStops[(i+1)%this.rangerStops.length][0];
+      if(elapsed>=wait+8){elapsed-=wait+8;continue;}
+      const progress=T.MathUtils.clamp((elapsed-wait)/8,0,1);
+      root.position.lerpVectors(stop,next,progress);
+      root.position.y=height(root.position.x,root.position.z);
+      root.rotation.y=Math.atan2(next.x-stop.x,next.z-stop.z);
+      this.rangerActivity=progress>0?'walking his camp rounds':activity;
+      this.ranger.legs.forEach((leg,index)=>{
+        leg.rotation.x=progress>0?Math.sin(progress*54+index*Math.PI)*.25:0;
+      });
+      break;
+    }
     this.rangerSensor.setTranslation({x:root.position.x,y:root.position.y+.98,z:root.position.z});
     if(this.stage===4)this.line.visible=false;
   }
