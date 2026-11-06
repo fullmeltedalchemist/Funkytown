@@ -11,7 +11,7 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 - [ ] Playtest boom aiming, flooded ford, bank detour, and recovery end to end.
 - [x] Search the intake and recover Cal’s jacket and dispatch cassette.
 - [x] Lookout minigame: play two tracks and align siren and winch cues. Audio on phone still needs testing.
-- [ ] Broadcast or share privately: saved choice and ending text are live. Add immediate reactions in town.
+- [x] Broadcast or share privately: ending choice persists and changes the post office radio response. Production source verified.
 - [ ] Playtest and tune the first 30 minutes.
 
 ## Backpack
@@ -32,11 +32,13 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 - [ ] Ranger: distinct rescue course inspection animation.
 - [ ] Projectionist: move reels and set up movie night.
 - [ ] Sheriff: patrol and head to lookout for the confrontation.
-- [ ] Town reactions to the spillway and broadcast decision.
+- [x] Post office radio reacts to the flooded ford, reopening, and each ending choice. Production source verified.
+- [ ] Playtest radio prompts and add in-person villager reactions.
 
 ## Side quests
 
-- [ ] Last Delivery: packing, Vale House delivery, forwarding slip, relocated delivery, and Cal’s letter are live. Verify full route in-game and add the neighbor clue path.
+- [x] Last Delivery: the neighbor’s note offers a second way to learn the caretaker’s new address after delivering the Vale House letter. Production source verified.
+- [ ] Playtest the full Last Delivery route with both the forwarding slip and neighbor clue.
 - [x] The Line That Held: choose anchors, manage slack and tension, reset after failure, and earn the pulley and clue. Logic tests passed and production source verified.
 - [ ] Playtest the rigging dialog and rewards in-game on phone.
 - [ ] The Wrong Reel: scrub and splice damaged footage, undo bad splices, and recover evidence.
