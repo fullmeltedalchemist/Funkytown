@@ -41,3 +41,8 @@ This is the project requirements reference for future work. It captures the play
 ## Current scope
 
 The base game includes the ridge, Vale House, Foxglove Camp, the Echo Grid, and the original clue sequence. The chapter work adds a receiver delivery and tuning task, a three-valve sluice puzzle, and a timed physical-projectile relay trial. These are playable objective implementations once deployed and tested; they are not the finished full-length chapters requested above. The full chapter progression, choices, consequences, and runtime remain to be built and validated.
+
+
+### Art implementation status
+
+The generated survey and handwritten letter are mapped onto the journal and letter props. The field receiver, sluice valves, camp lantern, Echo Grid relay dish, and stone arch load from the GLB asset manifest. Physics colliders and interaction markers are separate from the display models. Full chapter playthrough and art review remain part of acceptance.

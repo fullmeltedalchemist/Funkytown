@@ -1,5 +1,5 @@
 import {Missions} from './missions.js';
-import {campLantern,documentProp} from './props.js';
+import {documentProp} from './props.js';
 import * as T from 'three';
 import R from 'rapier';
 import {cabinX,cabinY,cabinZ,height,plots} from './terrain.js';
@@ -102,7 +102,7 @@ export class Story {
     this.shader=realityMaterial();
     const gateX=cabinX,gateZ=cabinZ-11,gateY=height(gateX,gateZ);
     this.gates=[new T.Vector3(gateX,gateY,gateZ),new T.Vector3(140,0,11)];
-    this.gates.forEach((point,index)=>this.arch(point,index));
+    this.gates.forEach((point,index)=>this.arch(point,index,pipeline,models.arch));
     realm.background=new T.Color(0x170f32);
     realm.fog=new T.FogExp2(0x543576,.029);
     realm.add(new T.HemisphereLight(0xf2cdff,0x5849ab,2.3));
@@ -149,10 +149,13 @@ export class Story {
     if(stage<2)gem.scale.setScalar(.29);
     this.markers.push({gem,y:gem.position.y,stage});
   }
-  arch(point,area){
+  arch(point,area,pipeline,model){
     const {x,y,z}=point;
-    for(const side of [-1,1])this.mechanics.staticBox([.36,3.12,.5],[x+side*1.54,y+1.55,z],0x543876,area);
-    this.mechanics.staticBox([3.45,.32,.54],[x,y+3.07,z],0x61468a,area);
+    for(const side of [-1,1])this.mechanics.staticBox([.36,3.12,.5],[x+side*1.54,y+1.55,z],0x543876,area).visual.visible=false;
+    this.mechanics.staticBox([3.45,.32,.54],[x,y+3.07,z],0x61468a,area).visual.visible=false;
+    const arch=pipeline.prepare(model,{position:point.toArray()});
+    arch.traverse(node=>{if(node.isMesh)node.castShadow=node.receiveShadow=true;});
+    this.mechanics.scenes[area].add(arch);
     const portal=new T.Mesh(new T.PlaneGeometry(2.73,2.92,22,25),this.shader);
     portal.position.set(x,y+1.49,z);
     this.mechanics.scenes[area].add(portal);
@@ -192,7 +195,7 @@ export class Story {
   }
 }
 
-export function buildCampEquipment(mechanics){
+export function buildCampEquipment(mechanics,pipeline,models){
   const {scenes}=mechanics;
   const wagonZ=30,wagonX=4.45;
   mechanics.makeCar([wagonX,height(wagonX,wagonZ)+.63,wagonZ]);
@@ -206,8 +209,8 @@ export function buildCampEquipment(mechanics){
     mechanics.crate([cx+dx,height(cx+dx,cz+dz+1.1)+.35,cz+dz+1.1]);
   }
   for(const [lx,lz] of [[cabinX+2,cabinZ+4.2],[plots[0].x-3.6,plots[0].z+1.35]]){
-    mechanics.dynamic({position:[lx,height(lx,lz)+.43,lz],shape:R.ColliderDesc.cylinder(.15,.11),
-      visual:campLantern(),name:'Camp lantern'});
+    mechanics.dynamic({position:[lx,height(lx,lz)+.43,lz],...pipeline.loose(models.lantern,1),
+      name:'Camp lantern'});
   }
   const post=mechanics.staticBox([.20,2.18,.20],[x,y+1.1,z+2.15],0x654c40);
   const valve=mechanics.staticBox([.39,.33,.29],[x,y+1.45,z+2.33],0x759794);

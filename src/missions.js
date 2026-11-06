@@ -45,10 +45,11 @@ export class Missions {
     this.targets=this.relays.map(p=>{
       const {visual,collider}=m.staticBox([.78,.78,.18],p.toArray(),0x725989,1);
       visual.visible=false;
-      const dish=new T.Mesh(new T.SphereGeometry(.52,22,12,0,Math.PI*2,0,Math.PI*.47),
-        new T.MeshStandardMaterial({color:0x837a92,roughness:.4,metalness:.5,emissive:0x000000,side:T.DoubleSide}));
-      dish.rotation.x=Math.PI/2;dish.position.copy(p);m.scenes[1].add(dish);
-      return {dish,collider};
+      const dish=pipeline.prepare(models.dish,{position:p.toArray()});
+      const lamp=dish.getObjectByName('relayLamp');
+      lamp.material=lamp.material.clone();
+      m.scenes[1].add(dish);
+      return {lamp,collider};
     });
     this.targets.forEach(({collider},i)=>m.onImpact.set(collider.handle,()=>this.hitRelay(i)));
   }
@@ -78,7 +79,7 @@ export class Missions {
       if(!m.carried&&near(vec(this.radio.body.translation()),this.receiver,2.1))this.carryDone=true;
     }
     if(this.relayTime>0)this.relayTime=Math.max(0,this.relayTime-dt);
-    this.targets.forEach(({dish},i)=>dish.material.emissive.setHex(this.relayTime&&i===this.relayIndex?0xe29453:0x000000));
+    this.targets.forEach(({lamp},i)=>lamp.material.emissive.setHex(this.relayTime&&i===this.relayIndex?0xe29453:0x000000));
   }
   get passed(){return this.relayIndex===this.relays.length;}
   target(){

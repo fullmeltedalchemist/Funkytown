@@ -35,6 +35,13 @@ function paperTexture(letter){
 export function documentProp(letter){
   const root=new T.Group();
   const paper=new T.MeshStandardMaterial({map:paperTexture(letter),roughness:.95,side:T.DoubleSide});
+  const artwork=letter?'./assets/moms-letter.jpg':'./assets/foxglove-survey.jpg';
+  new T.TextureLoader().load(artwork,texture=>{
+    texture.colorSpace=T.SRGBColorSpace;
+    paper.map?.dispose();
+    paper.map=texture;
+    paper.needsUpdate=true;
+  });
   if(letter){
     const envelope=mesh(root,new T.BoxGeometry(.26,.009,.175),material(0xaa8763),.105,.008,.01);
     envelope.rotation.y=-.3;
@@ -49,27 +56,9 @@ export function documentProp(letter){
     mesh(root,new T.BoxGeometry(.32,.023,.335),cover,0,.012,0);
     mesh(root,new T.BoxGeometry(.29,.034,.305),leaves,0,.039,0);
     const page=mesh(root,new T.PlaneGeometry(.285,.3),paper,0,.057,0);
-    new T.TextureLoader().load('./assets/foxglove-survey.jpg',texture=>{
-      texture.colorSpace=T.SRGBColorSpace;
-      paper.map?.dispose();
-      paper.map=texture;
-      paper.needsUpdate=true;
-    });
     page.rotation.x=-Math.PI/2;
     mesh(root,new T.BoxGeometry(.023,.066,.34),cover,-.153,.029,0);
     for(let i=0;i<4;i++)mesh(root,new T.BoxGeometry(.276,.001,.002),cover,.006,.028+i*.006,.153);
   }
-  return root;
-}
-export function campLantern(){
-  const root=new T.Group(),metal=material(0x343934,.51,.44);
-  for(const y of [-.13,.12])mesh(root,new T.CylinderGeometry(.105,.115,.045,18),metal,0,y,0);
-  const glass=new T.MeshStandardMaterial({color:0xe5c483,roughness:.34,emissive:0x4a2911});
-  mesh(root,new T.CylinderGeometry(.072,.083,.198,16),glass,0,-.006,0);
-  for(let i=0;i<4;i++){
-    const angle=Math.PI*.5*i;
-    mesh(root,new T.CylinderGeometry(.008,.008,.237,8),metal,Math.cos(angle)*.092,0,Math.sin(angle)*.092);
-  }
-  mesh(root,new T.TorusGeometry(.071,.008,8,16,Math.PI),metal,0,.14,0);
   return root;
 }

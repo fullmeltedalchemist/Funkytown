@@ -7,7 +7,10 @@
     "underbrush": "./assets/bush.glb",
     "rocks": "./assets/rocks.glb",
     "receiver": "./assets/field-receiver.glb",
-    "valve": "./assets/sluice-valve.glb"
+    "valve": "./assets/sluice-valve.glb",
+    "lantern": "./assets/camp-lantern.glb",
+    "dish": "./assets/echo-dish.glb",
+    "arch": "./assets/echo-arch.glb"
   },
   "placements": [
     {

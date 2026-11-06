@@ -107,7 +107,7 @@ async function boot(){
   const walker=new Walker(world,spawn);
   const mechanics=new Mechanics(world,walker,scene,realm);
   const story=new Story(mechanics,pipeline,models);
-  buildCampEquipment(mechanics);
+  buildCampEquipment(mechanics,pipeline,models);
   scene.add(camera);
   const tool=fieldPistol();
   camera.add(tool);
