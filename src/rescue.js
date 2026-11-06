@@ -98,8 +98,10 @@ export class Rescue {
     this.register(this.route[0],ranger.root,'Speak to the ranger',()=>{
       if(this.stage>=4&&bag?.records.has('cals-letter')&&bag.records.has('dispatch-tape')){
         if(!bag.records.has('timeline-conflict'))bag.record('timeline-conflict','The missing day','Cal’s letter was postmarked a day after the official rescue date. The original tape runs beyond the official transcript.');
-        return 'You show the ranger the letter and tape. He taps the postmark: “The report is a day early. And they cut the recording short.”';
+        return [this.spillwayReaction?.(), 'You show the ranger the letter and tape. He taps the postmark: “The report is a day early. And they cut the recording short.”'].filter(Boolean).join(' ');
       }
+      const reaction=this.spillwayReaction?.();
+      if(reaction)return reaction;
       if(this.stage!==1)return 'The ranger is '+(this.rangerActivity??'checking the rescue line')+'.';
       this.save(2);
       return '“Dispatch said east bank. The tape mentions two bells. Check the numbered markers for yourself.”';
@@ -225,11 +227,14 @@ export class Rescue {
       this.ranger.legs.forEach((leg,index)=>{
         leg.rotation.x=progress>0?Math.sin(progress*54+index*Math.PI)*.25:0;
       });
+      const inspecting=i===2&&progress===0;
       const working=i===1&&progress===0;
+      root.rotation.x=inspecting?.12+Math.sin(elapsed*2)*.035:0;
       this.wrench.visible=working;
       this.ranger.arms.forEach((arm,index)=>{
         if(progress>0)arm.rotation.x=Math.sin(progress*54+index*Math.PI)*.31;
         else if(working)arm.rotation.x=-1.16+Math.sin(elapsed*8+index*.6)*.19;
+        else if(inspecting)arm.rotation.x=index===0?-1.25+Math.sin(elapsed*2)*.2:-.36;
         else arm.rotation.x=i===0?-.72:-.09;
       });
       break;
