@@ -123,6 +123,7 @@ export class Finale {
     this.scene=mechanics.scenes[0];
     this.installRunawayCrate(notice);
     this.installWrongBankVoice(notice);
+    this.installPatrolTruck(notice);
     this.boomPoint=point(-6.1,-6.8,.56);
     this.boom=new T.Group();
     this.boom.position.copy(this.boomPoint);
@@ -251,6 +252,64 @@ export class Finale {
           ' The woman finishes a sentence that was never on the tape. “Ask her what he said next,” the ranger says.';
       });
     }
+  }
+  installPatrolTruck(notice){
+    const road=point(trailX(18)-2.7,18,.58);
+    const ridge=point(trailX(20)+3.6,20,.95);
+    const truck=this.mechanics.car.visual.clone(true);
+    truck.position.copy(road);truck.rotation.y=.36;truck.visible=false;
+    this.scene.add(truck);
+    let phase='waiting',elapsed=0,away=0,last='',rocks=0;
+    const record=(id,name,description)=>this.bag.record(id,name,description);
+    const station=(p,name,action)=>{
+      const sensor=this.mechanics.world.createCollider(R.ColliderDesc.ball(.55)
+        .setTranslation(...p.toArray()).setSensor(true).setCollisionGroups((128<<16)|2));
+      this.mechanics.tag(sensor,{name,action});
+      sensor.setEnabled(false);
+      return sensor;
+    };
+    const close=()=>{
+      phase='closed';truck.visible=false;cab.setEnabled(false);path.setEnabled(false);
+    };
+    const cab=station(road.clone().add(new T.Vector3(1,0,.6)),'Help with the stalled patrol truck',()=>{
+      chooseAtStation('Stalled patrol truck','A rear wheel is caught in a rut. Alternate forward and reverse to build momentum, or listen to the radio.',
+        [['Rock forward','forward'],['Rock backward','reverse'],['Listen to the radio','radio']],
+        action=>{
+          if(phase!=='active')return {done:true,message:'The patrol truck has left.'};
+          if(action==='radio'){
+            record('patrol-radio','Patrol radio log','Dispatch reports a vehicle waiting on the ridge and tells the sheriff to keep the lookout road clear.');
+            return {message:'“Unit Three, ridge turnout. Keep the lookout road clear.”'};
+          }
+          rocks=action===last?1:rocks+1;
+          last=action;
+          truck.rotation.z=(action==='forward'?1:-1)*Math.min(.12,rocks*.024);
+          if(rocks<5)return {message:'Rocking momentum '+rocks+' / 5. '+(action==='forward'?'Reverse next.':'Go forward next.')};
+          record('patrol-truck','Patrol truck recovered','You rocked the sheriff’s truck out of the rut.');
+          close();
+          return {done:true,message:'The tire catches. The sheriff pulls away and clears the road.'};
+        });
+      return '';
+    });
+    const path=station(ridge,'Check the patrol truck ridge detour',()=>{
+      record('patrol-detour','Ridge turnout','A marked turnout bypasses the stalled patrol truck.');
+      return 'The ridge turnout rejoins the road farther uphill. You can leave the sheriff to recover the truck.';
+    });
+    this.updateTruck=dt=>{
+      if(phase==='closed'||this.rescue.story.area!==0||this.rescue.stage<2)return;
+      if(this.bag.records.has('patrol-truck')||this.bag.records.has('patrol-tow'))return;
+      elapsed+=dt;
+      const distance=this.mechanics.walker.current.distanceToSquared(road);
+      if(phase==='waiting'){
+        if(elapsed<35||distance>100)return;
+        phase='active';truck.visible=true;cab.setEnabled(true);path.setEnabled(true);
+        notice('A patrol truck is stuck. Help rock it free or look for the ridge turnout.');
+        return;
+      }
+      away=distance>225?away+dt:0;
+      if(away<45)return;
+      record('patrol-tow','Patrol tow report','Dispatch sent a tow crew after the truck was left in the rut.');
+      close();
+    };
   }
   installWrongBankVoice(notice){
     const bend=point(4.9,2.8,1.05);
@@ -510,6 +569,7 @@ export class Finale {
     this.baitWatch.tick(dt);
     this.updateTown(dt);
     this.updateBankVoice(dt);
+    this.updateTruck(dt);
     this.water.uniforms.current.value+=dt*this.mechanics.creekFlow;
     if(this.rescue.stage!==4){this.mechanics.creekFlow=.76;this.updateCrate(dt);return;}
     this.boom.rotation.y=T.MathUtils.lerp(this.boom.rotation.y,this.boomAligned||this.stage>0?-.16:.95,1-Math.exp(-dt*3));
