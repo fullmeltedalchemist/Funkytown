@@ -125,16 +125,27 @@ export class Rescue {
         if(!this.checkedEast)return 'Two bells. Compare this with the east marker the dispatch named.';
         if(!this.approach)return 'Try the ford by wagon, wade upstream, or grapple from the bank to reconstruct the approach.';
         this.save(3);
-        return this.approach+' Two bells. Dispatch sent the ranger to the wrong bank. Follow the frayed line to its anchor.';
+        return this.approach+' Two bells. Dispatch sent the ranger to the wrong bank. Look for the orange rope on the low timber stand next to this post.';
       }
       return 'The west station matches the recording.';
     });
-    this.evidence=point(west.x-1.9,west.z+.55,.36);
+    this.evidence=point(west.x-1.25,west.z+.65,.78);
     const line=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3([
       new T.Vector3(-.58,.03,0),new T.Vector3(-.25,.08,.13),new T.Vector3(.05,.02,-.02),new T.Vector3(.38,.09,.09)
-    ]),24,.026,8,false),new T.MeshStandardMaterial({color:0xb4976d,roughness:.96}));
+    ]),24,.041,8,false),new T.MeshStandardMaterial({color:0xe99248,roughness:.9}));
+    const stand=new T.Group();
+    stand.position.copy(this.evidence);
+    const wood=new T.MeshStandardMaterial({color:0x775136,roughness:.88});
+    const board=new T.Mesh(new T.BoxGeometry(1.27,.1,.56),wood);
+    board.position.y=-.065;stand.add(board);
+    for(const x of [-.49,.49])for(const z of [-.19,.19]){
+      const bottom=height(this.evidence.x+x,this.evidence.z+z)-this.evidence.y;
+      const leg=new T.Mesh(new T.BoxGeometry(.095,-.1-bottom,.095),wood);
+      leg.position.set(x,(bottom-.1)/2,z);stand.add(leg);
+    }
+    town.add(stand);
     line.position.copy(this.evidence);town.add(line);this.line=line;
-    this.register(this.evidence.clone().add(new T.Vector3(0,-.66,0)),line,'Recover the cut rescue line',()=>{
+    this.register(this.evidence.clone().add(new T.Vector3(0,-.98,0)),line,'Recover the cut rescue line',()=>{
       if(this.stage<3)return 'The line runs back toward the two-bell marker.';
       if(this.stage===3){
         this.save(4);this.line.visible=false;
@@ -169,7 +180,7 @@ export class Rescue {
   }
   objective(){
     if(this.story.state<4||this.story.area!==0)return null;
-    const goals=['Meet the woman on the bank','Find the ranger on his camp rounds','Reconstruct the rescue · compare the bank markers','Follow the frayed line to its anchor','Cut line recovered · the spillway investigation is next'];
+    const goals=['Meet the woman on the bank','Find the ranger on his camp rounds','Reconstruct the rescue · compare the bank markers','Recover the orange rope on the stand beside the two-bell post','Cut line recovered · the spillway investigation is next'];
     const targets=[this.bank,this.ranger.root.position,this.route[this.checkedEast?2:1],this.evidence,null];
     if(this.stage===2&&this.checkedEast&&!this.approach){
       return {text:'Reconstruct an approach · drive through the ford, wade upstream, or grapple along the bank',
