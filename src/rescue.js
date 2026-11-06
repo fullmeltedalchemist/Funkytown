@@ -215,6 +215,22 @@ export class Rescue {
       [point(camp.x+3.5,camp.z+2.8),'checking Cal’s marker',8]
     ];
     const root=this.ranger.root;
+    const detour=this.grateDetour?.();
+    if(detour){
+      const delta=detour.clone().sub(root.position);
+      delta.y=0;
+      const distance=delta.length();
+      root.rotation.y=Math.atan2(delta.x,delta.z);
+      if(distance>.16)root.position.addScaledVector(delta,Math.min(1,.035/distance));
+      root.position.y=height(root.position.x,root.position.z);
+      root.rotation.x=distance>.16?0:.17;
+      this.rangerActivity=distance>.16?'walking to the jammed grate':'inspecting the jammed grate';
+      this.wrench.visible=false;
+      this.ranger.legs.forEach((leg,i)=>{leg.rotation.x=distance>.16?Math.sin(time*8+i*Math.PI)*.25:0;});
+      this.ranger.arms.forEach((arm,i)=>{arm.rotation.x=distance>.16?Math.sin(time*8+i*Math.PI)*.25:-.85;});
+      this.rangerSensor.setTranslation({x:root.position.x,y:root.position.y+.98,z:root.position.z});
+      return;
+    }
     let elapsed=time%47;
     for(const [i,[stop,activity,wait]] of this.rangerStops.entries()){
       const next=this.rangerStops[(i+1)%this.rangerStops.length][0];
