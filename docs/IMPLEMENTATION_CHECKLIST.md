@@ -5,8 +5,9 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 ## Story and investigation
 
 - [x] Prologue, woman on the bank, and first ranger conversation.
-- [ ] Rescue reconstruction: station comparison and cut line are live. Add distinct wagon, creek, and grapple routes.
-- [ ] Spillway: pressure and gate puzzle are live. Add grapple-controlled boom, flooded routes, and recovery from bad settings.
+- [ ] Rescue reconstruction: both station clues and cut line are live. Add distinct wagon, creek, and grapple routes.
+- [x] Spillway: grapple the boom into its catch, balance the gates, and recover from a flooded ford by correcting the gate settings. Verified in production source.
+- [ ] Playtest boom aiming, flooded ford, bank detour, and recovery end to end.
 - [x] Search the intake and recover Cal’s jacket and dispatch cassette.
 - [x] Lookout minigame: play two tracks and align siren and winch cues. Audio on phone still needs testing.
 - [ ] Broadcast or share privately: saved choice and ending text are live. Add immediate reactions in town.
