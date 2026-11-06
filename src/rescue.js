@@ -123,7 +123,7 @@ export class Rescue {
       if(this.stage<2)return 'Two bells hang from a weathered rescue post.';
       if(this.stage===2){
         if(!this.checkedEast)return 'Two bells. Compare this with the east marker the dispatch named.';
-        if(!this.approach)return 'Try the ford by wagon, wade upstream, or grapple from the bank to reconstruct the approach.';
+        this.approach??='On foot: from the west station, you can hear both bells.';
         this.save(3);
         return this.approach+' Two bells. Dispatch sent the ranger to the wrong bank. Look for the orange rope on the low timber stand next to this post.';
       }
@@ -182,10 +182,7 @@ export class Rescue {
     if(this.story.state<4||this.story.area!==0)return null;
     const goals=['Meet the woman on the bank','Find the ranger on his camp rounds','Reconstruct the rescue · compare the bank markers','Recover the orange rope on the stand beside the two-bell post','Cut line recovered · the spillway investigation is next'];
     const targets=[this.bank,this.ranger.root.position,this.route[this.checkedEast?2:1],this.evidence,null];
-    if(this.stage===2&&this.checkedEast&&!this.approach){
-      return {text:'Reconstruct an approach · drive through the ford, wade upstream, or grapple along the bank',
-        target:point(trailX(-1),-1)};
-    }
+    if(this.stage===2&&this.checkedEast)return {text:'Compare the two-bell post on the west bank',target:this.route[2]};
     return {text:goals[this.stage],target:targets[this.stage]};
   }
   traceApproach(){
