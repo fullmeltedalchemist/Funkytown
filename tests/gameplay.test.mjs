@@ -1,0 +1,121 @@
+import assert from 'node:assert/strict';
+import {registerHooks} from 'node:module';
+import test from 'node:test';
+import {readFile} from 'node:fs/promises';
+
+const dependencies=new Map([
+  ['three',new URL('../vendor/three.module.js',import.meta.url).href],
+  ['rapier',new URL('../vendor/rapier.mjs',import.meta.url).href]
+]);
+registerHooks({
+  resolve(name,context,next){
+    const url=dependencies.get(name);
+    return url?{url,shortCircuit:true}:next(name,context);
+  }
+});
+const {BaitWatch,ReelEdit,MailRoute}=await import('../src/finale.js');
+const T=await import('three');
+const {default:R}=await import('rapier');
+
+test('reel editor rejects a bad cut and accepts the repaired splice',()=>{
+  const edit=new ReelEdit();
+  edit.cut();
+  assert.match(edit.review(),/intact/);
+  edit.undo();
+  edit.step(1);
+  edit.step(1);
+  edit.cut();
+  edit.step(1);
+  edit.step(1);
+  edit.cut();
+  assert.equal(edit.review(),'');
+});
+
+test('bait camera requires tracks and distinguishes both timed outcomes',()=>{
+  const watch=new BaitWatch();
+  assert.equal(watch.aim('bank'),false);
+  watch.baited=true;
+  watch.tracked=true;
+  watch.aim('crate');
+  watch.tick(5);
+  assert.equal(watch.sighting,'');
+  watch.tick(1);
+  assert.equal(watch.sighting,'thief');
+  watch.aim('bank');
+  watch.tick(11);
+  assert.equal(watch.sighting,'');
+  watch.tick(1);
+  assert.equal(watch.sighting,'echo');
+});
+
+function element(){
+  return {
+    children:[],dataset:{},
+    setAttribute(){},
+    append(...nodes){this.children.push(...nodes);},
+    querySelectorAll(){return this.children.filter(node=>'choice' in node.dataset);}
+  };
+}
+
+await R.init({});
+for(const flooded of [false,true]){
+  test(flooded?'flood mail route awards Cal’s letter':'normal mail route accepts the neighbor clue',t=>{
+    let dialog;
+    const storage=new Map();
+    const previousStorage=Object.getOwnPropertyDescriptor(globalThis,'localStorage');
+    Object.defineProperty(globalThis,'localStorage',{configurable:true,value:{
+      getItem:key=>storage.get(key)??null,
+      setItem:(key,value)=>storage.set(key,value)
+    }});
+    t.after(()=>{
+      if(previousStorage)Object.defineProperty(globalThis,'localStorage',previousStorage);
+      else delete globalThis.localStorage;
+    });
+    globalThis.document={body:element(),createElement:()=>({...element(),showModal(){dialog=this;}})};
+    t.after(()=>{delete globalThis.document;});
+    const world=new R.World({x:0,y:-9.81,z:0});
+    t.after(()=>world.free());
+    const records=new Map(),actions=new Map();
+    const bag={records,record:(id,name)=>records.set(id,name),forget:id=>records.delete(id)};
+    const mechanics={world,scenes:[new T.Scene()],tag:(_,tag)=>actions.set(tag.name,tag.action)};
+    const finale={flood:0};
+    new MailRoute(mechanics,bag,{prepare:()=>new T.Group()},{receiver:{}},finale);
+    const use=name=>actions.get(name)();
+    const sort=index=>{
+      use('Sort the outbound mail');
+      dialog.querySelectorAll()[index].onclick();
+    };
+    sort(1);
+    assert(!records.has('mail'));
+    sort(0);
+    assert.match(use('Deliver Vale House letter'),/Letter delivered/);
+    sort(1);
+    if(flooded){
+      finale.flood=1;
+      assert.match(use('Deliver to the caretaker'),/emergency mail drop/);
+      assert.match(use('Check the emergency mail drop'),/Flood route complete/);
+    }else{
+      assert.match(use('Deliver to the caretaker'),/forwarding slip/);
+      use('Read the neighbor’s delivery note');
+      assert.match(use('Deliver to the caretaker'),/Last Delivery complete/);
+    }
+    assert(records.has('cals-letter'));
+    assert(!records.has('mail'));
+    assert.match(use('Check the dispatch ledger'),/Route closed/);
+  });
+}
+
+// Opt in with FUNKYTOWN_LIVE_URL to detect a stale or incomplete production upload.
+const liveUrl=process.env.FUNKYTOWN_LIVE_URL;
+if(liveUrl){
+  test('live site serves the game files from this checkout',async()=>{
+    const paths=['index.html','style.css','src/main.js','src/finale.js','src/rescue.js','src/gear.js'];
+    await Promise.all(paths.map(async path=>{
+      const url=new URL(path,liveUrl.endsWith('/')?liveUrl:liveUrl+'/');
+      const response=await fetch(url,{cache:'no-store',signal:AbortSignal.timeout(20000)});
+      assert.equal(response.status,200,path);
+      const expected=await readFile(new URL('../'+path,import.meta.url),'utf8');
+      assert.ok(await response.text()===expected,path+' differs from the checkout');
+    }));
+  });
+}
