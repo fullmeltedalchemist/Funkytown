@@ -179,7 +179,10 @@ async function boot(){
         mechanics.before(camera,move,input);
         input.actions.clear();
         if(mechanics.driving)world.step(mechanics.events);
-        else walker.step({...move,pull:mechanics.anchor},yaw,mechanics.events);
+        else {
+          if(story.area===0&&finale.onFloodedFord(walker.current)){move.x*=.58;move.z*=.58;move.sprint=false;}
+          walker.step({...move,pull:mechanics.anchor},yaw,mechanics.events);
+        }
         mechanics.after();
         story.missions.tick(STEP);
         rescue.tick(now*.001);

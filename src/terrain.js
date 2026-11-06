@@ -73,18 +73,19 @@ export function makeTerrain(scene,world,textures){
   for(let i=0;i<=112;i++){
     const x=-55+i*110/112,z=creekZ(x);
     const width=creekWidth(x)*1.35;
-    points.push(x,-1.68,z-width,x,-1.68,z+width);
-    const a=i*2;
-    if(i<112)indices.push(a,a+1,a+2,a+1,a+3,a+2);
+    for(let j=0;j<=8;j++){
+      points.push(x,-1.68,z+width*(j/4-1));
+      if(i<112&&j<8){const a=i*9+j;indices.push(a,a+1,a+9,a+1,a+10,a+9);}
+    }
   }
   const streamGeo=new T.BufferGeometry();
   streamGeo.setAttribute('position',new T.Float32BufferAttribute(points,3));
   streamGeo.setIndex(indices);
-  const water=new T.ShaderMaterial({side:T.DoubleSide,uniforms:{time:{value:0},current:{value:0},
+  const water=new T.ShaderMaterial({side:T.DoubleSide,uniforms:{time:{value:0},current:{value:0},flood:{value:0},
     ripple:{value:new T.Vector3(0,0,-100)}},
     vertexShader:`
-      varying vec3 p;
-      void main(){p=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}
+      varying vec3 p; uniform float flood;
+      void main(){p=position;p.y+=flood*.48*exp(-p.x*p.x*.045);gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}
     `,
     fragmentShader:`
       uniform float time; uniform float current; uniform vec3 ripple; varying vec3 p;

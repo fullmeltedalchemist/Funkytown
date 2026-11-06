@@ -108,6 +108,7 @@ export class Rescue {
     this.marker(west,0x9b7b55,'West rescue marker',()=>{
       if(this.stage<2)return 'Two bells hang from a weathered rescue post.';
       if(this.stage===2){
+        if(!this.checkedEast)return 'Two bells. Compare this with the east marker the dispatch named.';
         this.save(3);
         return 'Two bells. The dispatch sent the ranger to the wrong bank. Follow the frayed line to its anchor.';
       }

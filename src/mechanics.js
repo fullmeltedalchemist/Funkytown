@@ -151,6 +151,8 @@ export class Mechanics {
     if(this.anchor){this.anchor=null;return 'Hook released.';}
     const direction=camera.getWorldDirection(new T.Vector3());
     const hit=this.aim(camera,42);
+    const hook=hit&&this.fixed.get(hit.collider.handle)?.onGrapple;
+    if(hook)return hook();
     const visible=[];
     for(const root of this.scenes[this.area].children){
       if(!root.userData.grappleSurface)continue;

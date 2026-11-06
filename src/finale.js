@@ -1,7 +1,7 @@
 import {openTape} from './tape.js';
 import * as T from 'three';
 import R from 'rapier';
-import {height,cabinX,cabinZ,plots} from './terrain.js';
+import {height,cabinX,cabinZ,plots,trailX} from './terrain.js';
 
 const point=(x,z,y)=>new T.Vector3(x,height(x,z)+y,z);
 const key='bellwether-finale-v1';
@@ -14,19 +14,42 @@ export class Finale {
       if(Number.isInteger(save.stage)&&save.stage>=0&&save.stage<=3)this.stage=save.stage;
       if(['public','private'].includes(save.choice))this.choice=save.choice;
     }catch{}
-    this.gates=[0,0,0];this.pressure=.85;this.hold=0;
+    this.gates=[0,0,0];this.pressure=.85;this.hold=0;this.boomAligned=false;this.flood=0;
     this.positions=[point(-7.2,-7.5,.84),point(-9,-7,.84),point(-10.8,-6.6,.84)];
     this.intake=point(-12.6,-6.9,.9);
     this.lookout=point(cabinX+6,cabinZ+5,1.1);
     this.scene=mechanics.scenes[0];
+    this.boomPoint=point(-6.1,-6.8,.56);
+    this.boom=new T.Group();
+    this.boom.position.copy(this.boomPoint);
+    this.boom.rotation.y=.95;
+    const wood=new T.MeshStandardMaterial({color:0x795638,roughness:.91});
+    for(const offset of [-.16,.16]){
+      const log=new T.Mesh(new T.CylinderGeometry(.108,.125,2.25,12),wood);
+      log.rotation.z=Math.PI/2;log.position.z=offset;this.boom.add(log);
+    }
+    const ring=new T.Mesh(new T.TorusGeometry(.16,.026,8,16),
+      new T.MeshStandardMaterial({color:0xd8a662,metalness:.45}));
+    ring.position.y=.24;this.boom.add(ring);this.scene.add(this.boom);
+    const boomSensor=this.mechanics.world.createCollider(R.ColliderDesc.ball(.54)
+      .setTranslation(this.boomPoint.x,this.boomPoint.y+.22,this.boomPoint.z)
+      .setSensor(true).setCollisionGroups((128<<16)|2));
+    this.mechanics.tag(boomSensor,{name:'Grapple the boom ring',action:()=> 'Aim the hook at the brass ring and grapple to swing the boom.',
+      onGrapple:()=>{
+        if(this.rescue.stage!==4)return 'Finish reconstructing the rescue first.';
+        if(this.stage>0||this.boomAligned)return 'The boom is secured.';
+        this.boomAligned=true;
+        return 'You pull the boom into its catch. Set gates to 2 / 0 / 1.';
+      }});
     for(const [i,p] of this.positions.entries()){
       const valve=this.model(p,pipeline,models.valve);
       this.station(p,'Adjust intake gate '+(i+1),()=>{
         if(this.stage>0)return 'The intake is already drained.';
         this.gates[i]=(this.gates[i]+1)%3;
         this.hold=0;
+        if(this.gates.filter(n=>n===2).length>=2)this.flood=1;
         valve.rotation.z=this.gates[i]*Math.PI/3;
-        return 'Gates '+this.gates.join(' / ')+' · balance the intake. Target: 2 / 0 / 1.';
+        return (this.flood>.5?'The ford is flooding. Correct the gates or take the bank. ':'')+'Gates '+this.gates.join(' / ')+' · balance the intake. Target: 2 / 0 / 1.';
       });
     }
     this.model(this.intake,pipeline,models.arch,.48);
@@ -75,17 +98,25 @@ export class Finale {
   tick(dt){
     this.water.uniforms.current.value+=dt*this.mechanics.creekFlow;
     if(this.rescue.stage!==4)return;
+    this.boom.rotation.y=T.MathUtils.lerp(this.boom.rotation.y,this.boomAligned||this.stage>0?-.16:.95,1-Math.exp(-dt*3));
+    const draining=this.stage>0||this.gates.filter(n=>n===2).length<2;
+    if(draining)this.flood=Math.max(0,this.flood-dt*.16);
+    this.water.uniforms.flood.value=this.flood;
     if(this.stage>0){this.mechanics.creekFlow=.55;return;}
-    const balanced=this.gates.join('')==='201';
+    const balanced=this.boomAligned&&this.gates.join('')==='201';
     this.pressure=T.MathUtils.lerp(this.pressure,balanced?.12:.84,1-Math.exp(-dt*1.2));
     this.mechanics.creekFlow=.35+this.pressure*1.65;
     this.hold=balanced?this.hold+dt:0;
     if(this.hold>=3)this.advance(1);
   }
+  onFloodedFord(position){
+    return this.flood>.24&&Math.abs(position.z+1)<4&&Math.abs(position.x-trailX(position.z))<2.6;
+  }
   objective(){
     if(this.rescue.stage!==4||this.rescue.story.area!==0)return null;
     if(this.choice)return {text:'Chapter 1 complete · '+(this.choice==='public'?'the town heard the tape':'the ranger heard the tape privately'),target:null};
     if(this.stage===0){
+      if(!this.boomAligned)return {text:'Grapple the brass ring to secure the spillway boom',target:this.boomPoint};
       const index=this.gates.findIndex((n,i)=>n!==[2,0,1][i]);
       return {text:'Balance intake gates 2 / 0 / 1 · '+this.gates.join(' / ')+' · pressure '+Math.round(this.pressure*100)+'%',target:this.positions[index]??this.intake};
     }
