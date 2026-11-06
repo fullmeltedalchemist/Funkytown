@@ -111,6 +111,8 @@ export class Finale {
       if(this.choice==='public')return '“The postmaster backed your story on air. I’m taking her ledger to the lookout before the sheriff gets there.”';
       if(this.choice==='private')return '“I locked the tape in my cabin. At dawn, we’ll match the voices against my old dispatch log.”';
       if(this.flood>.24)return '“Stay off the ford. Take the high bank and reset the gates to two, zero, one.”';
+      const voice=this.compareBankVoice();
+      if(voice)return voice;
       if(this.crateJammed())return '“A crate is blocking the grate. Hook it from the bank and clear the current before you cross.”';
       if(this.stage===1)return '“The ford’s clear. Get into the intake while the pressure’s down. I’ll watch the gauges.”';
       return '';
@@ -120,6 +122,7 @@ export class Finale {
     this.lookout=point(cabinX+6,cabinZ+5,1.1);
     this.scene=mechanics.scenes[0];
     this.installRunawayCrate(notice);
+    this.installWrongBankVoice(notice);
     this.boomPoint=point(-6.1,-6.8,.56);
     this.boom=new T.Group();
     this.boom.position.copy(this.boomPoint);
@@ -248,6 +251,67 @@ export class Finale {
           ' The woman finishes a sentence that was never on the tape. “Ask her what he said next,” the ranger says.';
       });
     }
+  }
+  installWrongBankVoice(notice){
+    const bend=point(4.9,2.8,1.05);
+    const source=point(7.9,-1.1,1.05);
+    const line='Come east. Leave the rope.';
+    let phase='waiting',remaining=0,cooldown=0;
+    const setup=(where,name,action)=>{
+      const sensor=this.mechanics.world.createCollider(R.ColliderDesc.ball(.58)
+        .setTranslation(...where.toArray()).setSensor(true).setCollisionGroups((128<<16)|2));
+      this.mechanics.tag(sensor,{name,action});
+      sensor.setEnabled(false);
+      return sensor;
+    };
+    const record=(id,name,description)=>this.bag.record(id,name,description);
+    const call=setup(bend,'Listen for the wrong-bank voice',()=>{
+      if(phase!=='calling')return '';
+      if(typeof SpeechSynthesisUtterance==='function'&&globalThis.speechSynthesis){
+        const utterance=new SpeechSynthesisUtterance(line);
+        utterance.rate=.78;utterance.pitch=.64;
+        globalThis.speechSynthesis.speak(utterance);
+      }
+      record('bank-voice-sample','Wrong-bank voice field log','An imitation of the ranger called from the east bank: “Come east. Leave the rope.”');
+      call.setEnabled(false);origin.setEnabled(true);phase='tracing';remaining=35;
+      return 'Field log saved. Follow the voice toward the east bend or check with the ranger.';
+    });
+    const origin=setup(source,'Trace the voice to the bend',()=>{
+      if(phase!=='tracing')return '';
+      origin.setEnabled(false);phase='resolved';
+      record('bank-voice-origin','Empty east bank','The voice came from the bend, but the wet bank showed no footprints.');
+      return 'The voice cuts off. Nobody is here. Ask the ranger to compare your field log.';
+    });
+    this.compareBankVoice=()=>{
+      const compared=this.bag.records.has('bank-voice-compared');
+      if(compared||(!this.bag.records.has('bank-voice-sample')&&phase!=='calling'))return '';
+      if(phase==='calling'){
+        call.setEnabled(false);phase='resolved';
+        record('bank-voice-checked','Ranger’s alibi','The ranger stayed on his rounds. The voice on the east bank was someone or something else.');
+        return '“That wasn’t me. If you hear my voice ask you to leave the rope, stay where you are.”';
+      }
+      origin.setEnabled(false);phase='resolved';
+      record('bank-voice-compared','Wrong-bank voice comparison','The voice used the ranger’s cadence but gave the opposite of his rescue instruction.');
+      return '“That sounds like me, but I’d never tell you to leave the rope. Someone wanted you on the wrong bank.”';
+    };
+    this.updateBankVoice=dt=>{
+      if(phase==='resolved'||this.rescue.story.area!==0||this.rescue.stage<2)return;
+      if(phase==='waiting'){
+        if(this.bag.records.has('bank-voice-compared')||this.bag.records.has('bank-voice-checked')||
+           this.bag.records.has('bank-voice-origin'))return;
+        cooldown=Math.max(0,cooldown-dt);
+        if(cooldown>0||this.mechanics.walker.current.distanceToSquared(bend)>64)return;
+        phase='calling';remaining=28;call.setEnabled(true);
+        notice('A voice from the east bend sounds like the ranger. “Come east. Leave the rope.”');
+        return;
+      }
+      remaining-=dt;
+      if(remaining>0)return;
+      call.setEnabled(false);origin.setEnabled(false);
+      if(phase==='tracing'){phase='resolved';return;}
+      phase='waiting';cooldown=90;
+      notice('The voice fades downriver.');
+    };
   }
   installTownRounds(supply){
     const sheriff=person(0x464b39),projectionist=person(0x703f38);
@@ -445,6 +509,7 @@ export class Finale {
   tick(dt){
     this.baitWatch.tick(dt);
     this.updateTown(dt);
+    this.updateBankVoice(dt);
     this.water.uniforms.current.value+=dt*this.mechanics.creekFlow;
     if(this.rescue.stage!==4){this.mechanics.creekFlow=.76;this.updateCrate(dt);return;}
     this.boom.rotation.y=T.MathUtils.lerp(this.boom.rotation.y,this.boomAligned||this.stage>0?-.16:.95,1-Math.exp(-dt*3));
