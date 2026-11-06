@@ -20,13 +20,15 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 - [x] Earned spare pulley can be rigged at the spillway to secure the boom and speed flood drainage. Save restoration and production source verified.
 - [x] Quick slots and world tools: flashlight, receiver batteries, and field camera. Production files verified.
 - [ ] Playtest receiver fitting and field camera capture in the live game on desktop and mobile.
-- [ ] Evidence: ranger compares Cal’s letter with the tape. Add manual comparison and more conversations. Keep essential evidence safe.
+- [x] Evidence: compare Cal’s letter and dispatch tape at the lookout and log the discrepancy without consuming either original. Production source verified.
+- [ ] Add more evidence conversations and playtest both comparison paths.
 - [ ] Cargo: one-slot mail packing is live. Add bulky hand and wagon cargo and job-specific packing choices.
 
 ## Villagers
 
 - [ ] Walkable routes, activity stops, and conversation while working.
-- [ ] Postmaster: sort, load, deliver, close, and reroute after flooding.
+- [x] Post office: sort outbound mail by address, pack the correct item, and close the route at the dispatch ledger after both deliveries. Production source verified.
+- [ ] Add the postmaster’s physical work routine and a delivery reroute triggered by flooding.
 - [x] Ranger camp rounds: stops at the fire, rescue gear, and Cal’s marker. Dialogue reflects the current stop. Production deploy verified.
 - [x] Ranger: visible gear repair with a handheld wrench. Verified in production source.
 - [x] Ranger: distinct inspection animation at Cal’s marker on the rescue route. Production source verified.
