@@ -1,6 +1,6 @@
 import * as T from 'three';
 import R from 'rapier';
-import {cabinX,cabinZ,height} from './terrain.js';
+import {cabinX,cabinZ,height,inCreek,trailX} from './terrain.js';
 
 const point=(x,z,h=0)=>new T.Vector3(x,height(x,z)+h,z);
 function person(coat){
@@ -109,8 +109,9 @@ export class Rescue {
       if(this.stage<2)return 'Two bells hang from a weathered rescue post.';
       if(this.stage===2){
         if(!this.checkedEast)return 'Two bells. Compare this with the east marker the dispatch named.';
+        if(!this.approach)return 'Try the ford by wagon, wade upstream, or grapple from the bank to reconstruct the approach.';
         this.save(3);
-        return 'Two bells. The dispatch sent the ranger to the wrong bank. Follow the frayed line to its anchor.';
+        return this.approach+' Two bells. Dispatch sent the ranger to the wrong bank. Follow the frayed line to its anchor.';
       }
       return 'The west station matches the recording.';
     });
@@ -156,13 +157,43 @@ export class Rescue {
     if(this.story.state<4||this.story.area!==0)return null;
     const goals=['Meet the woman on the bank','Find the ranger on his camp rounds','Reconstruct the rescue · compare the bank markers','Follow the frayed line to its anchor','Cut line recovered · the spillway investigation is next'];
     const targets=[this.bank,this.ranger.root.position,this.route[this.checkedEast?2:1],this.evidence,null];
+    if(this.stage===2&&this.checkedEast&&!this.approach){
+      return {text:'Reconstruct an approach · drive through the ford, wade upstream, or grapple along the bank',
+        target:point(trailX(-1),-1)};
+    }
     return {text:goals[this.stage],target:targets[this.stage]};
+  }
+  traceApproach(){
+    const m=this.mechanics;
+    const position=m.driving?m.car.body.translation():m.walker.current;
+    if(Math.abs(position.z+1)>13||Math.abs(position.x)>21){
+      this.lastApproach=null;
+      return;
+    }
+    const point=new T.Vector3().copy(position);
+    const previous=this.lastApproach;
+    this.lastApproach=point;
+    if(!previous||point.distanceTo(previous)>.8)return;
+    if(m.driving&&Math.abs(point.z+1)<3&&Math.abs(point.x-trailX(point.z))<3){
+      if(Math.abs(m.car.body.linvel().z)>1.2)this.approach='Wagon: the service road crosses within earshot of the west bells.';
+      return;
+    }
+    if(!m.driving&&m.anchor&&point.y>height(point.x,point.z)+1.45){
+      this.airDistance=(this.airDistance||0)+point.distanceTo(previous);
+      if(this.airDistance>=2.1)this.approach='Grapple: the overhead line gives a clear sightline to the west station.';
+      return;
+    }
+    if(!m.driving&&point.y<-.35&&inCreek(point.x,point.z)){
+      this.wadeDistance=(this.wadeDistance||0)+Math.max(0,previous.x-point.x);
+      if(this.wadeDistance>=2.4)this.approach='Creek: the upstream bank carries the sound of two bells.';
+    }
   }
   tick(time){
     const enabled=this.story.state>=4&&this.story.area===0;
     this.mother.visible=enabled;
     this.ranger.root.visible=enabled;
     this.animateFire(time);
+    if(enabled&&this.stage===2&&this.checkedEast&&!this.approach)this.traceApproach();
     const camp=this.route[0];
     this.rangerStops??=[
       [camp,'warming his hands by the fire',6],
