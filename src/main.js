@@ -125,6 +125,29 @@ async function boot(){
   const notice=(message)=>{
     if(message){$('notice').textContent=message;noticeUntil=performance.now()+6400;}
   };
+  let audio=null,ambient=null;
+  const unlockAudio=()=>{
+    const Audio=window.AudioContext||window.webkitAudioContext;
+    if(!Audio)return;
+    try{
+      if(!audio){
+        audio=new Audio();
+        const duration=audio.sampleRate*3,buffer=audio.createBuffer(1,duration,audio.sampleRate);
+        const samples=buffer.getChannelData(0);
+        let wind=0;
+        for(let n=0;n<duration;n++){
+          wind=.96*wind+.04*(Math.random()*2-1);
+          samples[n]=wind;
+        }
+        const source=audio.createBufferSource();
+        source.buffer=buffer;source.loop=true;
+        ambient=audio.createGain();ambient.gain.value=0;
+        source.connect(ambient).connect(audio.destination);source.start();
+      }
+      audio.resume().catch(()=>{});
+    }catch(error){console.warn('Ambient audio unavailable',error);}
+  };
+  for(const id of ['start','touch-mode'])$(id).addEventListener('click',unlockAudio);
   const gear=new Gear(camera,bag,notice);
   const input=new Input(renderer.domElement,()=>notice(mechanics.use(camera)),()=>bag.toggle(),()=>gear.toggle(),()=>gear.takePhoto());
   $('start').disabled=false;
@@ -164,7 +187,8 @@ async function boot(){
   renderer.shadowMap.needsUpdate=true;
   renderer.setAnimationLoop(now=>{
     const dt=Math.min(.1,(now-last)/1000);last=now;
-    if(input.active&&!$('tape').open&&!$('rigging').open){
+    if(ambient)ambient.gain.setTargetAtTime(input.active?(story.area?.09:.28):0,audio.currentTime,.18);
+    if(input.active&&!document.querySelector('dialog[open]')){
       const sensitivity=input.touch?.0048:.00235;
       if(!mechanics.driving){
         yaw-=input.look[0]*sensitivity;
