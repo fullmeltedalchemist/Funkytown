@@ -56,6 +56,7 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 - [x] Runaway crate chase, grapple recovery, and current-changing grate jam. Production source verified.
 - [x] Ranger detours to inspect the jammed grate. Production source verified.
 - [ ] Playtest crate recovery and the ranger’s detour in-game.
-- [ ] Stalled patrol truck: rock it loose, use ridge detour, or hear sheriff radio.
-- [ ] Wrong-bank voice: follow, check real villager, or record and compare it.
-- [ ] Add location and story conditions, cooldowns, and ignored-event consequences. Required clues remain available.
+- [x] Stalled patrol truck: alternating recovery inputs, ridge turnout, radio log, and unattended tow. Logic and production source verified.
+- [x] Wrong-bank voice: trace to the bend, verify with the ranger, or log and compare the call. Logic and production source verified.
+- [x] Chance events use story and location triggers, with a voice cooldown, unattended tow, and persistent grate jam until cleared. Required story clues remain independent.
+- [ ] Playtest all chance event triggers, optional paths, and consequences in the live game.
