@@ -1,0 +1,67 @@
+name: WebGL playtest
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'src/**'
+      - 'index.html'
+      - 'style.css'
+      - '.github/workflows/webgl-playtest.yml'
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm test
+      - run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - run: |
+          python3 -m http.server 8080 --bind 127.0.0.1 &
+          mkdir -p playtest-results
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {chromium} from 'playwright';
+          const browser=await chromium.launch({args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+          try{
+            for(const profile of [
+              {name:'desktop',viewport:{width:1280,height:800}},
+              {name:'touch',viewport:{width:390,height:844},hasTouch:true,isMobile:true}
+            ]){
+              const {name,...options}=profile;
+              const page=await browser.newPage(options);
+              const errors=[];
+              page.on('pageerror',error=>errors.push(error.message));
+              try{
+                await page.goto('http://127.0.0.1:8080');
+                assert(await page.evaluate(()=>Boolean(document.createElement('canvas').getContext('webgl2'))),'WebGL2 unavailable');
+                await page.getByRole('button',{name:'Walk the ridge'}).waitFor({timeout:45000});
+                if(name==='touch'){
+                  await page.locator('#touch-mode').tap();
+                  await page.locator('#touch').waitFor({state:'visible'});
+                  await page.locator('#bag-button').tap();
+                }else{
+                  await page.locator('#start').click();
+                  await page.locator('#menu').waitFor({state:'hidden'});
+                  await page.keyboard.press('b');
+                }
+                await page.locator('#bag-panel').waitFor({state:'visible'});
+                assert.deepEqual(errors,[]);
+              }finally{
+                await page.screenshot({path:'playtest-results/'+name+'.png'});
+                await page.close();
+              }
+            }
+          }finally{
+            await browser.close();
+          }
+          JS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: funkytown-playtest
+          path: playtest-results/
