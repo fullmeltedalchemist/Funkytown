@@ -113,7 +113,7 @@ async function boot(){
   buildCampEquipment(mechanics,pipeline,models);
   const bag=new Bag(mechanics);
   const rescue=new Rescue(mechanics,story,bag);
-  const finale=new Finale(mechanics,rescue,bag,pipeline,models,water);
+  const finale=new Finale(mechanics,rescue,bag,pipeline,models,water,message=>notice(message));
   new MailRoute(mechanics,bag,pipeline,models);
   scene.add(camera);
   const tool=fieldPistol();
@@ -161,7 +161,7 @@ async function boot(){
   renderer.shadowMap.needsUpdate=true;
   renderer.setAnimationLoop(now=>{
     const dt=Math.min(.1,(now-last)/1000);last=now;
-    if(input.active){
+    if(input.active&&!$('tape').open){
       const sensitivity=input.touch?.0048:.00235;
       if(!mechanics.driving){
         yaw-=input.look[0]*sensitivity;

@@ -33,7 +33,7 @@ export class Input {
     });
     document.addEventListener('pointerlockerror',()=>{this.dragMode=true;this.toggle(true);});
     document.addEventListener('keydown',e=>{
-      if(!this.active)return;
+      if(!this.active||document.querySelector('#tape').open)return;
       if(e.code==='Escape'&&(this.touch||this.dragMode))return this.toggle(false);
       if(['KeyW','KeyA','KeyS','KeyD','Space','ShiftLeft','KeyE','KeyQ','KeyF','KeyG'].includes(e.code))e.preventDefault();
       this.held.add(e.code);

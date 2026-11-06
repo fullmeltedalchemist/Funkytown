@@ -26,6 +26,13 @@
     <p id="status" role="status"></p>
   </section>
 </div>
+<dialog id="tape">
+  <h2>Lookout tape deck</h2>
+  <p>Slide the dispatch tape until its siren and winch line up with the Echo track.</p>
+  <label>Dispatch offset <output></output><input type="range" min="-6" max="3" step=".1" value="0"></label>
+  <ul></ul><p role="status"></p>
+  <button data-play>Play both tracks</button><button data-align>Check alignment</button><button data-close>Back</button>
+</dialog>
 <script type="module" src="./src/main.js"></script>
 </body>
 </html>

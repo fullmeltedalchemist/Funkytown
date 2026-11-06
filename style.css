@@ -33,3 +33,9 @@ button:disabled{opacity:.45}.buttons{display:flex;gap:8px;flex-wrap:wrap}
 #bag-panel li{padding:9px 0;border-top:1px solid #b19b7048;font-size:13px}
 #bag-panel li strong{display:block;margin-bottom:4px}
 #bag-panel p{font-size:12px;margin:10px 0 0;color:#c5b18d}
+#tape{max-width:min(520px,calc(100vw - 24px));padding:22px;background:#202825;color:#eee3cd;border:1px solid #a88c63;border-radius:14px}
+#tape::backdrop{background:#111b}
+#tape input{width:100%;margin:12px 0;accent-color:#b8925c}
+#tape output{float:right;color:#ffe0a2}
+#tape ul{padding-left:20px;line-height:1.5}
+#tape button{margin:3px}

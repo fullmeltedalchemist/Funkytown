@@ -1,3 +1,4 @@
+import {openTape} from './tape.js';
 import * as T from 'three';
 import R from 'rapier';
 import {height,cabinX,cabinZ,plots} from './terrain.js';
@@ -5,7 +6,7 @@ import {height,cabinX,cabinZ,plots} from './terrain.js';
 const point=(x,z,y)=>new T.Vector3(x,height(x,z)+y,z);
 const key='bellwether-finale-v1';
 export class Finale {
-  constructor(mechanics,rescue,bag,pipeline,models,water){
+  constructor(mechanics,rescue,bag,pipeline,models,water,notice){
     Object.assign(this,{mechanics,rescue,bag,water});
     this.stage=0;this.choice='';
     try{
@@ -13,7 +14,7 @@ export class Finale {
       if(Number.isInteger(save.stage)&&save.stage>=0&&save.stage<=3)this.stage=save.stage;
       if(['public','private'].includes(save.choice))this.choice=save.choice;
     }catch{}
-    this.gates=[0,0,0];this.pressure=.85;this.hold=0;this.alignment=0;
+    this.gates=[0,0,0];this.pressure=.85;this.hold=0;
     this.positions=[point(-7.2,-7.5,.84),point(-9,-7,.84),point(-10.8,-6.6,.84)];
     this.intake=point(-12.6,-6.9,.9);
     this.lookout=point(cabinX+6,cabinZ+5,1.1);
@@ -38,15 +39,14 @@ export class Finale {
       return 'You recover Cal’s jacket and the dispatch tape. Someone scratched at the outside of the chamber door.';
     });
     this.model(this.lookout,pipeline,models.receiver,1.22);
-    this.station(this.lookout,'Advance the dispatch tape',()=>{
-      if(this.stage!==2)return 'The receiver waits for the original dispatch tape.';
-      this.alignment=(this.alignment+1)%7;
-      if(this.alignment===4){
-        this.advance(3);
+    this.station(this.lookout,'Open the tape deck',()=>{
+      if(this.stage!==2)return 'The deck waits for the original dispatch tape.';
+      openTape(()=>{
         bag.record('synced-audio','Synced rescue recording','Mom ordered the spillway shut while Cal was still on the radio.');
-        return 'The siren and winch line up. Cal was alive when Mom told the sheriff to close the inner gate.';
-      }
-      return 'Tape shifted '+this.alignment+' s · siren offset '+Math.abs(4-this.alignment)+' s. Match the two recordings.';
+        this.advance(3);
+        notice('The siren and winch line up. Cal was alive when Mom ordered the inner gate shut.');
+      });
+      return '';
     });
     for(const [i,choice] of ['public','private'].entries()){
       const p=this.lookout.clone().add(new T.Vector3(i?1.7:-1.7,0,.5));
