@@ -4,7 +4,7 @@ import R from 'rapier';
 import {cabinX,cabinZ,height,inCreek,trailX} from './terrain.js';
 
 const point=(x,z,h=0)=>new T.Vector3(x,height(x,z)+h,z);
-function person(coat){
+export function person(coat){
   const root=new T.Group();
   const material=(color)=>new T.MeshStandardMaterial({color,roughness:.84});
   const cloth=material(coat), trousers=material(0x343935), skin=material(0xba896d), leather=material(0x392d28);
