@@ -21,11 +21,21 @@ function rawHeight(x,z){
   return ridge(z)-2.67*creek(x,z)+(ripple+hills(x,z))*outside;
 }
 export const cabinY=rawHeight(cabinX,cabinZ)+.07;
+export const plots=[{name:'Vale House',x:12,z:26,yaw:-Math.PI/2,scale:.82},
+  {name:'Bellwether Supply',x:10,z:13,yaw:-Math.PI/2,scale:.83},
+  {name:'Post Office',x:-7,z:11,yaw:Math.PI/2,scale:.75}]
+  .map(plot=>({...plot,y:rawHeight(plot.x,plot.z)+.045}));
 export function height(x,z){
   const yard=1-smoothstep(Math.max(Math.abs(x-cabinX)*.83,Math.abs(z-cabinZ)*.92),4.7,9);
-  return lerp(rawHeight(x,z),cabinY-.035,yard);
+  let result=lerp(rawHeight(x,z),cabinY-.035,yard);
+  for(const {x:cx,y,z:cz} of plots){
+    const pad=1-smoothstep(Math.max(Math.abs(x-cx),Math.abs(z-cz)),3.5,7);
+    result=lerp(result,y-.035,pad);
+  }
+  return result;
 }
 export const spawn=[trailX(38),height(trailX(38),38)+1.1,38];
+export const inCreek=(x,z)=>Math.abs(z-creekZ(x))<2.5&&height(x,z)<-1.71;
 export const trailDistance=(x,z)=>Math.abs(x-trailX(z));
 export function makeTerrain(scene,world,textures){
   const size=114,cells=152;
@@ -65,20 +75,24 @@ export function makeTerrain(scene,world,textures){
   const streamGeo=new T.BufferGeometry();
   streamGeo.setAttribute('position',new T.Float32BufferAttribute(points,3));
   streamGeo.setIndex(indices);
-  const water=new T.ShaderMaterial({side:T.DoubleSide,uniforms:{time:{value:0}},
+  const water=new T.ShaderMaterial({side:T.DoubleSide,uniforms:{time:{value:0},
+    ripple:{value:new T.Vector3(0,0,-100)}},
     vertexShader:`
       varying vec3 p;
       void main(){p=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}
     `,
     fragmentShader:`
-      uniform float time; varying vec3 p;
+      uniform float time; uniform vec3 ripple; varying vec3 p;
       void main(){
         float a=sin(p.x*2.1+p.z*9.+time*2.);
         float b=sin(p.x*5.4-p.z*15.+time*2.7);
         float sparkle=pow(max(0.,a*.5+b*.5),6.);
         float ripples=.5+.5*sin(p.z*10.+p.x*1.2+time);
         vec3 water=mix(vec3(.032,.16,.14),vec3(.074,.29,.25),ripples);
-        gl_FragColor=vec4(water+sparkle*vec3(.35,.46,.39),1.);
+        float age=max(0.,time-ripple.z);
+        float radius=length(p.xz-ripple.xy);
+        float wake=sin(radius*18.-age*21.)*exp(-abs(radius-age*1.9)*4.)*exp(-age*2.);
+        gl_FragColor=vec4(water+sparkle*vec3(.35,.46,.39)+wake*.07,1.);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }

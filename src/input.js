@@ -4,13 +4,14 @@ export class Input {
   look=[0,0];
   active=false;
   jump=false;
+  actions=new Set();
   touch=matchMedia('(pointer:coarse)').matches;
   dragMode=false;
   constructor(canvas,onUse){
     this.canvas=canvas;
     const menu=document.querySelector('#menu'),pad=document.querySelector('#pad');
     const clear=()=>{
-      this.held.clear();this.stick=[0,0];this.look=[0,0];this.jump=false;
+      this.held.clear();this.actions.clear();this.stick=[0,0];this.look=[0,0];this.jump=false;
       pad.firstElementChild.style.transform='';
     };
     this.toggle=(active)=>{
@@ -34,11 +35,14 @@ export class Input {
     document.addEventListener('keydown',e=>{
       if(!this.active)return;
       if(e.code==='Escape'&&(this.touch||this.dragMode))return this.toggle(false);
-      if(['KeyW','KeyA','KeyS','KeyD','Space','ShiftLeft','KeyE'].includes(e.code))e.preventDefault();
+      if(['KeyW','KeyA','KeyS','KeyD','Space','ShiftLeft','KeyE','KeyQ','KeyF','KeyG'].includes(e.code))e.preventDefault();
       this.held.add(e.code);
       if(e.repeat)return;
       if(e.code==='Space')this.jump=true;
       if(e.code==='KeyE')onUse();
+      if(e.code==='KeyF')this.actions.add('fire');
+      if(e.code==='KeyG')this.actions.add('grapple');
+      if(e.code==='KeyQ')this.actions.add('throw');
     });
     document.addEventListener('keyup',e=>this.held.delete(e.code));
     document.addEventListener('mousemove',e=>{
@@ -49,6 +53,17 @@ export class Input {
       if(document.pointerLockElement===canvas)document.exitPointerLock();
       this.toggle(false);
     });
+    canvas.addEventListener('contextmenu',e=>e.preventDefault());
+    canvas.addEventListener('pointerdown',e=>{
+      if(document.pointerLockElement!==canvas)return;
+      if(e.button===0)this.actions.add('fire');
+      if(e.button===2)this.actions.add('grapple');
+    });
+    for(const action of ['fire','grapple','throw']){
+      document.querySelector('#'+action).addEventListener('pointerdown',e=>{
+        e.preventDefault();this.actions.add(action);
+      });
+    }
     let drag=null;
     canvas.addEventListener('pointerdown',e=>{
       if(!this.active||(!this.touch&&!this.dragMode)||drag)return;
@@ -77,7 +92,11 @@ export class Input {
     pad.addEventListener('lostpointercapture',()=>{
       pointer=null;this.stick=[0,0];pad.firstElementChild.style.transform='';
     });
-    document.querySelector('#jump').addEventListener('pointerdown',()=>{this.jump=true;});
+    const jumpButton=document.querySelector('#jump');
+    jumpButton.addEventListener('pointerdown',e=>{
+      e.preventDefault();jumpButton.setPointerCapture(e.pointerId);this.jump=true;this.held.add('Space');
+    });
+    jumpButton.addEventListener('lostpointercapture',()=>this.held.delete('Space'));
     document.querySelector('#use').addEventListener('pointerdown',onUse);
     document.querySelector('#pause').onclick=()=>this.toggle(false);
   }
@@ -85,6 +104,6 @@ export class Input {
     const jump=this.jump;this.jump=false;
     return {x:this.stick[0]+Number(this.held.has('KeyD'))-Number(this.held.has('KeyA')),
       z:this.stick[1]+Number(this.held.has('KeyW'))-Number(this.held.has('KeyS')),
-      sprint:this.held.has('ShiftLeft'),jump};
+      sprint:this.held.has('ShiftLeft'),drift:this.held.has('Space'),jump};
   }
 }

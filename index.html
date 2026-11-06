@@ -8,15 +8,15 @@
 <script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/addons/","rapier":"./vendor/rapier.mjs"}}</script>
 </head>
 <body>
-<div id="hud"><small>BELLWETHER HOLLOW</small><strong>FOXGLOVE RIDGE</strong><div id="guide">Find the ranger's cabin</div><div id="hint"></div></div>
+<div id="hud"><small>BELLWETHER HOLLOW</small><strong>FOXGLOVE RIDGE</strong><div id="objective"><span id="bearing" aria-hidden="true">↑</span><span id="guide">Find Vale House</span></div><div id="hint"></div><div id="notice" role="status"></div></div>
 <div id="reticle" aria-hidden="true"></div>
-<div id="touch" hidden><div id="pad" aria-label="Movement stick"><i></i></div><div id="actions"><button id="pause">Pause</button><button id="use">Use</button><button id="jump">Jump</button></div></div>
+<div id="touch" hidden><div id="pad" aria-label="Movement stick"><i></i></div><div id="actions"><button id="pause">Pause</button><button id="fire">Fire</button><button id="grapple">Hook</button><button id="throw">Throw</button><button id="use">Use</button><button id="jump">Jump</button></div></div>
 <div id="menu">
   <section>
     <small>BELLWETHER HOLLOW · PLAYABLE SCENE</small>
     <h1>Foxglove<br>Ridge</h1>
     <p>Follow the old footpath below the ridge. The ranger left a light on.</p>
-    <p class="help">Keyboard + mouse · WASD, Space, E<br>Touch · Left stick, drag to look, Use and Jump</p>
+    <p class="help">Keyboard + mouse · WASD, Space, E · Click / F fire · Right click / G hook · Q throw<br>Touch · Left stick, drag to look, Use, Jump, Fire, Hook and Throw</p>
     <div class="buttons"><button id="start" disabled>Loading scene…</button><button id="touch-mode" disabled>Use touch controls</button></div>
     <label class="import">Test a local GLB <input id="import" type="file" accept=".glb"></label>
     <p id="status" role="status"></p>

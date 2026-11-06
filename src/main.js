@@ -1,9 +1,11 @@
 import * as T from 'three';
 import R from 'rapier';
 import {AssetPipeline} from './assets.js';
-import {cabinX,cabinY,cabinZ,height,makeTerrain,spawn,trailDistance,trailX} from './terrain.js';
+import {cabinX,cabinY,cabinZ,height,inCreek,makeTerrain,plots,spawn,trailDistance,trailX} from './terrain.js';
 import {Walker,STEP} from './walker.js';
 import {Input} from './input.js';
+import {Mechanics,part,vec} from './mechanics.js';
+import {Story,buildCampEquipment} from './story.js';
 const $=id=>document.getElementById(id);
 
 function lighting(scene,low){
@@ -43,7 +45,7 @@ function forest(pipeline,models){
     const x=(rnd()-.5)*106,z=(rnd()-.5)*106;
     const d=trailDistance(x,z);
     const yard=Math.max(Math.abs(x-cabinX),Math.abs(z-cabinZ));
-    if(d<2.7||yard<7.9)continue;
+    if(d<2.7||yard<7.9||plots.some(p=>Math.hypot(x-p.x,z-p.z)<7))continue;
     if(d<6.5||rnd()<.47){
       place('underbrush',x,z,.55+rnd()*.62,.035);
       continue;
@@ -54,7 +56,7 @@ function forest(pipeline,models){
   }
   for(let i=0;i<43;i++){
     const x=(rnd()-.5)*91,z=(rnd()-.5)*95;
-    if(trailDistance(x,z)<2.5||Math.hypot(x-cabinX,z-cabinZ)<8)continue;
+    if(trailDistance(x,z)<2.5||Math.hypot(x-cabinX,z-cabinZ)<8||plots.some(p=>Math.hypot(x-p.x,z-p.z)<6))continue;
     place('rocks',x,z,2.8+rnd()*6.5,.035);
   }
   for(const [z,offset,scale] of [[30,-3.4,7],[21,3.2,9],[10,-3.5,7],[-4,-2.8,9],[-3,3.2,7],[-24,4.5,8]]){
@@ -70,11 +72,6 @@ function forest(pipeline,models){
     pipeline.scatter(models[key],placements,{solid:['oak','birch','maple'].includes(key)});
   }
 }
-function readBook(camera){
-  const book=new T.Vector3(cabinX-2.37,cabinY+1.12,cabinZ-1.38);
-  const toBook=book.clone().sub(camera.position),distance=toBook.length();
-  return distance<2.4 && camera.getWorldDirection(new T.Vector3()).dot(toBook.normalize())>.66;
-}
 async function boot(){
   await R.init();
   const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
@@ -84,7 +81,8 @@ async function boot(){
   renderer.shadowMap.type=T.PCFSoftShadowMap;
   renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.02;
   document.body.prepend(renderer.domElement);
-  const scene=new T.Scene();
+  const scene=new T.Scene(),realm=new T.Scene();
+  let activeScene=scene;
   const camera=new T.PerspectiveCamera(69,1,.055,142);
   const world=new R.World({x:0,y:-9.81,z:0});
   world.timestep=STEP;
@@ -106,11 +104,23 @@ async function boot(){
   forest(pipeline,models);
   lighting(scene,mobile);
   const walker=new Walker(world,spawn);
+  const mechanics=new Mechanics(world,walker,scene,realm);
+  const story=new Story(mechanics,pipeline,models);
+  buildCampEquipment(mechanics);
+  scene.add(camera);
+  const tool=new T.Group();
+  part(tool,[.108,.085,.31],[0,.02,-.085],0x474349);
+  part(tool,[.14,.11,.24],[0,0,.05],0x81553e);
+  part(tool,[.085,.17,.1],[0,-.07,.12],0x634535);
+  part(tool,[.034,.029,.09],[0,.073,-.074],0xdec78c);
+  for(const mesh of tool.children)mesh.castShadow=mesh.receiveShadow=false;
+  camera.add(tool);
   world.step();
-  let found=false;
-  const input=new Input(renderer.domElement,()=>{
-    if(readBook(camera)){found=true;$('guide').textContent='Ranger log found';}
-  });
+  let noticeUntil=0;
+  const notice=(message)=>{
+    if(message){$('notice').textContent=message;noticeUntil=performance.now()+6400;}
+  };
+  const input=new Input(renderer.domElement,()=>notice(mechanics.use(camera)));
   $('start').disabled=false;
   $('start').textContent='Walk the ridge';
   $('touch-mode').disabled=false;
@@ -128,11 +138,12 @@ async function boot(){
       if(bounds.isEmpty()||!Number.isFinite(longest)||longest<.00001)throw Error('No usable mesh geometry.');
       const scale=1.7/longest,center=bounds.getCenter(new T.Vector3());
       const z=31-imports*3,x=trailX(z)+3.8;
-      pipeline.place(model,{position:[x-center.x*scale,height(x,z)-bounds.min.y*scale,z-center.z*scale],scale,collider:'hull'});
+      const position=[x-center.x*scale,height(x,z)-bounds.min.y*scale+.12,z-center.z*scale];
+      mechanics.dynamic({...pipeline.loose(model,scale),position,name:file.name.replace(/\.glb$/i,''),area:0});
       imports++;
       world.step();
       renderer.shadowMap.needsUpdate=true;
-      $('status').textContent=file.name+' placed on the east side of the trail with a collision hull.';
+      $('status').textContent=file.name+' placed on the east side of the trail as a loose prop you can pick up and throw.';
     }catch(error){$('status').textContent='Import failed: '+error.message;}
     finally{URL.revokeObjectURL(url);e.target.value='';}
   };
@@ -142,31 +153,84 @@ async function boot(){
     camera.updateProjectionMatrix();
   };
   resize();addEventListener('resize',resize);
-  let yaw=.34,pitch=-.11,last=performance.now(),accumulator=0;
+  let yaw=.34,pitch=-.11,last=performance.now(),accumulator=0,lastWake=-Infinity;
   renderer.shadowMap.autoUpdate=false;
   renderer.shadowMap.needsUpdate=true;
   renderer.setAnimationLoop(now=>{
     const dt=Math.min(.1,(now-last)/1000);last=now;
     if(input.active){
       const sensitivity=input.touch?.0048:.00235;
-      yaw-=input.look[0]*sensitivity;
-      pitch=T.MathUtils.clamp(pitch-input.look[1]*sensitivity,-1.52,1.52);
+      if(!mechanics.driving){
+        yaw-=input.look[0]*sensitivity;
+        pitch=T.MathUtils.clamp(pitch-input.look[1]*sensitivity,-1.52,1.52);
+      }
       input.look=[0,0];
       accumulator+=dt;
       while(accumulator>=STEP){
-        walker.step(input.movement(),yaw);accumulator-=STEP;
+        const move=input.movement();
+        move.drift ||= move.jump && mechanics.driving;
+        if(input.actions.has('fire'))mechanics.fire(camera);
+        if(input.actions.has('grapple'))notice(mechanics.grapple(camera));
+        mechanics.before(camera,move,input);
+        input.actions.clear();
+        if(mechanics.driving)world.step(mechanics.events);
+        else walker.step({...move,pull:mechanics.anchor},yaw,mechanics.events);
+        mechanics.after();
+        if(!mechanics.driving){
+          const transition=story.transition(walker.current,STEP);
+          if(transition){
+            notice(transition.notice);
+            if(transition.position){
+              walker.teleport(transition.position);yaw=transition.yaw;pitch=0;
+              activeScene=transition.area?realm:scene;activeScene.add(camera);
+              renderer.shadowMap.needsUpdate=true;
+            }
+          }
+        }
+        accumulator-=STEP;
       }
     }else accumulator=0;
-    camera.position.lerpVectors(walker.previous,walker.current,input.active?accumulator/STEP:1);
-    camera.position.y+=.58;
-    camera.rotation.set(pitch,yaw,0,'YXZ');
+    if(mechanics.driving){
+      const center=vec(mechanics.car.body.translation());
+      const rotation=new T.Quaternion().copy(mechanics.car.body.rotation());
+      const offset=new T.Vector3(0,2.15,4.7).applyQuaternion(rotation);
+      const hit=mechanics.ray(center,offset.clone().normalize(),offset.length(),mechanics.car);
+      if(hit)offset.setLength(Math.max(1,hit.timeOfImpact-.25));
+      camera.position.copy(center).add(offset);
+      camera.lookAt(center.add(new T.Vector3(0,.44,0)));
+    }else{
+      camera.position.lerpVectors(walker.previous,walker.current,input.active?accumulator/STEP:1);
+      camera.position.y+=.58;
+      camera.rotation.set(pitch,yaw,0,'YXZ');
+    }
     camera.updateMatrixWorld();
+    tool.visible=!mechanics.driving&&!mechanics.carried;
+    tool.position.set(.265,-.205,-.53+mechanics.cooldown*.37);
+    mechanics.draw(camera);
     water.uniforms.time.value=now*.001;
-    const distance=Math.round(Math.hypot(camera.position.x-cabinX,camera.position.z-cabinZ));
-    if(!found)$('guide').textContent='Ranger cabin · '+distance+' m';
-    $('hint').textContent=found?'“When the creek runs uphill, stay out of the woods.”':
-      readBook(camera)?(input.touch?'Use':'E')+' · Read ranger log':'';
-    renderer.render(scene,camera);
+    const player=mechanics.driving?mechanics.car.body.translation():walker.current;
+    if(story.area===0&&inCreek(player.x,player.z)&&now-lastWake>360&&
+      (mechanics.driving||walker.velocity.lengthSq()>1)){
+      water.uniforms.ripple.value.set(player.x,player.z,now*.001);lastWake=now;
+    }
+    story.animate(now*.001);
+    $('guide').textContent=story.guide(player);
+    const waypoint=story.waypoint();
+    const arrow=$('bearing');
+    arrow.hidden=!waypoint;
+    if(waypoint){
+      const forward=camera.getWorldDirection(new T.Vector3());
+      const heading=Math.atan2(waypoint.x-player.x,-(waypoint.z-player.z))-Math.atan2(forward.x,-forward.z);
+      arrow.style.transform='rotate('+heading+'rad)';
+    }
+    $('hud').querySelector('strong').textContent=story.area?'THE ECHO GRID':'FOXGLOVE RIDGE';
+    if(now>noticeUntil)$('notice').textContent='';
+    const target=input.active&&!mechanics.driving&&!mechanics.carried?mechanics.target(camera):null;
+    const use=input.touch?'Use':'E';
+    $('hint').textContent=mechanics.driving?use+' · Exit wagon':mechanics.carried?use+' · Set down / '+(input.touch?'Throw':'Q')+' · Throw':
+      target?.name?use+' · '+target.name:'';
+    $('reticle').hidden=mechanics.driving;
+    renderer.render(activeScene,camera);
   });
 }
 boot().catch(error=>{$('status').textContent=error.message;console.error(error);});

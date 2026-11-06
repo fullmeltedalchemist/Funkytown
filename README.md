@@ -1,18 +1,18 @@
 # Bellwether Hollow · Foxglove Ridge
 
-Foxglove Ridge is a new first-person exploration build of Bellwether Hollow. The playable route starts on a wooded ridge, descends to a creek ford, and climbs to a ranger cabin with a readable log. Terrain relief, cabin entry, and walking are implemented. The old combat, grappling, vehicles, and narrative systems are outside this build.
+Foxglove Ridge is a first-person mystery set around a wooded ridge, a creek ford, and a small settlement. Find the Vale House journal, follow it to the Foxglove Camp lodge, and unlock the Echo Grid. The journal, letter, and memory milestones persist in this browser.
 
 ## Play
 
 - On Netlify, upload the extracted folder as a static site. The publish root is the folder with `index.html`. There is no build command. Use a separate site if you want to keep an older build available.
 - Locally, run `python3 -m http.server 8000` from the extracted folder and open `http://localhost:8000`.
-- Desktop controls are WASD, mouse, Space to jump, Shift to sprint, and E to read the log. On a phone or tablet, use the left stick, drag the scene to look, and tap Use or Jump.
+- Desktop controls are WASD, mouse, Space to jump, Shift to sprint, and E to read the log. On a phone or tablet, use the left stick, drag the scene to look, and tap the matching action. Use / E reads clues, carries or sets down props, opens the spillway, and enters or exits the wagon. Q / Throw throws carried props. Left click / F fires a physical round. Right click / G toggles the grapple. In the wagon, movement steers and accelerates and Space / Jump drifts.
 
 All runtime dependencies are included. The entry page should be served over HTTP or HTTPS.
 
 ## Put a model in the map
 
-1. To check the model quickly, choose **Test a local GLB** on the pause menu. A self-contained GLB is scaled to fit and placed beside the trail with a convex collider. That placement lasts for the current session.
+1. To check the model quickly, choose **Test a local GLB** on the pause menu. A self-contained GLB is scaled to fit and placed beside the trail as a carryable prop with a convex collider. That placement lasts for the current session.
 2. To keep a model in the map, copy it into `assets/` and register it in `assets/manifest.json`. A GLTF with separate textures or buffers needs its companion files in the expected relative paths.
 3. Add a placement. Positions are `[x, y, z]` in meters. Yaw is in radians and scale defaults to 1. The terrain height function is in `src/terrain.js`. The bundled cabin uses a named terrain anchor.
 

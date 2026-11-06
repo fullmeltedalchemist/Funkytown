@@ -75,6 +75,32 @@ export class AssetPipeline {
     this.scene.add(root);
     return root;
   }
+  // Keep a loose model's collision in body-local coordinates so it can move.
+  loose(source,scale){
+    const visual=this.prepare(source,{scale});
+    const vertices=[];
+    visual.traverse(node=>{
+      if(!node.isMesh)return;
+      if(collisionNode(node)){node.visible=false;return;}
+      node.castShadow=node.receiveShadow=true;
+      // Dynamic props own disposable geometry/materials. Keep cache copies intact.
+      node.geometry=node.geometry.clone();
+      node.material=Array.isArray(node.material)?node.material.map(m=>m.clone()):node.material.clone();
+      const points=pointsFor(node);
+      for(const value of points)vertices.push(value);
+    });
+    if(!vertices.length)throw Error('No usable mesh geometry.');
+    let shape=R.ColliderDesc.convexHull(new Float32Array(vertices));
+    if(!shape){
+      const bounds=new T.Box3().setFromArray(vertices);
+      const center=bounds.getCenter(new T.Vector3());
+      const size=bounds.getSize(new T.Vector3());
+      shape=R.ColliderDesc.cuboid(...size.toArray().map(n=>Math.max(.025,n/2)))
+        .setTranslation(center.x,center.y,center.z);
+    }
+    // The root's local scale stays on the rendered model.
+    return {visual,shape};
+  }
   // Batch repeated foliage by source mesh/material while retaining mesh transforms.
   scatter(source,placements,{solid=false}={}){
     if(!placements.length)return;
