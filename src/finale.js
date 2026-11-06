@@ -97,37 +97,59 @@ export class Finale {
 
 export class MailRoute {
   constructor(mechanics,bag,pipeline,models){
-    this.bag=bag;this.index=0;this.active=false;
-    try{
-      const index=Number(localStorage.getItem('bellwether-mail-v1'));
-      if(Number.isInteger(index)&&index>=0&&index<=2)this.index=index;
-    }catch{}
-    this.active=bag.records.has('mail')&&this.index<2;
     const post=plots[2],vale=plots[0];
-    this.start=point(post.x+3.8,post.z,1.1);
-    this.stops=[point(vale.x-3.6,vale.z+1.6,.82),point(cabinX+2.4,cabinZ+4.4,.86)];
-    const scene=mechanics.scenes[0];
+    const start=point(post.x+3.8,post.z,1.1);
+    const valeDoor=point(vale.x-3.6,vale.z+1.6,.82);
+    const oldAddress=point(cabinX+2.4,cabinZ+4.4,.86);
+    const newAddress=point(cabinX-3.4,cabinZ+5.9,.86);
+    const key='bellwether-mail-v2';
+    let saved={};
+    try{saved=JSON.parse(localStorage.getItem(key)||'{}')||{};}catch{}
+    let delivered=Boolean(saved.delivered);
+    let forwarded=Boolean(saved.forwarded);
+    let packed=['letter','parcel'].includes(saved.packed)?saved.packed:'';
+    let complete=bag.records.has('cals-letter');
+    const persist=()=>{
+      try{localStorage.setItem(key,JSON.stringify({delivered,forwarded,packed}));}catch{}
+      if(packed)bag.record('mail','Post office cargo',packed==='letter'?'Letter for Vale House.':'Parcel for the camp caretaker.','Cargo');
+      else bag.forget('mail');
+    };
     const station=(p,name,action)=>{
-      const prop=pipeline.prepare(models.receiver,{position:p.toArray(),scale:.48});scene.add(prop);
+      const prop=pipeline.prepare(models.receiver,{position:p.toArray(),scale:.48});
+      mechanics.scenes[0].add(prop);
       const c=mechanics.world.createCollider(R.ColliderDesc.ball(.32).setTranslation(...p.toArray())
         .setSensor(true).setCollisionGroups((128<<16)|2));
       mechanics.tag(c,{name,action});
     };
-    station(this.start,'Read the post office delivery slip',()=>{
-      if(this.index===2)return 'Both deliveries are complete.';
-      this.active=true;bag.record('mail','Post office parcels','Deliver to Vale House, then the ranger at camp.','Cargo');
-      return 'Last Delivery: take the first parcel to Vale House. The second is marked Foxglove Camp.';
+    const pack=(item)=>{
+      if(complete)return 'Last Delivery is complete.';
+      if(item==='letter'&&delivered)return 'Vale House already received its letter.';
+      if(packed===item)return 'That item is already in your cargo slot.';
+      packed=item;persist();
+      return item==='letter'?'Packed the letter for Vale House. The bag has one mail slot.':
+        'Packed the camp parcel. The address says Foxglove Camp, main cabin.';
+    };
+    station(start,'Pack Vale House letter',()=>pack('letter'));
+    station(start.clone().add(new T.Vector3(1.05,0,0)),'Pack camp parcel',()=>pack('parcel'));
+    station(valeDoor,'Deliver Vale House letter',()=>{
+      if(delivered)return 'The Vale House letter has been delivered.';
+      if(packed!=='letter')return 'Pick up the Vale House letter at the post office.';
+      delivered=true;packed='';persist();
+      return 'Letter delivered. A note on the porch says the camp caretaker moved to the west bunkhouse.';
     });
-    for(const [i,p] of this.stops.entries())station(p,'Check delivery address',()=>{
-      if(!this.active||this.index!==i)return 'No parcel for this stop right now.';
-      this.index++;
-      try{localStorage.setItem('bellwether-mail-v1',String(this.index));}catch{}
-      if(this.index===2){
-        bag.forget('mail');
-        bag.record('cals-letter','Cal’s undelivered letter','Postmarked a day after the date on the sheriff’s rescue report.');
-        return 'Delivery complete. The ranger gives you Cal’s undelivered letter.';
-      }
-      return 'First parcel delivered. Take the second to Foxglove Camp.';
+    station(oldAddress,'Read the forwarding slip',()=>{
+      if(complete)return 'The caretaker has already received the parcel.';
+      forwarded=true;persist();
+      return 'Forwarding slip: the caretaker moved to the west bunkhouse. Follow the path around the cabin.';
+    });
+    station(newAddress,'Deliver to the caretaker',()=>{
+      if(complete)return 'The caretaker thanks you for delivering the mail.';
+      if(!forwarded)return 'Check the forwarding slip at the main cabin so you can verify the recipient.';
+      if(!delivered)return 'Finish the Vale House letter first so the caretaker can sign off on the route.';
+      if(packed!=='parcel')return 'Bring the camp parcel from the post office.';
+      complete=true;packed='';persist();
+      bag.record('cals-letter','Cal’s undelivered letter','Postmarked a day after the date on the sheriff’s rescue report.');
+      return 'Last Delivery complete. The caretaker gives you Cal’s undelivered letter.';
     });
   }
 }
