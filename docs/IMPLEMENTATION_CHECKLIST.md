@@ -27,15 +27,15 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 
 ## Villagers
 
-- [ ] Walkable routes, activity stops, and conversation while working.
+- [ ] Playtest walking routes, activity stops, and work conversations for all villagers.
 - [x] Post office: sort outbound mail by address, pack the correct item, and close the route at the dispatch ledger after both deliveries. Production source verified.
 - [x] Postmaster walks between sorting, satchel loading, and creek advisory stops. The camp parcel diverts to an emergency drop while the ford is flooded. Production source verified.
 - [ ] Playtest postmaster interactions and both camp parcel destinations in-game.
 - [x] Ranger camp rounds: stops at the fire, rescue gear, and Cal’s marker. Dialogue reflects the current stop. Production deploy verified.
 - [x] Ranger: visible gear repair with a handheld wrench. Verified in production source.
 - [x] Ranger: distinct inspection animation at Cal’s marker on the rescue route. Production source verified.
-- [ ] Projectionist: move reels and set up movie night.
-- [ ] Sheriff: patrol and head to lookout for the confrontation.
+- [x] Projectionist carries a reel to movie night, sets up the lamp, and discusses the restored reel. Production source verified.
+- [x] Sheriff patrols town and heads to the lookout after tape alignment. Confrontation dialogue reflects the ending choice. Logic and production source verified.
 - [x] Post office radio reacts to the flooded ford, reopening, and each ending choice. Production source verified.
 - [x] Ranger reacts in person to ford flooding, drainage, and both ending choices. Production source verified.
 - [ ] Playtest radio and ranger prompts. Add reactions for other villagers.
@@ -54,7 +54,8 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 ## Chance events
 
 - [x] Runaway crate chase, grapple recovery, and current-changing grate jam. Production source verified.
-- [ ] Playtest crate recovery and add the ranger’s detour to the jam.
+- [x] Ranger detours to inspect the jammed grate. Production source verified.
+- [ ] Playtest crate recovery and the ranger’s detour in-game.
 - [ ] Stalled patrol truck: rock it loose, use ridge detour, or hear sheriff radio.
 - [ ] Wrong-bank voice: follow, check real villager, or record and compare it.
 - [ ] Add location and story conditions, cooldowns, and ignored-event consequences. Required clues remain available.
