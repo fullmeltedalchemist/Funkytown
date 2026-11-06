@@ -1,3 +1,4 @@
+import {Rescue} from './rescue.js';
 import {Bag} from './bag.js';
 import {fieldPistol} from './effects.js';
 import * as T from 'three';
@@ -110,6 +111,7 @@ async function boot(){
   const story=new Story(mechanics,pipeline,models);
   buildCampEquipment(mechanics,pipeline,models);
   const bag=new Bag(mechanics);
+  const rescue=new Rescue(mechanics,story);
   scene.add(camera);
   const tool=fieldPistol();
   camera.add(tool);
@@ -175,6 +177,7 @@ async function boot(){
         else walker.step({...move,pull:mechanics.anchor},yaw,mechanics.events);
         mechanics.after();
         story.missions.tick(STEP);
+        rescue.tick(now*.001);
         if(!mechanics.driving){
           const transition=story.transition(walker.current,STEP);
           if(transition){
@@ -217,8 +220,9 @@ async function boot(){
       water.uniforms.ripple.value.set(player.x,player.z,now*.001);lastWake=now;
     }
     story.animate(now*.001);
-    $('guide').textContent=story.guide(player);
-    const waypoint=story.waypoint();
+    const objective=rescue.objective();
+    $('guide').textContent=objective?.text??story.guide(player);
+    const waypoint=objective?objective.target:story.waypoint();
     const arrow=$('bearing');
     arrow.hidden=!waypoint;
     if(waypoint){

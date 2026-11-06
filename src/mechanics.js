@@ -1,3 +1,4 @@
+import {inCreek} from './terrain.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {spillwayStream} from './effects.js';
 import * as T from 'three';
@@ -231,6 +232,17 @@ export class Mechanics {
   before(camera,movement,input){
     this.cooldown=Math.max(0,this.cooldown-STEP);
     for(const item of this.items.values())if(item.size)item.speed=vec(item.body.linvel()).length();
+    for(const item of this.items.values()){
+      if(item.area!==0||item.kind!=='prop'||item===this.carried)continue;
+      const p=item.body.translation();
+      if(p.y>-1.49||!inCreek(p.x,p.z))continue;
+      const velocity=item.body.linvel();
+      const submerged=T.MathUtils.clamp((-1.49-p.y)/.48,0,1);
+      const scale=STEP*item.body.mass();
+      item.body.applyImpulse({x:(.76-velocity.x)*submerged*scale*3.1,
+        y:(submerged*15-velocity.y*3.6*submerged)*scale,
+        z:-velocity.z*submerged*scale*3.1},true);
+    }
     if(this.driving)this.drive(movement);
     if(this.carried){
       const dir=camera.getWorldDirection(new T.Vector3());
