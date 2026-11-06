@@ -52,3 +52,7 @@ button:disabled{opacity:.45}.buttons{display:flex;gap:8px;flex-wrap:wrap}
 #field-work::backdrop{background:#111b}
 #field-work button{display:block;width:100%;margin:8px 0;min-height:44px}
 #field-work [role=status]{color:#ffe0a2;min-height:1.4em}
+#touch{left:max(14px,env(safe-area-inset-left));right:max(14px,env(safe-area-inset-right))}
+#actions button{min-width:44px;min-height:44px}
+#actions #use{min-width:64px;background:#ffe4aa}
+@media(max-width:540px){#actions{max-width:168px}#touch{gap:12px}}
