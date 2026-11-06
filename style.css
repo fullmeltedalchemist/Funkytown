@@ -48,3 +48,7 @@ button:disabled{opacity:.45}.buttons{display:flex;gap:8px;flex-wrap:wrap}
 #bag-panel{max-height:calc(100dvh - 140px);overflow:auto}
 #bag-panel h3{margin:5px 0;color:#f0cb8d;font-size:13px}
 #photo-preview{position:fixed;z-index:3;right:18px;top:18px;width:min(220px,42vw);border:5px solid #eadbc1;border-bottom-width:12px;box-shadow:0 3px 16px #0008;pointer-events:none}
+#field-work{box-sizing:border-box;width:min(490px,calc(100vw - 24px));max-height:90dvh;padding:22px;background:#202825;color:#eee3cd;border:1px solid #a88c63;border-radius:14px}
+#field-work::backdrop{background:#111b}
+#field-work button{display:block;width:100%;margin:8px 0;min-height:44px}
+#field-work [role=status]{color:#ffe0a2;min-height:1.4em}
