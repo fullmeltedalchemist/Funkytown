@@ -202,6 +202,7 @@ export class Finale {
     });
     const supply=plots[1];
     this.installBaitWatch(supply,pipeline,models);
+    this.installTownRounds(supply);
     const reelBench=point(supply.x-4.3,supply.z+2.7,.95);
     this.model(reelBench,pipeline,models.receiver,.62);
     const edit=new ReelEdit();
@@ -247,6 +248,64 @@ export class Finale {
           ' The woman finishes a sentence that was never on the tape. “Ask her what he said next,” the ranger says.';
       });
     }
+  }
+  installTownRounds(supply){
+    const sheriff=person(0x464b39),projectionist=person(0x703f38);
+    const reel=new T.Mesh(new T.CylinderGeometry(.13,.13,.055,24),
+      new T.MeshStandardMaterial({color:0x9b9b89,metalness:.48,roughness:.4}));
+    reel.rotation.z=Math.PI/2;reel.position.set(0,-.34,.11);projectionist.arms[0].add(reel);
+    const patrol=[point(4,20,0),point(3,10,0),point(2,5,0)];
+    const lookout=this.lookout.clone().add(new T.Vector3(-2.9,0,1.4));
+    const movie=[point(supply.x-4.4,supply.z+2.7,0),point(supply.x-5,supply.z+5.4,0)];
+    const lantern=new T.PointLight(0xffa75d,0,6,2);
+    lantern.position.copy(movie[1]).y+=1.2;this.scene.add(lantern);
+    const setup=(actor,name,action)=>{
+      this.scene.add(actor.root);
+      const sensor=this.mechanics.world.createCollider(R.ColliderDesc.ball(.43)
+        .setSensor(true).setCollisionGroups((128<<16)|2));
+      this.mechanics.tag(sensor,{name,action});
+      return sensor;
+    };
+    let sheriffArrived=false,showReady=false;
+    const law=setup(sheriff,'Speak to the sheriff',()=>{
+      if(!sheriffArrived)return this.stage>=3?'“I’m heading to the lookout. We need to talk about that tape.”':'“Keep the creek crossing clear. I’m on patrol.”';
+      if(this.choice==='public')return '“The whole town heard it. Bring the ledger to my office tomorrow. I’ll explain why I changed the report.”';
+      if(this.choice==='private')return '“The ranger has your copy. Tell him to check the back page of the log before he calls me.”';
+      return '“Yes, I changed the report. The voice on dispatch sounded like Cal, and Cal was standing right beside me.”';
+    });
+    const film=setup(projectionist,'Speak to the projectionist',()=>{
+      if(this.bag.records.has('restored-reel'))return '“That gate footage was spliced into a family reel. Whoever hid it expected nobody to check the last frame.”';
+      return showReady?'“The reel is threaded and the lamp is warm. Movie night is ready.”':'“I’m carrying the reels out from the repair bench. Come back when the lamp is on.”';
+    });
+    const place=(actor,sensor,from,to,progress,walking,time)=>{
+      actor.root.position.lerpVectors(from,to,progress);
+      const {x,z}=actor.root.position;
+      actor.root.position.y=height(x,z);
+      actor.root.rotation.y=Math.atan2(to.x-from.x,to.z-from.z);
+      actor.legs.forEach((leg,i)=>{leg.rotation.x=walking?Math.sin(time*7+i*Math.PI)*.29:0;});
+      actor.arms.forEach((arm,i)=>{arm.rotation.x=walking?Math.sin(time*7+i*Math.PI)*.27:-.12;});
+      sensor.setTranslation({x,y:actor.root.position.y+1.04,z});
+    };
+    let time=0,departure=null,travel=0;
+    this.updateTown=dt=>{
+      time+=dt;
+      const cycle=time%24,leg=Math.floor(cycle/8),step=(cycle%8)/8;
+      if(this.stage>=3){
+        departure??=sheriff.root.position.clone();
+        travel=Math.min(1,travel+dt/26);
+        place(sheriff,law,departure,lookout,travel,travel<1,time);
+        sheriffArrived=travel===1;
+      }else place(sheriff,law,patrol[leg],patrol[(leg+1)%patrol.length],step,true,time);
+      const filmTime=time%26;
+      showReady=filmTime>=9&&filmTime<21;
+      const returning=filmTime>=21;
+      place(projectionist,film,returning?movie[1]:movie[0],returning?movie[0]:movie[1],
+        returning?(filmTime-21)/5:Math.min(1,filmTime/9),!showReady,time);
+      projectionist.arms[0].rotation.x=-1.05;
+      reel.visible=!showReady;
+      lantern.intensity=showReady?4.2:0;
+    };
+    this.updateTown(0);
   }
   installRunawayCrate(notice){
     const start=point(5.7,-.8,.52);
@@ -306,6 +365,7 @@ export class Finale {
       }
     };
     this.crateJammed=()=>phase==='jammed';
+    this.rescue.grateDetour=()=>this.crateJammed()?point(grate.x+2.2,grate.z-2.8,0):null;
   }
   installBaitWatch(supply,pipeline,models){
     const watch=this.baitWatch=new BaitWatch();
@@ -384,6 +444,7 @@ export class Finale {
   }
   tick(dt){
     this.baitWatch.tick(dt);
+    this.updateTown(dt);
     this.water.uniforms.current.value+=dt*this.mechanics.creekFlow;
     if(this.rescue.stage!==4){this.mechanics.creekFlow=.76;this.updateCrate(dt);return;}
     this.boom.rotation.y=T.MathUtils.lerp(this.boom.rotation.y,this.boomAligned||this.stage>0?-.16:.95,1-Math.exp(-dt*3));
