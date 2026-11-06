@@ -39,6 +39,45 @@ function chooseAtStation(title, prompt, choices, onChoice){
   dialog.showModal();
 }
 
+const reelFrames=[
+  'A grainy title card. The date is stamped in the corner.',
+  'One bell, then the camp emblem. The sprocket marks run straight.',
+  'White streaks and torn sprocket holes. The bell repeats twice.',
+  'A second bell. The west-bank marker comes into focus.',
+  'A flash of clear leader and a backwards frame counter.',
+  'The sheriff shuts the west-bank gate. The date stamp is still visible.'
+];
+const damagedFrames=new Set([2,4]);
+
+export class ReelEdit {
+  frame=0;
+  cuts=[];
+  step(direction){
+    this.frame=(this.frame+direction+reelFrames.length)%reelFrames.length;
+    return this.preview();
+  }
+  preview(){
+    return 'Frame '+(this.frame+1)+' / '+reelFrames.length+' · '+reelFrames[this.frame]+
+      (this.cuts.includes(this.frame)?' Marked for removal.':'');
+  }
+  cut(){
+    if(this.cuts.includes(this.frame))return 'That frame is already marked. Undo the last cut to restore it.';
+    this.cuts.push(this.frame);
+    return this.preview();
+  }
+  undo(){
+    const frame=this.cuts.pop();
+    if(frame===undefined)return 'There are no cuts to undo.';
+    this.frame=frame;
+    return this.preview();
+  }
+  review(){
+    if(this.cuts.some(frame=>!damagedFrames.has(frame)))return 'Playback jumps over intact footage. Undo until the missing picture is restored.';
+    if(this.cuts.length!==damagedFrames.size)return 'Playback still catches on damaged film. Scrub for torn sprocket holes or the reversed counter.';
+    return '';
+  }
+}
+
 export class Finale {
   constructor(mechanics,rescue,bag,pipeline,models,water,notice){
     Object.assign(this,{mechanics,rescue,bag,water});
@@ -140,6 +179,26 @@ export class Finale {
       if(this.choice==='private')return 'The public channel is quiet. On the ranger’s frequency: “I have Cal’s tape locked up. Meet me at dawn, before the sheriff starts his rounds.”';
       if(this.stage>0)return 'Post office advisory: the ford has reopened. Keep clear of the intake while the ranger checks the gate seals.';
       return this.flood>.24?'Post office advisory: ford closed. Use the high bank path.':'Post office advisory: crews are working at the spillway.';
+    });
+    const supply=plots[1];
+    const reelBench=point(supply.x-4.3,supply.z+2.7,.95);
+    this.model(reelBench,pipeline,models.receiver,.62);
+    const edit=new ReelEdit();
+    this.station(reelBench,'Restore the damaged reel',()=>{
+      if(bag.records.has('restored-reel'))return 'The restored reel is in your backpack. The last intact frame shows the sheriff closing the west-bank gate.';
+      chooseAtStation('The Wrong Reel',
+        'Scrub the reel. Mark damaged frames, preserve the intact footage, then review the splice. '+edit.preview(),
+        [['Previous frame','back'],['Next frame','forward'],['Mark frame for removal','cut'],['Undo last cut','undo'],['Review splice','review']],
+        action=>{
+          if(action==='back'||action==='forward')return {message:edit.step(action==='back'?-1:1)};
+          if(action==='cut')return {message:edit.cut()};
+          if(action==='undo')return {message:edit.undo()};
+          const problem=edit.review();
+          if(problem)return {message:problem};
+          bag.record('restored-reel','Restored west-bank reel','The final intact frame shows the sheriff shutting the west-bank gate. The date stamp survived the splice.');
+          return {done:true,message:'Splice holds. The final frame shows the sheriff at the west-bank gate. The reel is in your backpack.'};
+        });
+      return '';
     });
     const evidenceDesk=point(this.lookout.x+3.2,this.lookout.z+1.1,.95);
     this.model(evidenceDesk,pipeline,models.receiver,.55);
