@@ -48,7 +48,8 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 - [ ] Playtest the rigging dialog and rewards in-game on phone.
 - [x] The Wrong Reel: scrub frame descriptions, mark damaged frames, undo cuts, and recover the west-bank reel as evidence. Puzzle logic and production source verified.
 - [ ] Add illustrated film frames and playtest the reel bench in-game.
-- [ ] Night at the Bait Shop: bait, tracks, move the camera, catch the ordinary thief or stay for the Echo.
+- [x] Night at the Bait Shop: set bait, inspect pawprints, aim the camera, and wait for either the raccoon or the Echo. Timing logic and production source verified.
+- [ ] Add visual recordings and playtest both bait shop outcomes in-game.
 
 ## Chance events
 
