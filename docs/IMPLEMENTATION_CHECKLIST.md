@@ -53,7 +53,8 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 
 ## Chance events
 
-- [ ] Runaway crate: grapple, chase, or let it jam the grate. Jam changes current and draws ranger.
+- [x] Runaway crate chase, grapple recovery, and current-changing grate jam. Production source verified.
+- [ ] Playtest crate recovery and add the ranger’s detour to the jam.
 - [ ] Stalled patrol truck: rock it loose, use ridge detour, or hear sheriff radio.
 - [ ] Wrong-bank voice: follow, check real villager, or record and compare it.
 - [ ] Add location and story conditions, cooldowns, and ignored-event consequences. Required clues remain available.
