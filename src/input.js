@@ -10,7 +10,9 @@ export class Input {
   constructor(canvas,onUse,onBag,onGear,onPhoto){
     this.canvas=canvas;
     const menu=document.querySelector('#menu'),pad=document.querySelector('#pad');
+    let drag=null,pointer=null;
     const clear=()=>{
+      drag=null;pointer=null;
       this.held.clear();this.actions.clear();this.stick=[0,0];this.look=[0,0];this.jump=false;
       pad.firstElementChild.style.transform='';
     };
@@ -33,7 +35,7 @@ export class Input {
     });
     document.addEventListener('pointerlockerror',()=>{this.dragMode=true;this.toggle(true);});
     document.addEventListener('keydown',e=>{
-      if(!this.active||document.querySelector('#tape').open||document.querySelector('#rigging').open)return;
+      if(!this.active||document.querySelector('dialog[open]'))return;
       if(e.code==='Escape'&&(this.touch||this.dragMode))return this.toggle(false);
       if(['KeyW','KeyA','KeyS','KeyD','Space','ShiftLeft','KeyE','KeyQ','KeyF','KeyG'].includes(e.code))e.preventDefault();
       this.held.add(e.code);
@@ -67,7 +69,6 @@ export class Input {
         e.preventDefault();this.actions.add(action);
       });
     }
-    let drag=null;
     canvas.addEventListener('pointerdown',e=>{
       if(!this.active||(!this.touch&&!this.dragMode)||drag)return;
       canvas.setPointerCapture(e.pointerId);drag={id:e.pointerId,x:e.clientX,y:e.clientY};
@@ -77,11 +78,10 @@ export class Input {
       this.look[0]+=e.clientX-drag.x;this.look[1]+=e.clientY-drag.y;
       drag.x=e.clientX;drag.y=e.clientY;
     });
-    canvas.addEventListener('lostpointercapture',()=>{drag=null;});
-    let pointer=null;
+    canvas.addEventListener('lostpointercapture',e=>{if(drag?.id===e.pointerId)drag=null;});
     const move=e=>{
       const rect=pad.getBoundingClientRect();
-      const x=(e.clientX-rect.left-rect.width/2)/36,z=(e.clientY-rect.top-rect.height/2)/36;
+      const x=(e.clientX-rect.left-rect.width/2)/(rect.width*.36),z=(e.clientY-rect.top-rect.height/2)/(rect.height*.36);
       const length=Math.hypot(x,z);
       const factor=length<.12?0:1/Math.max(1,length);
       this.stick=[x*factor,-z*factor];
@@ -92,7 +92,8 @@ export class Input {
       pointer=e.pointerId;pad.setPointerCapture(pointer);move(e);
     });
     pad.addEventListener('pointermove',e=>{if(this.active&&e.pointerId===pointer)move(e);});
-    pad.addEventListener('lostpointercapture',()=>{
+    pad.addEventListener('lostpointercapture',e=>{
+      if(pointer!==e.pointerId)return;
       pointer=null;this.stick=[0,0];pad.firstElementChild.style.transform='';
     });
     const jumpButton=document.querySelector('#jump');
@@ -100,7 +101,7 @@ export class Input {
       e.preventDefault();jumpButton.setPointerCapture(e.pointerId);this.jump=true;this.held.add('Space');
     });
     jumpButton.addEventListener('lostpointercapture',()=>this.held.delete('Space'));
-    document.querySelector('#use').addEventListener('pointerdown',onUse);
+    document.querySelector('#use').onclick=onUse;
     document.querySelector('#bag-button').onclick=onBag;
     document.querySelector('#gear-button').onclick=onGear;
     document.querySelector('#photo-button').onclick=onPhoto;
