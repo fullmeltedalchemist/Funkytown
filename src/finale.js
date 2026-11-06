@@ -5,6 +5,39 @@ import {height,cabinX,cabinZ,plots,trailX} from './terrain.js';
 
 const point=(x,z,y)=>new T.Vector3(x,height(x,z)+y,z);
 const key='bellwether-finale-v1';
+function chooseAtStation(title, prompt, choices, onChoice){
+  const dialog=document.createElement('dialog');
+  dialog.id='field-work';
+  const heading=document.createElement('h2');
+  heading.textContent=title;
+  const instructions=document.createElement('p');
+  instructions.textContent=prompt;
+  const feedback=document.createElement('p');
+  feedback.setAttribute('role','status');
+  dialog.append(heading,instructions);
+  for(const [label,value] of choices){
+    const button=document.createElement('button');
+    button.type='button';
+    button.textContent=label;
+    button.onclick=()=>{
+      const result=onChoice(value);
+      feedback.textContent=result.message;
+      if(result.done)for(const option of dialog.querySelectorAll('button[data-choice]'))option.disabled=true;
+    };
+    button.dataset.choice='';
+    dialog.append(button);
+  }
+  const close=document.createElement('button');
+  close.type='button';
+  close.textContent='Close';
+  close.onclick=()=>dialog.close();
+  dialog.append(feedback,close);
+  dialog.onclose=()=>dialog.remove();
+  document.body.append(dialog);
+  if(document.pointerLockElement)document.exitPointerLock();
+  dialog.showModal();
+}
+
 export class Finale {
   constructor(mechanics,rescue,bag,pipeline,models,water,notice){
     Object.assign(this,{mechanics,rescue,bag,water});
@@ -107,6 +140,22 @@ export class Finale {
       if(this.stage>0)return 'Post office advisory: the ford has reopened. Keep clear of the intake while the ranger checks the gate seals.';
       return this.flood>.24?'Post office advisory: ford closed. Use the high bank path.':'Post office advisory: crews are working at the spillway.';
     });
+    const evidenceDesk=point(this.lookout.x+3.2,this.lookout.z+1.1,.95);
+    this.model(evidenceDesk,pipeline,models.receiver,.55);
+    this.station(evidenceDesk,'Compare the rescue evidence',()=>{
+      if(!bag.records.has('cals-letter')||!bag.records.has('dispatch-tape')){
+        return 'Bring Cal’s undelivered letter from Last Delivery and the original tape from the spillway intake.';
+      }
+      chooseAtStation('Compare the rescue evidence',
+        'The official report places the rescue on the previous day and ends the dispatch transcript before the tape stops. What can you establish from the originals?',
+        [['The date and the cutoff both conflict','both'],['The tape proves who cut the rescue line','culprit'],['The postmark proves the exact time Cal wrote the letter','time']],
+        answer=>{
+          if(answer!=='both')return {message:'Look at what each source actually records. A postmark records when mail was processed, and the tape does not identify who cut the line.'};
+          bag.record('timeline-conflict','The missing day','Cal’s letter was postmarked a day after the official rescue date. The original tape runs beyond the official transcript.');
+          return {done:true,message:'Comparison saved in your backpack. The ranger can discuss the discrepancy at camp.'};
+        });
+      return '';
+    });
     for(const [i,choice] of ['public','private'].entries()){
       const p=this.lookout.clone().add(new T.Vector3(i?1.7:-1.7,0,.5));
       this.model(p,pipeline,i?models.lantern:models.receiver,.72);
@@ -181,6 +230,7 @@ export class MailRoute {
       if(packed)bag.record('mail','Post office cargo',packed==='letter'?'Letter for Vale House.':'Parcel for the camp caretaker.','Cargo');
       else bag.forget('mail');
     };
+    if(complete&&packed){packed='';persist();}
     const station=(p,name,action)=>{
       const prop=pipeline.prepare(models.receiver,{position:p.toArray(),scale:.48});
       mechanics.scenes[0].add(prop);
@@ -196,8 +246,21 @@ export class MailRoute {
       return item==='letter'?'Packed the letter for Vale House. The bag has one mail slot.':
         'Packed the camp parcel. The address says Foxglove Camp, main cabin.';
     };
-    station(start,'Pack Vale House letter',()=>pack('letter'));
-    station(start.clone().add(new T.Vector3(1.05,0,0)),'Pack camp parcel',()=>pack('parcel'));
+    station(start,'Sort the outbound mail',()=>{
+      if(complete)return 'Last Delivery is complete. Check the dispatch ledger to close the route.';
+      const item=delivered?'parcel':'letter';
+      chooseAtStation('Sort the outbound mail',
+        delivered?'The label reads “Camp caretaker, Foxglove Camp.” Which route takes this parcel?':'The envelope reads “Vale House, Bellwether.” Which route takes this letter?',
+        [['Town route · Vale House','letter'],['Camp route · Foxglove','parcel'],['Hold for an unreadable address','hold']],
+        answer=>answer===item?{done:true,message:pack(item)}:{message:'That bin does not match the address. Read the label and try again.'});
+      return '';
+    });
+    station(start.clone().add(new T.Vector3(1.05,0,0)),'Check the dispatch ledger',()=>{
+      if(bag.records.has('mail-route-closed'))return 'The postmaster has signed off on your route.';
+      if(!complete)return forwarded?'The ledger now lists the west bunkhouse. Deliver the parcel there before signing out.':'The ledger is open. Deliver the Vale House letter, then verify the caretaker’s address.';
+      bag.record('mail-route-closed','Signed delivery ledger','The postmaster signed off on both deliveries and logged the caretaker’s new address.','Evidence');
+      return 'Route closed. The postmaster hands you a signed copy of the ledger.';
+    });
     station(valeDoor,'Deliver Vale House letter',()=>{
       if(delivered)return 'The Vale House letter has been delivered.';
       if(packed!=='letter')return 'Pick up the Vale House letter at the post office.';
