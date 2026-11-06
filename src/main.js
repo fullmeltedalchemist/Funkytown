@@ -1,10 +1,11 @@
+import {fieldPistol} from './effects.js';
 import * as T from 'three';
 import R from 'rapier';
 import {AssetPipeline} from './assets.js';
 import {cabinX,cabinY,cabinZ,height,inCreek,makeTerrain,plots,spawn,trailDistance,trailX} from './terrain.js';
 import {Walker,STEP} from './walker.js';
 import {Input} from './input.js';
-import {Mechanics,part,vec} from './mechanics.js';
+import {Mechanics,vec} from './mechanics.js';
 import {Story,buildCampEquipment} from './story.js';
 const $=id=>document.getElementById(id);
 
@@ -108,12 +109,7 @@ async function boot(){
   const story=new Story(mechanics,pipeline,models);
   buildCampEquipment(mechanics);
   scene.add(camera);
-  const tool=new T.Group();
-  part(tool,[.108,.085,.31],[0,.02,-.085],0x474349);
-  part(tool,[.14,.11,.24],[0,0,.05],0x81553e);
-  part(tool,[.085,.17,.1],[0,-.07,.12],0x634535);
-  part(tool,[.034,.029,.09],[0,.073,-.074],0xdec78c);
-  for(const mesh of tool.children)mesh.castShadow=mesh.receiveShadow=false;
+  const tool=fieldPistol();
   camera.add(tool);
   world.step();
   let noticeUntil=0;
@@ -205,7 +201,11 @@ async function boot(){
     }
     camera.updateMatrixWorld();
     tool.visible=!mechanics.driving&&!mechanics.carried;
-    tool.position.set(.265,-.205,-.53+mechanics.cooldown*.37);
+    const stride=mechanics.driving?0:Math.min(1,Math.hypot(walker.velocity.x,walker.velocity.z)/5);
+    const recoil=Math.max(0,mechanics.cooldown-.065);
+    tool.position.set(.173+Math.sin(now*.008)*.009*stride,-.19+Math.cos(now*.016)*.006*stride,-.49+recoil*.58);
+    tool.rotation.x=recoil*.9;
+    mechanics.drawWater(now*.001);
     mechanics.draw(camera);
     water.uniforms.time.value=now*.001;
     const player=mechanics.driving?mechanics.car.body.translation():walker.current;

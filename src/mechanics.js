@@ -1,3 +1,4 @@
+import {spillwayStream} from './effects.js';
 import * as T from 'three';
 import R from 'rapier';
 import {STEP} from './walker.js';
@@ -12,10 +13,10 @@ export function part(root,size,pos,color){
 const bits={world:1,player:2,prop:4,round:8,water:16,car:32,held:64};
 const groups=(member,mask)=>member<<16|mask;
 const all=65535;
-const roundGeometry=new T.SphereGeometry(.073,8,6);
-const roundMaterial=new T.MeshBasicMaterial({color:0xffd581});
-const fluidGeometry=new T.SphereGeometry(.105,8,6);
-const fluidMaterial=new T.MeshStandardMaterial({color:0x57cbd4,metalness:.25,roughness:.18,emissive:0x053346});
+const roundGeometry=new T.CapsuleGeometry(.008,.17,4,8).rotateX(Math.PI/2);
+const roundMaterial=new T.MeshBasicMaterial({color:0xffdfa6});
+const fluidGeometry=new T.SphereGeometry(.022,7,5).scale(.62,.62,1.75);
+const fluidMaterial=new T.MeshBasicMaterial({color:0xd2e6df,transparent:true,opacity:.43,depthWrite:false});
 
 export class Mechanics {
   items=new Map();
@@ -35,6 +36,9 @@ export class Mechanics {
     this.line.frustumCulled=false;this.line.visible=false;scene.add(this.line);
     this.fluid=new T.InstancedMesh(fluidGeometry,fluidMaterial,96);
     this.fluid.count=0;this.fluid.frustumCulled=false;scene.add(this.fluid);
+    this.stream=spillwayStream();
+    this.flowUntil=0;
+    scene.add(this.stream);
   }
   staticBox(size,position,color,area=0){
     const visual=part(this.scenes[area],size,position,color);
@@ -122,6 +126,9 @@ export class Mechanics {
     const dir=camera.getWorldDirection(new T.Vector3());
     const round=this.dynamic({position:camera.position.toArray(),kind:'round',life:1.65,
       visual:new T.Mesh(roundGeometry,roundMaterial),shape:R.ColliderDesc.ball(.065).setDensity(24)});
+    round.visual.quaternion.setFromUnitVectors(new T.Vector3(0,0,1),dir);
+    round.body.setRotation(round.visual.quaternion,true);
+    round.body.lockRotations(true,true);
     round.body.setGravityScale(.16,true);
     round.body.setLinvel(dir.multiplyScalar(47),true);
     this.cooldown=.15;
@@ -135,10 +142,18 @@ export class Mechanics {
     this.anchor=camera.position.clone().addScaledVector(direction,hit.timeOfImpact).addScaledVector(vec(hit.normal),.51);
     return 'Hook attached. Tap Hook or press G again to release.';
   }
+  drawWater(now){
+    const flow=T.MathUtils.clamp((this.flowUntil-now)*2,0,1);
+    this.stream.visible=flow>0;
+    this.stream.material.uniforms.clock.value=now;
+    this.stream.material.uniforms.flow.value=flow;
+  }
   spawnFluid(position){
+    this.stream.position.set(...position);
+    this.flowUntil=performance.now()*.001+2.15;
     for(let i=0;i<28&&this.drops.length<96;i++){
       const p=[position[0]+(i%4-1.5)*.24,position[1]+Math.floor(i/16)*.24,position[2]+(Math.floor(i/4)%4)*.24];
-      const drop=this.dynamic({position:p,kind:'water',life:12,shape:R.ColliderDesc.ball(.095).setDensity(15).setFriction(.025)});
+      const drop=this.dynamic({position:p,kind:'water',life:2.1,shape:R.ColliderDesc.ball(.095).setDensity(15).setFriction(.025)});
       drop.body.setLinvel({x:.65,y:.1,z:2.5},true);this.drops.push(drop);
     }
   }
@@ -229,12 +244,13 @@ export class Mechanics {
       else if(item.visual){item.visual.position.copy(p);item.visual.quaternion.copy(item.body.rotation());}
     }
     this.drops=this.drops.filter(drop=>this.items.has(drop.collider.handle));
-    this.fluid.count=this.drops.length;
+    const spray=this.drops.filter(drop=>drop.life<1.72&&drop.life>.3&&vec(drop.body.linvel()).lengthSq()>1.25);
+    this.fluid.count=spray.length;
     const matrix=new T.Matrix4();
-    this.drops.forEach((drop,i)=>{
+    spray.forEach((drop,i)=>{
       const {x,y,z}=drop.body.translation();this.fluid.setMatrixAt(i,matrix.makeTranslation(x,y,z));
     });
-    if(this.drops.length)this.fluid.instanceMatrix.needsUpdate=true;
+    if(spray.length)this.fluid.instanceMatrix.needsUpdate=true;
   }
   draw(camera){
     this.line.visible=!!this.anchor;
