@@ -8,13 +8,14 @@ const key='bellwether-finale-v1';
 export class Finale {
   constructor(mechanics,rescue,bag,pipeline,models,water,notice){
     Object.assign(this,{mechanics,rescue,bag,water});
-    this.stage=0;this.choice='';
+    this.stage=0;this.choice='';this.pulleyRigged=false;
     try{
       const save=JSON.parse(localStorage.getItem(key)||'{}');
       if(Number.isInteger(save.stage)&&save.stage>=0&&save.stage<=3)this.stage=save.stage;
       if(['public','private'].includes(save.choice))this.choice=save.choice;
+      this.pulleyRigged=save.pulleyRigged===true&&bag.records.has('spare-pulley');
     }catch{}
-    this.gates=[0,0,0];this.pressure=.85;this.hold=0;this.boomAligned=false;this.flood=0;
+    this.gates=[0,0,0];this.pressure=.85;this.hold=0;this.boomAligned=this.pulleyRigged;this.flood=0;
     this.positions=[point(-7.2,-7.5,.84),point(-9,-7,.84),point(-10.8,-6.6,.84)];
     this.intake=point(-12.6,-6.9,.9);
     this.lookout=point(cabinX+6,cabinZ+5,1.1);
@@ -41,6 +42,24 @@ export class Finale {
         this.boomAligned=true;
         return 'You pull the boom into its catch. Set gates to 2 / 0 / 1.';
       }});
+    const socket=point(this.boomPoint.x+.6,this.boomPoint.z+1.35,.92);
+    const brace=new T.Mesh(new T.CylinderGeometry(.083,.119,.95,12),wood);
+    brace.position.copy(socket).add(new T.Vector3(0,-.43,0));this.scene.add(brace);
+    this.pulley=new T.Mesh(new T.TorusGeometry(.12,.032,8,18),
+      new T.MeshStandardMaterial({color:0x9f865c,metalness:.55,roughness:.47}));
+    this.pulley.position.copy(socket);
+    this.pulley.visible=this.pulleyRigged;
+    this.scene.add(this.pulley);
+    this.station(socket,'Rig spare pulley',()=>{
+      if(this.stage>0)return 'The intake is already drained.';
+      if(!bag.records.has('spare-pulley'))return 'A spare pulley would fit here. Earn one on the practice rescue rig near the campfire.';
+      if(this.pulleyRigged)return 'Your pulley is holding the boom steady.';
+      this.pulleyRigged=true;
+      this.pulley.visible=true;
+      this.boomAligned=true;
+      this.advance(0);
+      return 'Pulley rigged. The boom is secured and the ford will drain faster once the gate settings are safe.';
+    });
     for(const [i,p] of this.positions.entries()){
       const valve=this.model(p,pipeline,models.valve);
       this.station(p,'Adjust intake gate '+(i+1),()=>{
@@ -93,14 +112,14 @@ export class Finale {
   }
   advance(stage){
     this.stage=stage;
-    try{localStorage.setItem(key,JSON.stringify({stage,choice:this.choice}));}catch{}
+    try{localStorage.setItem(key,JSON.stringify({stage,choice:this.choice,pulleyRigged:this.pulleyRigged}));}catch{}
   }
   tick(dt){
     this.water.uniforms.current.value+=dt*this.mechanics.creekFlow;
     if(this.rescue.stage!==4)return;
     this.boom.rotation.y=T.MathUtils.lerp(this.boom.rotation.y,this.boomAligned||this.stage>0?-.16:.95,1-Math.exp(-dt*3));
     const draining=this.stage>0||this.gates.filter(n=>n===2).length<2;
-    if(draining)this.flood=Math.max(0,this.flood-dt*.16);
+    if(draining)this.flood=Math.max(0,this.flood-dt*(this.pulleyRigged?.38:.16));
     this.water.uniforms.flood.value=this.flood;
     if(this.stage>0){this.mechanics.creekFlow=.55;return;}
     const balanced=this.boomAligned&&this.gates.join('')==='201';
