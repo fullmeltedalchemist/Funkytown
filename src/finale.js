@@ -111,6 +111,7 @@ export class Finale {
       if(this.choice==='public')return '“The postmaster backed your story on air. I’m taking her ledger to the lookout before the sheriff gets there.”';
       if(this.choice==='private')return '“I locked the tape in my cabin. At dawn, we’ll match the voices against my old dispatch log.”';
       if(this.flood>.24)return '“Stay off the ford. Take the high bank and reset the gates to two, zero, one.”';
+      if(this.crateJammed())return '“A crate is blocking the grate. Hook it from the bank and clear the current before you cross.”';
       if(this.stage===1)return '“The ford’s clear. Get into the intake while the pressure’s down. I’ll watch the gauges.”';
       return '';
     };
@@ -118,6 +119,7 @@ export class Finale {
     this.intake=point(-12.6,-6.9,.9);
     this.lookout=point(cabinX+6,cabinZ+5,1.1);
     this.scene=mechanics.scenes[0];
+    this.installRunawayCrate(notice);
     this.boomPoint=point(-6.1,-6.8,.56);
     this.boom=new T.Group();
     this.boom.position.copy(this.boomPoint);
@@ -246,6 +248,65 @@ export class Finale {
       });
     }
   }
+  installRunawayCrate(notice){
+    const start=point(5.7,-.8,.52);
+    const grate=point(-5.9,-5.1,.52);
+    const position=start.clone();
+    const world=this.mechanics.world;
+    const collider=world.createCollider(R.ColliderDesc.ball(.43).setTranslation(...start.toArray())
+      .setSensor(true).setCollisionGroups((128<<16)|2));
+    // Reuse the detailed wooden crate mesh without keeping its dynamic body.
+    const sample=this.mechanics.crate(start.toArray());
+    const visual=sample.visual.clone(true);
+    const owned=new Map();
+    visual.traverse(node=>{
+      if(!node.isMesh)return;
+      node.geometry=node.geometry.clone();
+      if(!owned.has(node.material))owned.set(node.material,node.material.clone());
+      node.material=owned.get(node.material);
+    });
+    this.mechanics.remove(sample);
+    this.scene.add(visual);
+    visual.visible=false;
+    let phase='waiting',elapsed=0,cooldown=8;
+    const recover=hook=>{
+      if(phase!=='moving'&&phase!=='jammed')return '';
+      const wasJammed=phase==='jammed';
+      if(wasJammed&&!hook)return 'The current pins the crate against the grate. Aim the hook at it from the bank.';
+      phase='recovered';visual.visible=false;collider.setEnabled(false);
+      this.bag.record('runaway-crate','Recovered supply crate','The ranger logged the crate as recovered. Its shipping stencil matches Bellwether Supply.','Cargo');
+      return wasJammed?'You pull the crate off the grate. The current eases.':'You recover the crate before it reaches the grate.';
+    };
+    this.mechanics.tag(collider,{name:'Catch the runaway crate',action:()=>recover(false),onGrapple:()=>recover(true)});
+    collider.setEnabled(false);
+    this.updateCrate=dt=>{
+      if(phase==='recovered'||this.bag.records.has('runaway-crate'))return;
+      const player=this.mechanics.walker.current;
+      if(phase==='waiting'){
+        if(this.rescue.stage<2||this.rescue.story.area!==0)return;
+        cooldown-=dt;
+        if(cooldown>0||player.distanceToSquared(start)>81)return;
+        phase='moving';visual.visible=true;collider.setEnabled(true);
+        notice('A supply crate breaks loose in the creek. Chase it down or catch it with the hook.');
+      }
+      if(phase==='moving'){
+        elapsed=Math.min(1,elapsed+dt/10);
+        position.lerpVectors(start,grate,elapsed);
+        position.y=height(position.x,position.z)+.52+Math.sin(elapsed*24)*.09;
+        visual.position.copy(position);
+        visual.rotation.set(.12*Math.sin(elapsed*18),elapsed*3,.09);
+        collider.setTranslation(position);
+        if(elapsed>=1){
+          phase='jammed';
+          if(this.rescue.story.area===0)notice('The crate jams the grate. The creek current picks up.');
+        }
+      }
+      if(phase==='jammed'){
+        this.mechanics.creekFlow+=.65;
+      }
+    };
+    this.crateJammed=()=>phase==='jammed';
+  }
   installBaitWatch(supply,pipeline,models){
     const watch=this.baitWatch=new BaitWatch();
     const crate=point(supply.x+2,supply.z+4,.65);
@@ -324,17 +385,18 @@ export class Finale {
   tick(dt){
     this.baitWatch.tick(dt);
     this.water.uniforms.current.value+=dt*this.mechanics.creekFlow;
-    if(this.rescue.stage!==4)return;
+    if(this.rescue.stage!==4){this.mechanics.creekFlow=.76;this.updateCrate(dt);return;}
     this.boom.rotation.y=T.MathUtils.lerp(this.boom.rotation.y,this.boomAligned||this.stage>0?-.16:.95,1-Math.exp(-dt*3));
     const draining=this.stage>0||this.gates.filter(n=>n===2).length<2;
     if(draining)this.flood=Math.max(0,this.flood-dt*(this.pulleyRigged?.38:.16));
     this.water.uniforms.flood.value=this.flood;
-    if(this.stage>0){this.mechanics.creekFlow=.55;return;}
+    if(this.stage>0){this.mechanics.creekFlow=.55;this.updateCrate(dt);return;}
     const balanced=this.boomAligned&&this.gates.join('')==='201';
     this.pressure=T.MathUtils.lerp(this.pressure,balanced?.12:.84,1-Math.exp(-dt*1.2));
     this.mechanics.creekFlow=.35+this.pressure*1.65;
     this.hold=balanced?this.hold+dt:0;
     if(this.hold>=3)this.advance(1);
+    this.updateCrate(dt);
   }
   onFloodedFord(position){
     return this.flood>.24&&Math.abs(position.z+1)<4&&Math.abs(position.x-trailX(position.z))<2.6;
