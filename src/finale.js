@@ -16,6 +16,13 @@ export class Finale {
       this.pulleyRigged=save.pulleyRigged===true&&bag.records.has('spare-pulley');
     }catch{}
     this.gates=[0,0,0];this.pressure=.85;this.hold=0;this.boomAligned=this.pulleyRigged;this.flood=0;
+    rescue.spillwayReaction=()=>{
+      if(this.choice==='public')return '“The postmaster backed your story on air. I’m taking her ledger to the lookout before the sheriff gets there.”';
+      if(this.choice==='private')return '“I locked the tape in my cabin. At dawn, we’ll match the voices against my old dispatch log.”';
+      if(this.flood>.24)return '“Stay off the ford. Take the high bank and reset the gates to two, zero, one.”';
+      if(this.stage===1)return '“The ford’s clear. Get into the intake while the pressure’s down. I’ll watch the gauges.”';
+      return '';
+    };
     this.positions=[point(-7.2,-7.5,.84),point(-9,-7,.84),point(-10.8,-6.6,.84)];
     this.intake=point(-12.6,-6.9,.9);
     this.lookout=point(cabinX+6,cabinZ+5,1.1);
