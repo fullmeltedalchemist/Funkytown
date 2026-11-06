@@ -47,3 +47,4 @@ button:disabled{opacity:.45}.buttons{display:flex;gap:8px;flex-wrap:wrap}
 #rigging button{margin:3px}
 #bag-panel{max-height:calc(100dvh - 140px);overflow:auto}
 #bag-panel h3{margin:5px 0;color:#f0cb8d;font-size:13px}
+#photo-preview{position:fixed;z-index:3;right:18px;top:18px;width:min(220px,42vw);border:5px solid #eadbc1;border-bottom-width:12px;box-shadow:0 3px 16px #0008;pointer-events:none}

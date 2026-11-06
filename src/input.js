@@ -7,7 +7,7 @@ export class Input {
   actions=new Set();
   touch=matchMedia('(pointer:coarse)').matches;
   dragMode=false;
-  constructor(canvas,onUse,onBag,onGear){
+  constructor(canvas,onUse,onBag,onGear,onPhoto){
     this.canvas=canvas;
     const menu=document.querySelector('#menu'),pad=document.querySelector('#pad');
     const clear=()=>{
@@ -42,6 +42,7 @@ export class Input {
       if(e.code==='KeyE')onUse();
       if(e.code==='KeyB')onBag();
       if(e.code==='KeyL'||e.code==='Digit1')onGear();
+      if(e.code==='KeyC'||e.code==='Digit2')onPhoto();
       if(e.code==='KeyF')this.actions.add('fire');
       if(e.code==='KeyG')this.actions.add('grapple');
       if(e.code==='KeyQ')this.actions.add('throw');
@@ -102,6 +103,7 @@ export class Input {
     document.querySelector('#use').addEventListener('pointerdown',onUse);
     document.querySelector('#bag-button').onclick=onBag;
     document.querySelector('#gear-button').onclick=onGear;
+    document.querySelector('#photo-button').onclick=onPhoto;
     document.querySelector('#pause').onclick=()=>this.toggle(false);
   }
   movement(){

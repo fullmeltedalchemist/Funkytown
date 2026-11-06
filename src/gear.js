@@ -3,11 +3,34 @@ import * as T from 'three';
 export class Gear {
   constructor(camera,bag,notice){
     this.notice=notice;
+    this.bag=bag;
+    this.pendingPhoto=false;
     this.light=new T.SpotLight(0xffe9ba,0,24,.34,.58,1.8);
     this.light.position.set(.13,-.12,0);
     this.light.target.position.set(.13,-.12,-12);
     camera.add(this.light,this.light.target);
+    bag.record('camera','Field camera','Quick slot 2 · tap Photo or press C to capture the current view.','Gear');
     bag.record('flashlight','Field flashlight','Quick slot 1 · tap Light or press L to toggle.','Gear');
+  }
+  takePhoto(){this.pendingPhoto=true;}
+  capture(canvas,area,position){
+    if(!this.pendingPhoto)return;
+    this.pendingPhoto=false;
+    const photo=document.createElement('canvas');
+    photo.width=Math.min(384,canvas.width);
+    photo.height=Math.round(photo.width*canvas.height/canvas.width);
+    const context=photo.getContext('2d');
+    if(!context)return this.notice('The camera could not capture a frame.');
+    context.drawImage(canvas,0,0,photo.width,photo.height);
+    const preview=document.querySelector('#photo-preview');
+    preview.src=photo.toDataURL('image/jpeg',.78);
+    preview.hidden=false;
+    clearTimeout(this.previewTimer);
+    this.previewTimer=setTimeout(()=>{preview.hidden=true;},2800);
+    const location=area?'Echo Grid':'Foxglove Ridge';
+    this.bag.record('field-photo-'+area,'Field photo · '+location,
+      'Latest frame logged at '+Math.round(position.x)+', '+Math.round(position.z)+'.');
+    this.notice('Photo captured. Location logged in Evidence.');
   }
   toggle(){
     const on=this.light.intensity===0;

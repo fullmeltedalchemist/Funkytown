@@ -60,9 +60,19 @@ export class Missions {
     m.tag(collider,{name,action});
     m.scenes[area].add(pipeline.prepare(models[asset],{position:point.toArray(),scale:.86}));
   }
+  equipBatteryBag(bag){
+    this.bag=bag;
+    if(!bag.records.has('receiver-powered'))bag.record('receiver-batteries','Receiver batteries','A spare pair for the field receiver at camp.','Gear');
+  }
   tune(){
     if(this.story.state!==1)return 'The receiver is idle.';
     if(!this.carryDone)return 'Set the receiver down within two meters of the tuning stand.';
+    if(this.bag&&!this.bag.records.has('receiver-powered')){
+      if(!this.bag.records.has('receiver-batteries'))return 'The receiver needs a spare pair of batteries.';
+      this.bag.record('receiver-powered','Receiver battery log','Fresh batteries fitted to the camp receiver.');
+      this.bag.forget('receiver-batteries');
+      return 'Fresh batteries fitted. Use the receiver again to tune.';
+    }
     this.frequency=(this.frequency+1)%8;
     return this.frequency===5?'Channel 5 locks in. You can hear Mom. Read the letter inside.':
       'Channel '+this.frequency+' · static. The journal marks channel 5.';

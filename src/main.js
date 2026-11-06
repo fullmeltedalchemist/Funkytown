@@ -113,6 +113,7 @@ async function boot(){
   const story=new Story(mechanics,pipeline,models);
   buildCampEquipment(mechanics,pipeline,models);
   const bag=new Bag(mechanics);
+  story.missions.equipBatteryBag(bag);
   const rescue=new Rescue(mechanics,story,bag,message=>notice(message));
   const finale=new Finale(mechanics,rescue,bag,pipeline,models,water,message=>notice(message));
   new MailRoute(mechanics,bag,pipeline,models);
@@ -125,7 +126,7 @@ async function boot(){
     if(message){$('notice').textContent=message;noticeUntil=performance.now()+6400;}
   };
   const gear=new Gear(camera,bag,notice);
-  const input=new Input(renderer.domElement,()=>notice(mechanics.use(camera)),()=>bag.toggle(),()=>gear.toggle());
+  const input=new Input(renderer.domElement,()=>notice(mechanics.use(camera)),()=>bag.toggle(),()=>gear.toggle(),()=>gear.takePhoto());
   $('start').disabled=false;
   $('start').textContent='Walk the ridge';
   $('touch-mode').disabled=false;
@@ -247,6 +248,7 @@ async function boot(){
       target?.name?use+' · '+target.name:'';
     $('reticle').hidden=mechanics.driving;
     renderer.render(activeScene,camera);
+    gear.capture(renderer.domElement,story.area,player);
   });
 }
 boot().catch(error=>{$('status').textContent=error.message;console.error(error);});
