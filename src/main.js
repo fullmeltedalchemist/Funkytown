@@ -116,7 +116,7 @@ async function boot(){
   story.missions.equipBatteryBag(bag);
   const rescue=new Rescue(mechanics,story,bag,message=>notice(message));
   const finale=new Finale(mechanics,rescue,bag,pipeline,models,water,message=>notice(message));
-  new MailRoute(mechanics,bag,pipeline,models);
+  const mail=new MailRoute(mechanics,bag,pipeline,models,finale);
   scene.add(camera);
   const tool=fieldPistol();
   camera.add(tool);
@@ -188,6 +188,7 @@ async function boot(){
         story.missions.tick(STEP);
         rescue.tick(now*.001);
         finale.tick(STEP);
+        mail.tick(now*.001);
         if(!mechanics.driving){
           const transition=story.transition(walker.current,STEP);
           if(transition){
