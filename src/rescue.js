@@ -13,13 +13,16 @@ function person(coat){
   mesh(new T.CapsuleGeometry(.21,.33,8,16),cloth,0,1.13,0).scale.z=.67;
   mesh(new T.SphereGeometry(.12,20,14),skin,0,1.6,0).scale.y=1.21;
   mesh(new T.SphereGeometry(.127,18,12),leather,0,1.66,-.019).scale.y=.55;
-  for(const x of [-.249,.249]){
-    mesh(new T.CapsuleGeometry(.063,.29,6,12),cloth,x,1.12,0).rotation.z=Math.sign(x)*.15;
-    mesh(new T.SphereGeometry(.053,12,8),skin,x*1.16,.91,0);
-  }
+  const arms=[-.249,.249].map(x=>{
+    const pivot=new T.Group();pivot.position.set(x,1.31,0);root.add(pivot);
+    const sleeve=mesh(new T.CapsuleGeometry(.063,.29,6,12),cloth,0,-.19,0);
+    const hand=mesh(new T.SphereGeometry(.053,12,8),skin,0,-.4,0);
+    pivot.add(sleeve,hand);pivot.rotation.z=Math.sign(x)*.15;
+    return pivot;
+  });
   const legs=[-.102,.102].map(x=>mesh(new T.CapsuleGeometry(.079,.52,6,12),trousers,x,.43,0));
   for(const x of [-.102,.102])mesh(new T.SphereGeometry(.093,12,8),leather,x,.095,.05).scale.set(.87,.63,1.43);
-  return {root,legs};
+  return {root,legs,arms};
 }
 
 function campfire(scene,base){
@@ -78,6 +81,13 @@ export class Rescue {
     const mother=person(0x60536b);mother.root.position.copy(this.bank);town.add(mother.root);
     this.mother=mother.root;
     const ranger=person(0x655743);town.add(ranger.root);this.ranger=ranger;
+    const wrench=new T.Group();
+    const metal=new T.MeshStandardMaterial({color:0x8c9897,metalness:.65,roughness:.48});
+    const handle=new T.Mesh(new T.CylinderGeometry(.018,.022,.19,10),metal);
+    const jaw=new T.Mesh(new T.TorusGeometry(.035,.012,8,16,Math.PI*1.55),metal);
+    jaw.position.y=-.11;wrench.add(handle,jaw);
+    wrench.position.set(0,-.41,.03);wrench.rotation.x=Math.PI/2;
+    ranger.arms[1].add(wrench);wrench.visible=false;this.wrench=wrench;
     this.animateFire=campfire(town,this.fire);
     this.register(this.bank,mother.root,'Speak to the woman',()=>{
       if(this.stage!==0)return 'She looks toward the spillway. “Ask him why they sent him east.”';
@@ -170,6 +180,13 @@ export class Rescue {
       this.rangerActivity=progress>0?'walking his camp rounds':activity;
       this.ranger.legs.forEach((leg,index)=>{
         leg.rotation.x=progress>0?Math.sin(progress*54+index*Math.PI)*.25:0;
+      });
+      const working=i===1&&progress===0;
+      this.wrench.visible=working;
+      this.ranger.arms.forEach((arm,index)=>{
+        if(progress>0)arm.rotation.x=Math.sin(progress*54+index*Math.PI)*.31;
+        else if(working)arm.rotation.x=-1.16+Math.sin(elapsed*8+index*.6)*.19;
+        else arm.rotation.x=i===0?-.72:-.09;
       });
       break;
     }
