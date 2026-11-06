@@ -23,7 +23,8 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 
 - [ ] Walkable routes, activity stops, and conversation while working.
 - [ ] Postmaster: sort, load, deliver, close, and reroute after flooding.
-- [ ] Ranger: inspect rescue course, repair gear, and visit Cal’s marker. Camp activity-stop code needs production verification.
+- [x] Ranger camp rounds: stops at the fire, rescue gear, and Cal’s marker. Dialogue reflects the current stop. Production deploy verified.
+- [ ] Ranger: visible gear repair and rescue course inspection animations.
 - [ ] Projectionist: move reels and set up movie night.
 - [ ] Sheriff: patrol and head to lookout for the confrontation.
 - [ ] Town reactions to the spillway and broadcast decision.
