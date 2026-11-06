@@ -17,7 +17,8 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 ## Backpack
 
 - [x] Field Bag organizes Gear, Evidence, Cargo, and Keepsakes into separate sections. Verified in production source.
-- [ ] Quick slot and world tools: flashlight is live. Add pulley, receiver batteries, and camera.
+- [x] Earned spare pulley can be rigged at the spillway to secure the boom and speed flood drainage. Save restoration and production source verified.
+- [ ] Quick slot and world tools: flashlight is live. Add receiver batteries and camera.
 - [ ] Evidence: ranger compares Cal’s letter with the tape. Add manual comparison and more conversations. Keep essential evidence safe.
 - [ ] Cargo: one-slot mail packing is live. Add bulky hand and wagon cargo and job-specific packing choices.
 
