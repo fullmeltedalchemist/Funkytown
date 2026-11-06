@@ -66,7 +66,7 @@ function campfire(scene,base){
 }
 
 export class Rescue {
-  constructor(mechanics,story){
+  constructor(mechanics,story,bag){
     this.mechanics=mechanics;this.story=story;
     let saved=0;try{saved=Number(localStorage.getItem('bellwether-rescue-v1'));}catch{}
     this.stage=Number.isInteger(saved)&&saved>=0&&saved<=4?saved:0;
@@ -108,6 +108,7 @@ export class Rescue {
       if(this.stage<3)return 'The line runs back toward the two-bell marker.';
       if(this.stage===3){
         this.save(4);this.line.visible=false;
+        bag?.record('cut-line','Cut rescue line','Clean cut fibers. Recovered by the two-bell station.');
         return 'Recovered: the cut line. Both ends are clean. Someone cut it under tension.';
       }
       return 'You already recovered the line.';

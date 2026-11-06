@@ -68,15 +68,30 @@ export class Bag {
         return name+' added to your bag.';
       }});
     }
+    let records=[];
+    try{records=JSON.parse(localStorage.getItem(key+'-records')||'[]');}catch{}
+    this.records=new Map(Array.isArray(records)?records.filter(entry=>Array.isArray(entry)&&typeof entry[0]==='string'&&entry[1]?.name):[]);
+    this.render();
+  }
+  record(id,name,description,category='Evidence'){
+    this.records.set(id,{name,description,category});this.saveRecords();
+  }
+  forget(id){this.records.delete(id);this.saveRecords();}
+  saveRecords(){
+    try{localStorage.setItem(key+'-records',JSON.stringify([...this.records]));}catch{}
     this.render();
   }
   toggle(){this.panel.hidden=!this.panel.hidden;}
   render(){
     this.count.textContent=this.ids.size+' / '+finds.length;
     this.list.replaceChildren();
-    if(!this.ids.size){
+    if(!this.ids.size&&!this.records.size){
       const empty=document.createElement('li');empty.textContent='Empty. Look for small keepsakes near the trail and camp.';this.list.append(empty);
       return;
+    }
+    for(const {name,description,category} of this.records.values()){
+      const row=document.createElement('li'),title=document.createElement('strong');
+      title.textContent=category+' · '+name;row.append(title,document.createTextNode(description));this.list.append(row);
     }
     for(const item of finds){
       if(!this.ids.has(item.id))continue;

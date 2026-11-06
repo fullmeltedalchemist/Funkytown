@@ -80,17 +80,17 @@ export function makeTerrain(scene,world,textures){
   const streamGeo=new T.BufferGeometry();
   streamGeo.setAttribute('position',new T.Float32BufferAttribute(points,3));
   streamGeo.setIndex(indices);
-  const water=new T.ShaderMaterial({side:T.DoubleSide,uniforms:{time:{value:0},
+  const water=new T.ShaderMaterial({side:T.DoubleSide,uniforms:{time:{value:0},current:{value:0},
     ripple:{value:new T.Vector3(0,0,-100)}},
     vertexShader:`
       varying vec3 p;
       void main(){p=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}
     `,
     fragmentShader:`
-      uniform float time; uniform vec3 ripple; varying vec3 p;
+      uniform float time; uniform float current; uniform vec3 ripple; varying vec3 p;
       void main(){
-        float a=sin(p.x*2.1+p.z*9.+time*2.);
-        float b=sin(p.x*5.4-p.z*15.+time*2.7);
+        float a=sin(p.x*2.1+p.z*9.+current*2.);
+        float b=sin(p.x*5.4-p.z*15.+current*2.7);
         float sparkle=pow(max(0.,a*.5+b*.5),6.);
         float ripples=.5+.5*sin(p.z*10.+p.x*1.2+time);
         vec3 water=mix(vec3(.032,.16,.14),vec3(.074,.29,.25),ripples);

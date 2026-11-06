@@ -30,6 +30,7 @@ export class Mechanics {
   anchor=null;
   driving=false;
   cooldown=0;
+  creekFlow=.76;
   constructor(world,walker,scene,realm){
     this.world=world;this.walker=walker;this.scenes=[scene,realm];this.area=0;
     this.events=new R.EventQueue(true);
@@ -239,7 +240,7 @@ export class Mechanics {
       const velocity=item.body.linvel();
       const submerged=T.MathUtils.clamp((-1.49-p.y)/.48,0,1);
       const scale=STEP*item.body.mass();
-      item.body.applyImpulse({x:(.76-velocity.x)*submerged*scale*3.1,
+      item.body.applyImpulse({x:(this.creekFlow-velocity.x)*submerged*scale*3.1,
         y:(submerged*15-velocity.y*3.6*submerged)*scale,
         z:-velocity.z*submerged*scale*3.1},true);
     }

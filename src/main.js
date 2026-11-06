@@ -1,3 +1,4 @@
+import {Finale,MailRoute} from './finale.js';
 import {Rescue} from './rescue.js';
 import {Bag} from './bag.js';
 import {fieldPistol} from './effects.js';
@@ -111,7 +112,9 @@ async function boot(){
   const story=new Story(mechanics,pipeline,models);
   buildCampEquipment(mechanics,pipeline,models);
   const bag=new Bag(mechanics);
-  const rescue=new Rescue(mechanics,story);
+  const rescue=new Rescue(mechanics,story,bag);
+  const finale=new Finale(mechanics,rescue,bag,pipeline,models,water);
+  new MailRoute(mechanics,bag,pipeline,models);
   scene.add(camera);
   const tool=fieldPistol();
   camera.add(tool);
@@ -178,6 +181,7 @@ async function boot(){
         mechanics.after();
         story.missions.tick(STEP);
         rescue.tick(now*.001);
+        finale.tick(STEP);
         if(!mechanics.driving){
           const transition=story.transition(walker.current,STEP);
           if(transition){
@@ -220,7 +224,7 @@ async function boot(){
       water.uniforms.ripple.value.set(player.x,player.z,now*.001);lastWake=now;
     }
     story.animate(now*.001);
-    const objective=rescue.objective();
+    const objective=finale.objective()??rescue.objective();
     $('guide').textContent=objective?.text??story.guide(player);
     const waypoint=objective?objective.target:story.waypoint();
     const arrow=$('bearing');
