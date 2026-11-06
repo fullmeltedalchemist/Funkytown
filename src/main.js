@@ -148,7 +148,22 @@ async function boot(){
     }catch(error){console.warn('Ambient audio unavailable',error);}
   };
   for(const id of ['start','touch-mode'])$(id).addEventListener('click',unlockAudio);
+  const playToolSound=(from,to,duration,volume)=>{
+    if(audio?.state!=='running')return;
+    const time=audio.currentTime;
+    const tone=audio.createOscillator(),gain=audio.createGain();
+    tone.type='triangle';
+    tone.frequency.setValueAtTime(from,time);
+    tone.frequency.exponentialRampToValueAtTime(to,time+duration);
+    gain.gain.setValueAtTime(volume,time);
+    gain.gain.exponentialRampToValueAtTime(.001,time+duration);
+    tone.connect(gain).connect(audio.destination);
+    tone.onended=()=>{tone.disconnect();gain.disconnect();};
+    tone.start(time);tone.stop(time+duration);
+  };
   const gear=new Gear(camera,bag,notice);
+  bag.record('field-pistol','Field pistol','Click, press F, or tap Fire to shoot physical rounds. Set down any carried item and exit the wagon first.','Gear');
+  bag.record('grapple-hook','Grappling hook','Right click, press G, or tap Hook. Aim at trees, roofs, walls, or the brass spillway ring.','Gear');
   const input=new Input(renderer.domElement,()=>notice(mechanics.use(camera)),()=>bag.toggle(),()=>gear.toggle(),()=>gear.takePhoto());
   $('start').disabled=false;
   $('start').textContent='Walk the ridge';
@@ -199,8 +214,16 @@ async function boot(){
       while(accumulator>=STEP){
         const move=input.movement();
         move.drift ||= move.jump && mechanics.driving;
-        if(input.actions.has('fire'))mechanics.fire(camera);
-        if(input.actions.has('grapple'))notice(mechanics.grapple(camera));
+        if(input.actions.has('fire')){
+          const before=mechanics.cooldown;
+          mechanics.fire(camera);
+          if(mechanics.cooldown>before)playToolSound(168,41,.13,.28);
+        }
+        if(input.actions.has('grapple')){
+          const result=mechanics.grapple(camera);
+          notice(result);
+          if(result&&!result.startsWith('Aim'))playToolSound(640,150,.14,.1);
+        }
         mechanics.before(camera,move,input);
         input.actions.clear();
         if(mechanics.driving)world.step(mechanics.events);
