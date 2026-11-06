@@ -1,3 +1,4 @@
+import {person} from './rescue.js';
 import {openTape} from './tape.js';
 import * as T from 'three';
 import R from 'rapier';
@@ -212,12 +213,14 @@ export class Finale {
 }
 
 export class MailRoute {
-  constructor(mechanics,bag,pipeline,models){
+  constructor(mechanics,bag,pipeline,models,finale){
     const post=plots[2],vale=plots[0];
     const start=point(post.x+3.8,post.z,1.1);
     const valeDoor=point(vale.x-3.6,vale.z+1.6,.82);
     const oldAddress=point(cabinX+2.4,cabinZ+4.4,.86);
     const newAddress=point(cabinX-3.4,cabinZ+5.9,.86);
+    const floodDrop=point(11.5,8.3,.92);
+    const flooded=()=>finale.flood>.24;
     const key='bellwether-mail-v2';
     let saved={};
     try{saved=JSON.parse(localStorage.getItem(key)||'{}')||{};}catch{}
@@ -238,6 +241,47 @@ export class MailRoute {
         .setSensor(true).setCollisionGroups((128<<16)|2));
       mechanics.tag(c,{name,action});
     };
+    const worker=person(0x36576a);
+    mechanics.scenes[0].add(worker.root);
+    const satchel=new T.Mesh(new T.BoxGeometry(.19,.23,.11),
+      new T.MeshStandardMaterial({color:0x674530,roughness:.9}));
+    satchel.position.set(.24,.94,-.08);
+    worker.root.add(satchel);
+    const stops=[
+      [point(start.x+.1,start.z-1.5),'sorting outgoing mail',5],
+      [point(start.x+2,start.z-1.5),'loading the satchel',4],
+      [point(start.x+2,start.z-3.1),'checking the creek advisory',5]
+    ];
+    const sensor=mechanics.world.createCollider(R.ColliderDesc.ball(.43)
+      .setSensor(true).setCollisionGroups((128<<16)|2));
+    let activity=stops[0][1];
+    mechanics.tag(sensor,{name:'Speak to the postmaster',action:()=>{
+      if(flooded())return '“The ford is closed. Bring the camp parcel to the emergency mail drop south of the creek, beside the supply store.”';
+      if(bag.records.has('timeline-conflict'))return '“I logged Cal’s parcel after the date in the report. The timestamp on my ledger matches your postmark.”';
+      if(complete)return '“Both deliveries made it. Check the dispatch ledger if you still need a signed copy.”';
+      return '“I’m '+activity+'. Outbound mail is sorted by address. Read the label before you load it.”';
+    }});
+    this.tick=time=>{
+      let elapsed=time%26;
+      for(const [i,[stop,label,wait]] of stops.entries()){
+        if(elapsed>=wait+4){elapsed-=wait+4;continue;}
+        const next=stops[(i+1)%stops.length][0];
+        const progress=T.MathUtils.clamp((elapsed-wait)/4,0,1);
+        worker.root.position.lerpVectors(stop,next,progress);
+        const {x,z}=worker.root.position;
+        worker.root.position.y=height(x,z);
+        worker.root.rotation.y=Math.atan2(next.x-stop.x,next.z-stop.z);
+        activity=progress>0?'making my rounds':label;
+        satchel.visible=i!==0||progress>0;
+        worker.legs.forEach((leg,index)=>{leg.rotation.x=progress>0?Math.sin(progress*23+index*Math.PI)*.28:0;});
+        worker.arms.forEach((arm,index)=>{
+          arm.rotation.x=progress>0?Math.sin(progress*23+index*Math.PI)*.24:-.78+Math.sin(elapsed*4+index)*.16;
+        });
+        sensor.setTranslation({x,y:worker.root.position.y+1.02,z});
+        break;
+      }
+    };
+    this.tick(0);
     const pack=(item)=>{
       if(complete)return 'Last Delivery is complete.';
       if(item==='letter'&&delivered)return 'Vale House already received its letter.';
@@ -257,6 +301,7 @@ export class MailRoute {
     });
     station(start.clone().add(new T.Vector3(1.05,0,0)),'Check the dispatch ledger',()=>{
       if(bag.records.has('mail-route-closed'))return 'The postmaster has signed off on your route.';
+      if(!complete&&flooded())return 'Ford closed. Take the parcel to the emergency mail drop south of the creek beside the supply store.';
       if(!complete)return forwarded?'The ledger now lists the west bunkhouse. Deliver the parcel there before signing out.':'The ledger is open. Deliver the Vale House letter, then verify the caretaker’s address.';
       bag.record('mail-route-closed','Signed delivery ledger','The postmaster signed off on both deliveries and logged the caretaker’s new address.','Evidence');
       return 'Route closed. The postmaster hands you a signed copy of the ledger.';
@@ -279,14 +324,19 @@ export class MailRoute {
       forwarded=true;persist();
       return 'Forwarding slip: the caretaker moved to the west bunkhouse. Follow the path around the cabin.';
     });
-    station(newAddress,'Deliver to the caretaker',()=>{
+    const deliverParcel=rerouted=>{
+      if(rerouted&&!flooded())return 'The ford is open. Deliver to the caretaker at the west bunkhouse.';
+      if(!rerouted&&flooded())return 'The caretaker is collecting mail south of the creek until the ford drains. Use the emergency mail drop by the supply store.';
       if(complete)return 'The caretaker thanks you for delivering the mail.';
-      if(!forwarded)return 'Check the forwarding slip at the main cabin so you can verify the recipient.';
+      if(!forwarded&&!rerouted)return 'Check the forwarding slip at the main cabin so you can verify the recipient.';
       if(!delivered)return 'Finish the Vale House letter first so the caretaker can sign off on the route.';
       if(packed!=='parcel')return 'Bring the camp parcel from the post office.';
       complete=true;packed='';persist();
       bag.record('cals-letter','Cal’s undelivered letter','Postmarked a day after the date on the sheriff’s rescue report.');
-      return 'Last Delivery complete. The caretaker gives you Cal’s undelivered letter.';
-    });
+      return rerouted?'Flood route complete. Cal’s undelivered letter is waiting in the caretaker’s return pouch.':
+        'Last Delivery complete. The caretaker gives you Cal’s undelivered letter.';
+    };
+    station(newAddress,'Deliver to the caretaker',()=>deliverParcel(false));
+    station(floodDrop,'Check the emergency mail drop',()=>deliverParcel(true));
   }
 }
