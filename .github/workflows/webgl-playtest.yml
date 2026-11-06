@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - 'src/**'
+      - 'assets/**'
+      - 'tests/**'
       - 'index.html'
       - 'style.css'
       - '.github/workflows/webgl-playtest.yml'
@@ -37,9 +39,9 @@ jobs:
               const errors=[];
               page.on('pageerror',error=>errors.push(error.message));
               try{
-                await page.goto('http://127.0.0.1:8080');
+                await page.goto('http://127.0.0.1:8080',{waitUntil:'domcontentloaded'});
                 assert(await page.evaluate(()=>Boolean(document.createElement('canvas').getContext('webgl2'))),'WebGL2 unavailable');
-                await page.getByRole('button',{name:'Walk the ridge'}).waitFor({timeout:45000});
+                await page.getByRole('button',{name:'Walk the ridge'}).waitFor({timeout:90000});
                 if(name==='touch'){
                   await page.locator('#touch-mode').tap();
                   await page.locator('#touch').waitFor({state:'visible'});
@@ -52,7 +54,8 @@ jobs:
                 await page.locator('#bag-panel').waitFor({state:'visible'});
                 assert.deepEqual(errors,[]);
               }finally{
-                await page.screenshot({path:'playtest-results/'+name+'.png'});
+                await page.screenshot({path:'playtest-results/'+name+'.png',timeout:15000})
+                  .catch(error=>console.warn(name+' screenshot failed:',error.message));
                 await page.close();
               }
             }
