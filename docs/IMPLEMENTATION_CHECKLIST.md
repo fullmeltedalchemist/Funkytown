@@ -21,14 +21,16 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 - [x] Quick slots and world tools: flashlight, receiver batteries, and field camera. Production files verified.
 - [ ] Playtest receiver fitting and field camera capture in the live game on desktop and mobile.
 - [x] Evidence: compare Cal’s letter and dispatch tape at the lookout and log the discrepancy without consuming either original. Production source verified.
-- [ ] Add more evidence conversations and playtest both comparison paths.
+- [x] Postmaster discusses the timestamp in the dispatch ledger after the discrepancy is logged. Production source verified.
+- [ ] Playtest both evidence comparison paths and add conversations with other villagers.
 - [ ] Cargo: one-slot mail packing is live. Add bulky hand and wagon cargo and job-specific packing choices.
 
 ## Villagers
 
 - [ ] Walkable routes, activity stops, and conversation while working.
 - [x] Post office: sort outbound mail by address, pack the correct item, and close the route at the dispatch ledger after both deliveries. Production source verified.
-- [ ] Add the postmaster’s physical work routine and a delivery reroute triggered by flooding.
+- [x] Postmaster walks between sorting, satchel loading, and creek advisory stops. The camp parcel diverts to an emergency drop while the ford is flooded. Production source verified.
+- [ ] Playtest postmaster interactions and both camp parcel destinations in-game.
 - [x] Ranger camp rounds: stops at the fire, rescue gear, and Cal’s marker. Dialogue reflects the current stop. Production deploy verified.
 - [x] Ranger: visible gear repair with a handheld wrench. Verified in production source.
 - [x] Ranger: distinct inspection animation at Cal’s marker on the rescue route. Production source verified.
