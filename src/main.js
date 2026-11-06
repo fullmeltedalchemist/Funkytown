@@ -1,3 +1,4 @@
+import {Gear} from './gear.js';
 import {Finale,MailRoute} from './finale.js';
 import {Rescue} from './rescue.js';
 import {Bag} from './bag.js';
@@ -123,7 +124,8 @@ async function boot(){
   const notice=(message)=>{
     if(message){$('notice').textContent=message;noticeUntil=performance.now()+6400;}
   };
-  const input=new Input(renderer.domElement,()=>notice(mechanics.use(camera)),()=>bag.toggle());
+  const gear=new Gear(camera,bag,notice);
+  const input=new Input(renderer.domElement,()=>notice(mechanics.use(camera)),()=>bag.toggle(),()=>gear.toggle());
   $('start').disabled=false;
   $('start').textContent='Walk the ridge';
   $('touch-mode').disabled=false;
