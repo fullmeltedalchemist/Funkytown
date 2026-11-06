@@ -1,0 +1,13 @@
+{
+  "models": {
+    "cabin": "./assets/ranger-cabin.glb",
+    "oak": "./assets/tree1.glb",
+    "birch": "./assets/tree2.glb",
+    "maple": "./assets/tree3.glb",
+    "underbrush": "./assets/bush.glb",
+    "rocks": "./assets/rocks.glb"
+  },
+  "placements": [
+    { "model": "cabin", "anchor": "rangerCabin", "collider": "authored" }
+  ]
+}

@@ -1,0 +1,22 @@
+:root{font:16px system-ui,sans-serif;color:#ffecd2;background:#243635;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;overflow:hidden}canvas{display:block;touch-action:none}
+[hidden]{display:none!important}
+small{display:block;color:#ebbf86;font-size:10px;font-weight:800;letter-spacing:.19em}
+#hud{position:fixed;z-index:2;top:max(14px,env(safe-area-inset-top));left:max(14px,env(safe-area-inset-left));pointer-events:none;text-shadow:0 2px 5px #131e1c}
+#hud strong{font:800 20px Georgia,serif;letter-spacing:.08em}
+#guide,#hint{margin-top:8px;font-size:13px;color:#fff3d8}
+#hint{max-width:280px}
+#reticle{position:fixed;pointer-events:none;left:50%;top:50%;width:5px;height:5px;border-radius:50%;background:#fff5d7;box-shadow:0 0 4px #192220;transform:translate(-50%,-50%)}
+#menu{position:fixed;inset:0;display:grid;align-items:end;padding:clamp(16px,5vw,64px);background:linear-gradient(90deg,#132626ed,#14242424 85%);overflow:auto}
+section{max-width:460px}
+h1{font:bold clamp(42px,10vw,110px)/.82 Georgia,serif;letter-spacing:-.05em;margin:14px 0 20px;color:#ffe3ae;text-shadow:0 4px 35px #142824}
+p{line-height:1.45;margin:12px 0}.help{color:#c6d1bc;font-size:13px}
+button{border:1px solid #ffd5979c;background:#ead09a;color:#1d322e;border-radius:7px;font:700 13px system-ui;padding:11px 14px;cursor:pointer;touch-action:none}
+button:disabled{opacity:.45}.buttons{display:flex;gap:8px;flex-wrap:wrap}
+.import{display:block;margin-top:14px;font-size:12px}.import input{font-size:11px;max-width:235px}
+#status{font-size:13px;color:#ffcb9b;min-height:1em}
+#touch{position:fixed;left:14px;right:14px;bottom:max(14px,env(safe-area-inset-bottom));display:flex;justify-content:space-between;align-items:end;pointer-events:none}
+#pad,#actions button{pointer-events:auto;touch-action:none}
+#pad{width:110px;height:110px;border:1px solid #ffe2a37d;border-radius:100%;position:relative;background:#172b2b77}
+#pad i{position:absolute;left:34px;top:34px;width:40px;height:40px;background:#e7c394cc;border-radius:50%;pointer-events:none}
+#actions{display:flex;gap:5px}#actions button{min-height:45px;background:#19312df0;color:#ffe4b1}

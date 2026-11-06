@@ -1,0 +1,88 @@
+import * as T from 'three';
+import R from 'rapier';
+
+const {lerp,smoothstep}=T.MathUtils;
+export const trailX=(z)=>Math.sin(z*.076)*6.1+Math.sin(z*.16)*1.4;
+const creekZ=(x)=>-1+3.3*Math.sin(x*.095);
+export const cabinZ=-28;
+export const cabinX=trailX(cabinZ);
+const ridge=(z)=>5.1*Math.exp(-((z-31)**2)/430)+2.0*Math.exp(-((z+28)**2)/265);
+const creek=(x,z)=>Math.exp(-((z-creekZ(x))**2)/22);
+function hills(x,z){
+  return 5.7*Math.exp(-((x+32)**2+(z+20)**2)/600)+
+    7.6*Math.exp(-((x-31)**2+(z-20)**2)/650)+
+    11.2*Math.exp(-((x-36)**2+(z+38)**2)/460)+
+    7.5*Math.exp(-((x+34)**2+(z-36)**2)/400);
+}
+function rawHeight(x,z){
+  const distance=Math.abs(x-trailX(z));
+  const outside=smoothstep(distance,2.1,9);
+  const ripple=.68*Math.sin(x*.19+z*.12)*Math.cos(z*.24)+.22*Math.sin(x*.51-z*.41);
+  return ridge(z)-2.67*creek(x,z)+(ripple+hills(x,z))*outside;
+}
+export const cabinY=rawHeight(cabinX,cabinZ)+.07;
+export function height(x,z){
+  const yard=1-smoothstep(Math.max(Math.abs(x-cabinX)*.83,Math.abs(z-cabinZ)*.92),4.7,9);
+  return lerp(rawHeight(x,z),cabinY-.035,yard);
+}
+export const spawn=[trailX(38),height(trailX(38),38)+1.1,38];
+export const trailDistance=(x,z)=>Math.abs(x-trailX(z));
+export function makeTerrain(scene,world,textures){
+  const size=114,cells=152;
+  const geo=new T.PlaneGeometry(size,size,cells,cells).rotateX(-Math.PI/2);
+  const pos=geo.attributes.position;
+  const color=new Float32Array(pos.count*3),uv=geo.attributes.uv;
+  const moss=new T.Color(0x92a877),needle=new T.Color(0xb9a684);
+  const dirt=new T.Color(0xddb98d),stone=new T.Color(0x9f9f9d);
+  const temp=new T.Color();
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i),z=pos.getZ(i), y=height(x,z);
+    pos.setY(i,y);
+    uv.setXY(i,x*.43,z*.43);
+    const grain=.5+.5*Math.sin(x*.47+z*.31)*Math.cos(z*.77-x*.35);
+    const near=1-smoothstep(trailDistance(x,z)+.27*Math.sin(z*1.5),.95,2.35);
+    temp.copy(moss).lerp(needle,grain*.66);
+    temp.lerp(stone,creek(x,z)*.63).lerp(dirt,near*.85);
+    temp.multiplyScalar(.78+.24*grain).toArray(color,i*3);
+  }
+  geo.setAttribute('color',new T.BufferAttribute(color,3));
+  geo.computeVertexNormals();
+  world.createCollider(R.ColliderDesc.trimesh(pos.array,new Uint32Array(geo.index.array)).setFriction(.85));
+  const ground=new T.Mesh(geo,new T.MeshStandardMaterial({vertexColors:true,roughness:.99,
+    map:textures.floor,normalMap:textures.normal,normalScale:new T.Vector2(.53,.53)}));
+  ground.receiveShadow=true;
+  scene.add(ground);
+
+  // The stream is a shallow animated ribbon. The bed remains physical terrain.
+  const points=[],indices=[];
+  for(let i=0;i<=112;i++){
+    const x=-55+i*110/112,z=creekZ(x);
+    const width=2.8+.5*Math.sin(x*.18);
+    points.push(x,-1.68,z-width,x,-1.68,z+width);
+    const a=i*2;
+    if(i<112)indices.push(a,a+1,a+2,a+1,a+3,a+2);
+  }
+  const streamGeo=new T.BufferGeometry();
+  streamGeo.setAttribute('position',new T.Float32BufferAttribute(points,3));
+  streamGeo.setIndex(indices);
+  const water=new T.ShaderMaterial({side:T.DoubleSide,uniforms:{time:{value:0}},
+    vertexShader:`
+      varying vec3 p;
+      void main(){p=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}
+    `,
+    fragmentShader:`
+      uniform float time; varying vec3 p;
+      void main(){
+        float a=sin(p.x*2.1+p.z*9.+time*2.);
+        float b=sin(p.x*5.4-p.z*15.+time*2.7);
+        float sparkle=pow(max(0.,a*.5+b*.5),6.);
+        float ripples=.5+.5*sin(p.z*10.+p.x*1.2+time);
+        vec3 water=mix(vec3(.032,.16,.14),vec3(.074,.29,.25),ripples);
+        gl_FragColor=vec4(water+sparkle*vec3(.35,.46,.39),1.);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }
+    `});
+  scene.add(new T.Mesh(streamGeo,water));
+  return water;
+}
