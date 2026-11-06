@@ -46,7 +46,8 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 - [ ] Playtest the full Last Delivery route with both the forwarding slip and neighbor clue.
 - [x] The Line That Held: choose anchors, manage slack and tension, reset after failure, and earn the pulley and clue. Logic tests passed and production source verified.
 - [ ] Playtest the rigging dialog and rewards in-game on phone.
-- [ ] The Wrong Reel: scrub and splice damaged footage, undo bad splices, and recover evidence.
+- [x] The Wrong Reel: scrub frame descriptions, mark damaged frames, undo cuts, and recover the west-bank reel as evidence. Puzzle logic and production source verified.
+- [ ] Add illustrated film frames and playtest the reel bench in-game.
 - [ ] Night at the Bait Shop: bait, tracks, move the camera, catch the ordinary thief or stay for the Echo.
 
 ## Chance events
