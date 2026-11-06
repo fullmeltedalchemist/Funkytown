@@ -26,3 +26,10 @@ button:disabled{opacity:.45}.buttons{display:flex;gap:8px;flex-wrap:wrap}
 #objective{display:flex;align-items:center;gap:7px;margin-top:8px}
 #objective #guide{margin:0}
 #bearing{display:inline-block;color:#ffd286;font-weight:900}
+#bag-panel{position:fixed;z-index:4;right:16px;top:16px;width:min(290px,calc(100vw - 32px));padding:18px;background:#171b19ee;color:#eee3cd;border:1px solid #9f8d6b;border-radius:13px;box-shadow:0 12px 35px #0006;pointer-events:none}
+#bag-panel h2{margin:6px 0 12px;font-size:22px}
+#bag-panel h2 span{font-size:12px;color:#c5b18d;float:right}
+#bag-panel ul{padding:0;margin:0;list-style:none}
+#bag-panel li{padding:9px 0;border-top:1px solid #b19b7048;font-size:13px}
+#bag-panel li strong{display:block;margin-bottom:4px}
+#bag-panel p{font-size:12px;margin:10px 0 0;color:#c5b18d}

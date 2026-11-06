@@ -1,3 +1,4 @@
+import {Bag} from './bag.js';
 import {fieldPistol} from './effects.js';
 import * as T from 'three';
 import R from 'rapier';
@@ -108,6 +109,7 @@ async function boot(){
   const mechanics=new Mechanics(world,walker,scene,realm);
   const story=new Story(mechanics,pipeline,models);
   buildCampEquipment(mechanics,pipeline,models);
+  const bag=new Bag(mechanics);
   scene.add(camera);
   const tool=fieldPistol();
   camera.add(tool);
@@ -116,7 +118,7 @@ async function boot(){
   const notice=(message)=>{
     if(message){$('notice').textContent=message;noticeUntil=performance.now()+6400;}
   };
-  const input=new Input(renderer.domElement,()=>notice(mechanics.use(camera)));
+  const input=new Input(renderer.domElement,()=>notice(mechanics.use(camera)),()=>bag.toggle());
   $('start').disabled=false;
   $('start').textContent='Walk the ridge';
   $('touch-mode').disabled=false;

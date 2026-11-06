@@ -1,3 +1,4 @@
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {spillwayStream} from './effects.js';
 import * as T from 'three';
 import R from 'rapier';
@@ -5,8 +6,9 @@ import {STEP} from './walker.js';
 
 export const vec=(p)=>new T.Vector3(p.x,p.y,p.z);
 const material=(color)=>new T.MeshStandardMaterial({color,roughness:.72});
-export function part(root,size,pos,color){
-  const mesh=new T.Mesh(new T.BoxGeometry(...size),material(color));
+export function part(root,size,pos,color,round=0){
+  const geometry=round?new RoundedBoxGeometry(...size,2,round):new T.BoxGeometry(...size);
+  const mesh=new T.Mesh(geometry,material(color));
   mesh.position.set(...pos);mesh.castShadow=mesh.receiveShadow=true;root.add(mesh);
   return mesh;
 }
@@ -61,8 +63,15 @@ export class Mechanics {
   }
   crate(position,area=0){
     const size=[.65,.59,.61],visual=new T.Group();
-    part(visual,size,[0,0,0],0x9d6240);
-    for(const x of [-.24,.24])part(visual,[.1,.62,.65],[x,0,0],0xc3905f);
+    for(let i=0;i<4;i++){
+      part(visual,[.65,.137,.61],[0,-.219+i*.146,0],[0x896142,0xa77d55,0x97704b,0xb68b62][i],.014);
+    }
+    for(const x of [-.24,.24])part(visual,[.075,.60,.645],[x,0,0],0x806246,.014);
+    const iron=new T.MeshStandardMaterial({color:0x403c36,roughness:.67,metalness:.4});
+    for(const x of [-.24,.24])for(const y of [-.23,.23])for(const side of [-1,1]){
+      const nail=new T.Mesh(new T.SphereGeometry(.014,8,6),iron);
+      nail.position.set(x,y,.326*side);nail.scale.z=.44;visual.add(nail);
+    }
     return this.dynamic({position,size,visual,area,name:'Supply crate',shape:R.ColliderDesc.cuboid(.325,.295,.305)});
   }
   remove(item){
@@ -171,13 +180,15 @@ export class Mechanics {
   }
   makeCar(position){
     const visual=new T.Group();
-    part(visual,[1.63,.53,2.98],[0,.05,0],0xa34c32);
-    part(visual,[1.39,.63,1.51],[0,.57,.25],0x304c50);
-    part(visual,[1.53,.15,1.72],[0,.94,.25],0xf1d39c);
-    for(const x of [-.58,.58])part(visual,[.3,.15,.1],[x,.17,-1.53],0xffe298);
+    part(visual,[1.63,.53,2.98],[0,.05,0],0x8c4936,.19);
+    part(visual,[1.39,.63,1.51],[0,.57,.25],0x304c50,.21);
+    part(visual,[1.53,.15,1.72],[0,.94,.25],0xe0c393,.073);
+    for(const x of [-.58,.58])part(visual,[.3,.15,.1],[x,.17,-1.53],0xffe298,.045);
     for(const x of [-.81,.81])for(const z of [-.97,.97]){
       const wheel=new T.Mesh(new T.CylinderGeometry(.34,.34,.23,16),material(0x211d20));
       wheel.rotation.z=Math.PI*.5;wheel.position.set(x,-.23,z);visual.add(wheel);
+      const hub=new T.Mesh(new T.CylinderGeometry(.177,.177,.037,20),material(0x8f8d7c));
+      hub.rotation.z=Math.PI*.5;hub.position.set(x+Math.sign(x)*.125,-.23,z);visual.add(hub);
     }
     this.car=this.dynamic({position,kind:'car',name:'Camp wagon',visual,
       shape:R.ColliderDesc.cuboid(.84,.49,1.48).setDensity(7).setFriction(.18)});

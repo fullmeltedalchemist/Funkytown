@@ -111,7 +111,11 @@ export class Story {
     grid.position.set(140,.018,-4);realm.add(grid);
     for(let i=0;i<12;i++){
       const x=140+(i%2?1:-1)*(5+(i*3%9)),z=8-i*2.75,h=2+i%5;
-      mechanics.staticBox([.75,h,.75],[x,h*.5,z],0x633d86,1);
+      const pillar=mechanics.staticBox([.75,h,.75],[x,h*.5,z],0x633d86,1);
+      pillar.visual.visible=false;
+      const stone=new T.Mesh(new T.CylinderGeometry(.29,.51,h,7),
+        new T.MeshStandardMaterial({color:0x63516f,roughness:.81}));
+      stone.position.set(x,h*.5,z);realm.add(stone);
       const halo=new T.Mesh(new T.TorusGeometry(.93,.16,12,40),this.shader);
       halo.position.set(x,h+.55,z);halo.rotation.set(i*.4,i*.23,0);realm.add(halo);
     }
@@ -213,7 +217,11 @@ export function buildCampEquipment(mechanics,pipeline,models){
       name:'Camp lantern'});
   }
   const post=mechanics.staticBox([.20,2.18,.20],[x,y+1.1,z+2.15],0x654c40);
+  post.visual.visible=false;
   const valve=mechanics.staticBox([.39,.33,.29],[x,y+1.45,z+2.33],0x759794);
+  valve.visual.visible=false;
+  const hardware=pipeline.prepare(models.valve,{position:[x,y+1.45,z+2.33],scale:1.16});
+  scenes[0].add(hardware);
   const flow=()=>{mechanics.spawnFluid([x,y+1.38,z+2.67]);return 'The spillway is running.';};
   mechanics.tag(valve.collider,{name:'Open spillway valve',action:flow});
   mechanics.tag(post.collider,{name:'Open spillway valve',action:flow});
