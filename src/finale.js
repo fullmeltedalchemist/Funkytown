@@ -96,6 +96,27 @@ export class BaitWatch {
   }
 }
 
+// Fit the authored mesh to the tabletop, including models whose origin is above or below their base.
+function stationProp(pipeline,source,position,scale){
+  const prop=pipeline.prepare(source,{position:position.toArray(),scale});
+  const bounds=new T.Box3().setFromObject(prop);
+  const ground=height(position.x,position.z);
+  const top=ground+.64;
+  if(!bounds.isEmpty())prop.position.y+=top-bounds.min.y;
+  const table=new T.Group();
+  table.position.set(position.x,ground,position.z);
+  const wood=new T.MeshStandardMaterial({color:0x674932,roughness:.92});
+  const board=new T.Mesh(new T.BoxGeometry(.8,.08,.56),wood);
+  board.position.y=.60;table.add(board);
+  for(const x of [-.31,.31])for(const z of [-.21,.21]){
+    const base=height(position.x+x,position.z+z)-ground;
+    const leg=new T.Mesh(new T.BoxGeometry(.08,Math.max(.1,.56-base),.08),wood);
+    leg.position.set(x,(.56+base)/2,z);table.add(leg);
+  }
+  // Keep the supported prop independently rotatable at camera stations.
+  return {prop,table};
+}
+
 export class Finale {
   constructor(mechanics,rescue,bag,pipeline,models,water,notice){
     Object.assign(this,{mechanics,rescue,bag,water});
@@ -184,7 +205,7 @@ export class Finale {
       this.advance(2);
       return 'You recover Cal’s jacket and the dispatch tape. Someone scratched at the outside of the chamber door.';
     });
-    this.model(this.lookout,pipeline,models.receiver,1.22);
+    this.supportedModel(this.lookout,pipeline,models.receiver,1.22);
     this.station(this.lookout,'Open the tape deck',()=>{
       if(this.stage!==2)return 'The deck waits for the original dispatch tape.';
       openTape(()=>{
@@ -197,7 +218,7 @@ export class Finale {
     const post=plots[2];
     const bulletin=point(post.x+3.9,post.z-2.1,.95);
     this.bulletin=bulletin;
-    this.model(bulletin,pipeline,models.receiver,.55);
+    this.supportedModel(bulletin,pipeline,models.receiver,.55);
     this.station(bulletin,'Check the post office radio',()=>{
       if(this.choice==='public')return 'The postmaster cuts into the broadcast. “I logged Cal’s parcel the morning after the rescue. If the sheriff wants that ledger, he can ask me in front of everyone.”';
       if(this.choice==='private')return 'The public channel is quiet. On the ranger’s frequency: “I have Cal’s tape locked up. Meet me at dawn, before the sheriff starts his rounds.”';
@@ -208,7 +229,7 @@ export class Finale {
     this.installBaitWatch(supply,pipeline,models);
     this.installTownRounds(supply);
     const reelBench=point(supply.x-4.3,supply.z+2.7,.95);
-    this.model(reelBench,pipeline,models.receiver,.62);
+    this.supportedModel(reelBench,pipeline,models.receiver,.62);
     const edit=new ReelEdit();
     this.station(reelBench,'Restore the damaged reel',()=>{
       if(bag.records.has('restored-reel'))return 'The restored reel is in your backpack. The last intact frame shows the sheriff closing the west-bank gate.';
@@ -227,7 +248,7 @@ export class Finale {
       return '';
     });
     const evidenceDesk=point(this.lookout.x+3.2,this.lookout.z+1.1,.95);
-    this.model(evidenceDesk,pipeline,models.receiver,.55);
+    this.supportedModel(evidenceDesk,pipeline,models.receiver,.55);
     this.station(evidenceDesk,'Compare the rescue evidence',()=>{
       if(!bag.records.has('cals-letter')||!bag.records.has('dispatch-tape')){
         return 'Bring Cal’s undelivered letter from Last Delivery and the original tape from the spillway intake.';
@@ -496,7 +517,7 @@ export class Finale {
     const tracks=point(supply.x+3.7,supply.z+2.7,.35);
     const stand=point(supply.x+1,supply.z+1.3,1.03);
     this.model(crate,pipeline,models.lantern,.5);
-    const camera=this.model(stand,pipeline,models.receiver,.48);
+    const camera=this.supportedModel(stand,pipeline,models.receiver,.48);
     const prints=new T.Group();
     prints.position.copy(tracks);
     const dirt=new T.MeshStandardMaterial({color:0x3b3024,roughness:1});
@@ -551,6 +572,11 @@ export class Finale {
         });
       return '';
     });
+  }
+  supportedModel(point,pipeline,source,scale){
+    const {prop,table}=stationProp(pipeline,source,point,scale);
+    this.scene.add(prop,table);
+    return prop;
   }
   model(point,pipeline,source,scale=1){
     const model=pipeline.prepare(source,{position:point.toArray(),scale});
@@ -624,8 +650,8 @@ export class MailRoute {
     };
     if(complete&&packed){packed='';persist();}
     const station=(p,name,action)=>{
-      const prop=pipeline.prepare(models.receiver,{position:p.toArray(),scale:.48});
-      mechanics.scenes[0].add(prop);
+      const {prop,table}=stationProp(pipeline,models.receiver,p,.48);
+      mechanics.scenes[0].add(prop,table);
       const c=mechanics.world.createCollider(R.ColliderDesc.ball(.32).setTranslation(...p.toArray())
         .setSensor(true).setCollisionGroups((128<<16)|2));
       mechanics.tag(c,{name,action});
