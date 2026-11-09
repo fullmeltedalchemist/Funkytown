@@ -133,7 +133,10 @@ export class Mechanics {
         const bounds=new T.Box3().setFromObject(model);
         model.position.set(0,.43-bounds.min.y,1.02);
         this.car.visual.add(model);
-        return this.cargo.name+' secured on the wagon rack.';
+        this.cargoSecured=false;
+        this.cargoSlide=0;
+        this.cargoSpeed=0;
+        return this.cargo.name+' loaded on the wagon rack. Use Strap before a hard turn.';
       }
       this.release();return 'Set down.';
     }
@@ -145,6 +148,39 @@ export class Mechanics {
     }
     if(target?.kind==='prop')return this.grab(target);
     return '';
+  }
+  toggleStrap(){
+    if(!this.cargo||this.driving)return 'Park beside a loaded wagon to work the straps.';
+    if(this.walker.current.distanceTo(vec(this.car.body.translation()))>3.6)return 'Stand beside the wagon rack first.';
+    this.cargoSecured=!this.cargoSecured;
+    if(this.cargoSecured){
+      this.cargoSlide=0;
+      this.cargo.visual.position.x=0;
+    }
+    return this.cargoSecured?'Ratchet straps tightened. Cargo secured.':'Ratchet straps loosened.';
+  }
+  shiftCargo(){
+    if(!this.cargo||!this.driving)return;
+    const speed=vec(this.car.body.linvel()).length();
+    const brake=this.cargoSpeed-speed;
+    this.cargoSpeed=speed;
+    if(this.cargoSecured)return;
+    const side=this.car.body.angvel().y*speed;
+    this.cargoSlide=T.MathUtils.clamp(this.cargoSlide+(-side*.17-this.cargoSlide)*.11,-.29,.29);
+    this.cargo.visual.position.x=this.cargoSlide;
+    if(brake>6.1)this.dropLooseCargo();
+  }
+  dropLooseCargo(){
+    const item=this.cargo;
+    const position=item.visual.getWorldPosition(new T.Vector3());
+    const rotation=item.visual.getWorldQuaternion(new T.Quaternion());
+    const velocity=vec(this.car.body.linvel()).add(new T.Vector3(this.cargoSlide*6,1.8,0));
+    this.cargo=null;
+    this.scenes[0].add(item.visual);
+    item.body.setTranslation(position,true);
+    item.body.setRotation(rotation,true);
+    item.body.setEnabled(true);
+    item.body.setLinvel(velocity,true);
   }
   canUnloadCargo(){
     if(!this.cargo||this.driving)return false;
@@ -339,6 +375,7 @@ export class Mechanics {
       }else if(item.life<=0||p.y<-18)this.remove(item);
       else if(item.visual){item.visual.position.copy(p);item.visual.quaternion.copy(item.body.rotation());}
     }
+    this.shiftCargo();
     this.drops=this.drops.filter(drop=>this.items.has(drop.collider.handle));
     const spray=this.drops.filter(drop=>drop.life<1.72&&drop.life>.3&&vec(drop.body.linvel()).lengthSq()>1.25);
     this.fluid.count=spray.length;

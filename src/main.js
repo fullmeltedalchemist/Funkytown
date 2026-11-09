@@ -1,3 +1,6 @@
+import {TowLine} from './tow-line.js';
+import {fireFlare} from './flare.js';
+import {Wildlife} from './wildlife.js';
 import {SecondAddress} from './second-address.js';
 import {SalvageStreet} from './salvage-street.js';
 import {FieldProps} from './field-props.js';
@@ -132,8 +135,10 @@ async function boot(){
   const creekEncounter=new CreekEncounter(mechanics,bag,message=>notice(message));
   scene.add(camera);
   const pistol=fieldPistol(),scattergun=fieldPistol(true);
-  let scatter=false;
-  camera.add(pistol,scattergun);
+  const flarePistol=pipeline.prepare(models.flarePistol,{yaw:Math.PI,scale:1.12});
+  const weapons=[pistol,scattergun,flarePistol];
+  let weapon=0;
+  camera.add(...weapons);
   world.step();
   let noticeUntil=0;
   const notice=(message)=>{
@@ -192,6 +197,22 @@ async function boot(){
   const salvage=new SalvageStreet(mechanics,pipeline,models,bag,chapters,campLife,notice,
     ()=>playToolSound(540,330,.68,.23));
   const address=new SecondAddress(mechanics,pipeline,models,bag,notice);
+  const wildlife=new Wildlife(mechanics,pipeline,models.cottontail,bag,notice);
+  bag.record('flare-pistol','Flare pistol','Cycle weapons with X or the weapon button. Fire a bouncing light that burns for twelve seconds.','Gear');
+  bag.record('contact-mic','Contact microphone','M or Mic · aim at machinery or a loose prop and sample its vibration.','Gear');
+  function sampleContact(){
+    if(mechanics.driving||rescue.zipline.active)return;
+    const target=mechanics.target(camera);
+    if(!target)return notice('Aim the contact microphone at a surface you can reach.');
+    const sample=target.contact?.()??{
+      strength:target.body?Math.min(1,vec(target.body.linvel()).length()*.24):0,
+      message:'Contact sample taken.'
+    };
+    if(sample.strength)playToolSound(90+sample.strength*155,61,.34,.18*sample.strength);
+    notice(sample.message+' Contact signal '+Math.round(sample.strength*100)+'%.');
+  }
+  const towLine=new TowLine(mechanics);
+  bag.record('tow-line','Two-hook tow line','V or Rig · anchor a loose prop or wagon to a second object or a fixed surface.','Gear');
   let cableAudio;
   function soundCable(speed){
     if(audio?.state!=='running')return;
@@ -222,12 +243,14 @@ async function boot(){
     }
   },()=>bag.toggle(),()=>gear.toggle(),()=>gear.takePhoto(),()=>{
     if(rescue.zipline.active)return;
-    if(!bag.records.has('scattergun'))return notice('Find the scattergun in the camp supply rack.');
-    scatter=!scatter;
-    $('weapon-button').textContent=scatter?'Scattergun':'Pistol';
-    notice(scatter?'Scattergun equipped. Short-range spread.':'Field pistol equipped.');
+    weapon=(weapon+1)%weapons.length;
+    if(weapon===1&&!bag.records.has('scattergun'))weapon=2;
+    const name=['Pistol','Scattergun','Flare'][weapon];
+    $('weapon-button').textContent=name;
+    notice(name+' equipped.');
   },()=>{if(!rescue.zipline.active)gear.deployLantern(mechanics,camera);},
-    ()=>{if(!rescue.zipline.active)notice(campLife.drink());});
+    ()=>{if(!rescue.zipline.active)notice(campLife.drink());},
+    ()=>{if(!rescue.zipline.active)notice(mechanics.toggleStrap());},sampleContact,()=>{if(!rescue.zipline.active)notice(towLine.select(camera));});
   $('start').disabled=false;
   $('start').textContent='Walk the ridge';
   $('touch-mode').disabled=false;
@@ -289,8 +312,12 @@ async function boot(){
         }
         if(input.actions.has('fire')){
           const before=mechanics.cooldown;
-          mechanics.fire(camera,scatter);
-          if(mechanics.cooldown>before)playToolSound(scatter?94:168,41,scatter?.23:.13,.28);
+          if(weapon===2){
+            if(fireFlare(mechanics,camera))playToolSound(430,73,.25,.23);
+          }else{
+            mechanics.fire(camera,weapon===1);
+            if(mechanics.cooldown>before)playToolSound(weapon===1?94:168,41,weapon===1?.23:.13,.28);
+          }
         }
         if(input.actions.has('grapple')){
           const result=mechanics.grapple(camera);
@@ -316,6 +343,8 @@ async function boot(){
         fieldProps.tick(STEP);
         salvage.tick(STEP);
         address.tick(STEP);
+        wildlife.tick(STEP);
+        towLine.tick();
         if(!mechanics.driving){
           const transition=story.transition(walker.current,STEP);
           if(transition){
@@ -347,11 +376,11 @@ async function boot(){
     soundCable(riding?rescue.zipline.speed:0);
     if(riding)camera.rotation.z=Math.sin(now*.008)*Math.min(.042,rescue.zipline.speed*.003);
     camera.updateMatrixWorld();
-    const tool=scatter?scattergun:pistol;
-    pistol.visible=scattergun.visible=false;
+    const tool=weapons[weapon];
+    for(const model of weapons)model.visible=false;
     tool.visible=!mechanics.driving&&!mechanics.carried&&!rescue.zipline.active;
     const stride=mechanics.driving?0:Math.min(1,Math.hypot(walker.velocity.x,walker.velocity.z)/5);
-    const recoil=Math.min(.15,Math.max(0,mechanics.cooldown-(scatter?.45:.065)));
+    const recoil=Math.min(.15,Math.max(0,mechanics.cooldown-(weapon===1?.45:weapon===2?.67:.065)));
     tool.position.set(.173+Math.sin(now*.008)*.009*stride,-.19+Math.cos(now*.016)*.006*stride,-.49+recoil*.58);
     tool.rotation.x=recoil*.9;
     mechanics.drawWater(now*.001);
@@ -380,6 +409,8 @@ async function boot(){
     $('hint').textContent=rescue.zipline.active?rescue.zipline.readout(input.touch):mechanics.driving?use+' · Exit wagon':mechanics.carried?(target?.acceptName?use+' · '+target.acceptName:target===mechanics.car&&mechanics.carried.size?use+' · Secure cargo to wagon':
         use+' · Set down / '+(input.touch?'Throw':'Q')+' · Throw'):
       target===mechanics.car&&mechanics.canUnloadCargo()?use+' · Unload cargo':target?.name?use+' · '+target.name:'';
+    $('strap-button').hidden=!mechanics.cargo||mechanics.driving;
+    $('strap-button').textContent=mechanics.cargoSecured?'Unstrap':'Strap';
     $('reticle').hidden=mechanics.driving;
     renderer.render(activeScene,camera);
     gear.capture(renderer.domElement,story.area,player);

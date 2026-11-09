@@ -7,7 +7,7 @@ export class Input {
   actions=new Set();
   touch=matchMedia('(pointer:coarse)').matches;
   dragMode=false;
-  constructor(canvas,onUse,onBag,onGear,onPhoto,onWeapon,onLantern,onDrink){
+  constructor(canvas,onUse,onBag,onGear,onPhoto,onWeapon,onLantern,onDrink,onStrap,onMic,onRig){
     this.canvas=canvas;
     const menu=document.querySelector('#menu'),pad=document.querySelector('#pad');
     let drag=null,pointer=null;
@@ -48,6 +48,9 @@ export class Input {
       if(e.code==='KeyX')onWeapon();
       if(e.code==='KeyK')onLantern();
       if(e.code==='KeyU')onDrink();
+      if(e.code==='KeyT')onStrap();
+      if(e.code==='KeyM')onMic();
+      if(e.code==='KeyV')onRig();
       if(e.code==='KeyF')this.actions.add('fire');
       if(e.code==='KeyG')this.actions.add('grapple');
       if(e.code==='KeyQ')this.actions.add('throw');
@@ -111,6 +114,9 @@ export class Input {
     document.querySelector('#weapon-button').onclick=onWeapon;
     document.querySelector('#lantern-button').onclick=onLantern;
     document.querySelector('#drink-button').onclick=onDrink;
+    document.querySelector('#strap-button').onclick=onStrap;
+    document.querySelector('#mic-button').onclick=onMic;
+    document.querySelector('#rig-button').onclick=onRig;
     document.querySelector('#pause').onclick=()=>this.toggle(false);
   }
   movement(){

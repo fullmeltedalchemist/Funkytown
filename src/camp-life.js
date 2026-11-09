@@ -47,8 +47,9 @@ export class CampLife {
   cook(){
     if(this.elapsed===null){
       if(this.bag.records.has('camp-meal'))return 'Eat or deliver the meal you already packed before cooking another.';
-      if(!this.bag.records.has('camp-ingredients'))return 'Get ingredients from the camp pantry rack first.';
-      this.bag.forget('camp-ingredients');
+      this.meatMeal=this.bag.records.has('cottontail-meat');
+      if(!this.meatMeal&&!this.bag.records.has('camp-ingredients'))return 'Get ingredients from the camp pantry rack first.';
+      this.bag.forget(this.meatMeal?'cottontail-meat':'camp-ingredients');
       this.elapsed=0;
       this.food.visible=true;
       this.food.material.color.setHex(0xb4864b);
@@ -61,7 +62,8 @@ export class CampLife {
     this.food.visible=false;
     this.heat.intensity=0;
     if(burned)return 'The batch burned. Clear the skillet and try a fresh batch from the pantry.';
-    this.bag.record('camp-meal','Hot skillet meal','Eat at the mess station or share it with the ranger.','Cargo');
+    this.bag.record('camp-meal',this.meatMeal?'Roasted cottontail':'Hot skillet meal',
+      'Eat at the mess station or share it with the ranger.','Cargo');
     return 'Meal packed. Eat at the mess station or deliver a plate for the ranger.';
   }
   refill(){
@@ -76,8 +78,9 @@ export class CampLife {
   }
   eat(){
     if(!this.bag.records.has('camp-meal'))return 'Cook a skillet meal before sitting down to eat.';
+    const meat=this.bag.records.get('camp-meal')?.name==='Roasted cottontail';
     this.bag.forget('camp-meal');
-    this.energy=110;
+    this.energy=meat?165:110;
     return 'You eat the hot skillet meal. Sprint speed improved for a short time. On touch, push the movement stick all the way.';
   }
   tick(dt){

@@ -411,7 +411,8 @@ test('wagon drives the actual basin ramp and turns in salvage through normal int
   assert.match(use(pumpPosition),/Carrying Transfer pump/);
   const car=vec(m.car.body.translation());
   walkTo(car.x+1.55,car.z+1.25);
-  assert.match(use(car),/secured on the wagon rack/);
+  assert.match(use(car),/loaded on the wagon rack/);
+  assert.match(m.toggleStrap(),/Cargo secured/);
   assert.equal(m.cargo,pump);
   walkTo(car.x+1.55,car.z-.4);
   assert.match(use(car),/Wagon controls/);
@@ -501,4 +502,112 @@ test('Second Address opens by three approaches and proves the slope with a simul
   assert.ok(records.has('echo-slope'));
   assert.match(target('Compare the two addresses at the post office').action(),/signatures/);
   assert.ok(records.has('second-address-filed'));
+});
+
+test('wildlife reacts to physical shots, meat cooks, flares expire, and straps hold cargo',async t=>{
+  const {AssetPipeline}=await import('../src/assets.js');
+  const {Wildlife}=await import('../src/wildlife.js');
+  const {CampLife}=await import('../src/camp-life.js');
+  const {fireFlare}=await import('../src/flare.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker,STEP}=await import('../src/walker.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  t.after(()=>world.free());
+  const scene=new T.Scene();
+  const walker=new Walker(world,[0,1,0]);
+  const mechanics=new Mechanics(world,walker,scene,new T.Scene());
+  const pipeline=new AssetPipeline(scene,world);
+  const model=async file=>{
+    const bytes=await readFile(new URL('../assets/'+file+'.glb',import.meta.url));
+    return (await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'')).scene;
+  };
+  const [rabbit,flarePistol]=await Promise.all([model('ridge-cottontail'),model('field-flare-pistol')]);
+  assert.ok(new T.Box3().setFromObject(flarePistol).getSize(new T.Vector3()).length()>.2);
+  const records=new Map();
+  const bag={records,record:(id,name)=>records.set(id,{name}),forget:id=>records.delete(id)};
+  const wildlife=new Wildlife(mechanics,pipeline,rabbit,bag,()=>{});
+  const camp=new CampLife(mechanics,bag,()=>{});
+  const camera=new T.PerspectiveCamera();
+  const frame=()=>{
+    mechanics.before(camera,{x:0,z:0},{actions:new Set()});
+    world.step(mechanics.events);
+    mechanics.after();
+  };
+  function shoot(animal){
+    const target=animal.home.clone().add(new T.Vector3(0,.23,0));
+    camera.position.copy(target).add(new T.Vector3(0,0,2));
+    camera.lookAt(target);camera.updateMatrixWorld(true);
+    world.step(mechanics.events);
+    mechanics.fire(camera);
+    for(let i=0;i<18;i++)frame();
+  }
+  const animal=wildlife.animals[0];
+  shoot(animal);
+  assert.equal(animal.state,'down');
+  assert.match(wildlife.use(animal),/Meat packed/);
+  assert.match(camp.cook(),/heat/);
+  camp.tick(6);
+  camp.cook();
+  assert.equal(records.get('camp-meal').name,'Roasted cottontail');
+  camp.eat();
+  assert.equal(camp.energy,165);
+  const echo=wildlife.animals.at(-1);
+  shoot(echo);
+  assert.equal(echo.state,'gone');
+  assert.ok(records.has('echo-cottontail'));
+  assert.ok(!records.has('cottontail-meat'));
+
+  camera.position.set(0,15,0);camera.lookAt(0,15,-2);camera.updateMatrixWorld(true);
+  assert.ok(fireFlare(mechanics,camera));
+  const flare=[...mechanics.items.values()].find(item=>item.name==='Burning signal flare');
+  assert.ok(flare.body.linvel().z<0);
+  assert.ok(flare.visual.children.some(node=>node.isPointLight));
+  flare.life=STEP;
+  frame();
+  assert.ok(!mechanics.items.has(flare.collider.handle));
+
+  mechanics.makeCar([0,1,0]);
+  const load=mechanics.crate([0,1,1]);
+  mechanics.cargo=load;
+  load.body.setEnabled(false);
+  mechanics.car.visual.add(load.visual);
+  mechanics.cargoSlide=0;
+  assert.match(mechanics.toggleStrap(),/Cargo secured/);
+  mechanics.driving=true;
+  mechanics.cargoSpeed=10;
+  mechanics.shiftCargo();
+  assert.equal(mechanics.cargo,load);
+  mechanics.driving=false;
+  assert.match(mechanics.toggleStrap(),/loosened/);
+  mechanics.driving=true;
+  mechanics.car.body.setLinvel({x:0,y:0,z:-5},true);
+  mechanics.car.body.setAngvel({x:0,y:1.3,z:0},true);
+  mechanics.cargoSpeed=5;
+  mechanics.shiftCargo();
+  assert.notEqual(load.visual.position.x,0);
+  mechanics.cargoSpeed=12;
+  mechanics.car.body.setLinvel({x:0,y:0,z:0},true);
+  mechanics.shiftCargo();
+  assert.equal(mechanics.cargo,null);
+  assert.ok(load.body.isEnabled());
+
+  const {TowLine}=await import('../src/tow-line.js');
+  mechanics.driving=false;
+  const first=mechanics.crate([7,9,0]),second=mechanics.crate([10,9,0]);
+  first.body.setGravityScale(0,true);second.body.setGravityScale(0,true);
+  world.step(mechanics.events);
+  const line=new TowLine(mechanics);
+  camera.position.set(8.5,9,3);
+  camera.lookAt(7,9,0);camera.updateMatrixWorld(true);
+  assert.match(line.select(camera),/First hook/);
+  camera.lookAt(10,9,0);camera.updateMatrixWorld(true);
+  assert.match(line.select(camera),/Tow line rigged/);
+  second.body.setLinvel({x:4,y:0,z:0},true);
+  for(let i=0;i<22;i++){frame();line.tick();}
+  assert.ok(line.joint?.isValid());
+  assert.ok(first.body.translation().x>7.05);
+  mechanics.remove(second);
+  line.tick();
+  assert.equal(line.visual.visible,false);
 });

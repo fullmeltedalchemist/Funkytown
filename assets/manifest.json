@@ -14,7 +14,9 @@
     "waterJug": "./assets/pump-water-jug.glb",
     "fuelCan": "./assets/creek-fuel-can.glb",
     "transferPump": "./assets/creek-transfer-pump.glb",
-    "echoSurveyTray": "./assets/echo-survey-tray.glb"
+    "echoSurveyTray": "./assets/echo-survey-tray.glb",
+    "cottontail": "./assets/ridge-cottontail.glb",
+    "flarePistol": "./assets/field-flare-pistol.glb"
   },
   "placements": [
     {

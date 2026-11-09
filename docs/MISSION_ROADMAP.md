@@ -45,8 +45,12 @@ The central question is who returned after the reservoir evacuation. People who 
 
 ## Systems that serve these missions
 
-- [ ] Dual-anchor grapple, contact microphone, flare pistol, magnetic crawler, slingshot, lever-action rifle, wagon winch and ratchet straps.
+- [x] First flare pistol, contact microphone and wagon ratchet straps. A flare is a physical projectile with a temporary light. The mic can contrast an operating pump with the silent Echo relay. Loose cargo can shift in turns and leave the rack in a hard impact.
+- [x] Two-hook tow line. A real rope joint connects a movable prop or wagon to a second object or an anchor on a solid surface.
+- [ ] Magnetic crawler, slingshot, lever-action rifle and a powered wagon winch. Add a recorder and playback function to the contact microphone.
 - [ ] Material-based breakage, weight and buoyancy, movable furniture, persistent quest-object recovery, and cargo tie-downs.
-- [ ] Ordinary huntable rabbits, creek birds and a boar with distinct reactions. Integrate harvested meat into cooking, sharing and bait.
-- [ ] Echo wildlife that can be observed, photographed, followed or shot, with different evidence from real wildlife.
+- [x] Authored cottontails that flee, can be shot and yield meat for the existing skillet and sharing loop.
+- [ ] Creek birds and a boar with distinct reactions. Add meat bait and trackable signs.
+- [x] First Echo cottontail. Observe it or shoot it to learn what it does. It yields a clue and no meat.
+- [ ] Echo photography, track-following and more species.
 - [ ] Prove desktop and touch controls, clean-save progression, failure recovery and alternate routes before marking any mission as release-verified.

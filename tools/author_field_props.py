@@ -170,3 +170,48 @@ for x in (-.246,.246):
         bolt=lathe("Flush brass screw",[(.018,.123),(.016,.132)],bronze,12)
         bolt.location=(x,y,0)
 export("echo-survey-tray.glb")
+
+reset()
+fur = material("Cottontail brown", (.27,.16,.09), 0,.88)
+belly = material("Pale throat and tail", (.64,.51,.37), 0,.95)
+ear = material("Dusky inner ear", (.39,.18,.14), 0,.89)
+eye = material("Dark wet eye", (.019,.015,.012), .12,.19)
+
+
+def oval(name, location, size, mat, tilt=0):
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=16, ring_count=10, location=location)
+    obj = bpy.context.object
+    obj.scale = size
+    obj.rotation_euler.x = tilt
+    for face in obj.data.polygons:
+        face.use_smooth = True
+    return finish(obj, name, mat)
+
+
+oval("Hindquarters",(0,.09,.15),(.14,.18,.145),fur)
+oval("Chest",(0,-.075,.151),(.103,.137,.12),belly)
+oval("Head",(0,-.192,.215),(.093,.10,.096),fur)
+oval("Tail",(0,.262,.178),(.067,.062,.066),belly)
+for side in (-1,1):
+    oval("Hind paw",(side*.091,.061,.043),(.063,.148,.042),fur)
+    oval("Fore paw",(side*.053,-.166,.031),(.031,.064,.031),belly)
+    oval("Ear",(side*.046,-.154,.343),(.033,.036,.12),fur,-.29)
+    oval("Ear lining",(side*.046,-.184,.348),(.019,.011,.082),ear,-.29)
+    oval("Eye",(side*.078,-.237,.238),(.013,.022,.018),eye)
+oval("Nose",(0,-.284,.207),(.029,.018,.019),eye)
+export("ridge-cottontail.glb")
+
+reset()
+orange = material("Flare orange enamel", (.68,.21,.05), .26,.38)
+gunmetal = material("Oxidized barrel", (.115,.13,.14), .72,.36)
+grip = material("Textured polymer grip", (.067,.052,.043), .08,.77)
+box("Orange receiver",(0,-.044,.019),(.071,.18,.064),orange,.013)
+box("Rounded grip",(0,.036,-.063),(.059,.069,.13),grip,.014).rotation_euler.x=-.2
+barrel=lathe("Flared barrel mouth",[(.027,-.103),(.029,-.088),(.026,.076),(.031,.091),(.031,.106)],gunmetal,24)
+barrel.rotation_euler.x=-tau/4
+barrel.location=(0,-.16,.039)
+box("Dark muzzle insert",(0,-.268,.039),(.039,.006,.037),grip,.009)
+box("Front sight",(0,-.232,.071),(.013,.016,.017),gunmetal,.003)
+for z in (-.105,-.087,-.068):
+    box("Grip rib",(0,.069,z),(.061,.014,.009),gunmetal,.003)
+export("field-flare-pistol.glb")
