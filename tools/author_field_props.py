@@ -153,3 +153,20 @@ for x in (-.2,.2):
 neck=lathe("Intake coupling",[(.074,-.1),(.091,-.083),(.091,-.047),(.069,-.024),(.069,.11)],brass,24)
 neck.location=(-.12,.09,.187)
 export("creek-transfer-pump.glb")
+
+reset()
+oak = material("Dark survey oak", (.23,.13,.071), 0,.77)
+bronze = material("Survey brass", (.57,.33,.11), .62,.36)
+felt = material("Faded survey felt", (.12,.19,.15), 0,.94)
+box("Felt channel",(0,0,.037),(.46,1.6,.054),felt,.017)
+for x in (-.248,.248):
+    box("Rounded oak rail",(x,0,.068),(.068,1.67,.122),oak,.022)
+for y in (-.793,.793):
+    box("Raised end stop",(0,y,.065),(.47,.059,.108),oak,.013)
+for y in (-.57,-.38,-.19,0,.19,.38,.57):
+    box("Inlaid distance mark",(-.172,y,.065),(.094,.011,.006),bronze,.002)
+for x in (-.246,.246):
+    for y in (-.69,.69):
+        bolt=lathe("Flush brass screw",[(.018,.123),(.016,.132)],bronze,12)
+        bolt.location=(x,y,0)
+export("echo-survey-tray.glb")

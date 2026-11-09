@@ -28,6 +28,8 @@ export const plots=[{name:'Vale House',x:12,z:26,yaw:-Math.PI/2,scale:.82},
   {name:'Bellwether Supply',x:10,z:13,yaw:-Math.PI/2,scale:.83},
   {name:'Post Office',x:-7,z:11,yaw:Math.PI/2,scale:.75}]
   .map(plot=>({...plot,y:rawHeight(plot.x,plot.z)+.045}));
+export const secondAddress={x:25,z:24,y:rawHeight(25,24)+.045};
+const terrainPlots=[...plots,secondAddress];
 export const basin={x:-33,entry:37,back:9,floor:-2.35,water:-.34};
 export function basinInfluence(x,z){
   return (1-smoothstep(Math.abs(x-basin.x),11,15))*
@@ -36,7 +38,7 @@ export function basinInfluence(x,z){
 export function height(x,z){
   const yard=1-smoothstep(Math.max(Math.abs(x-cabinX)*.83,Math.abs(z-cabinZ)*.92),4.7,9);
   let result=lerp(rawHeight(x,z),cabinY-.035,yard);
-  for(const {x:cx,y,z:cz} of plots){
+  for(const {x:cx,y,z:cz} of terrainPlots){
     const pad=1-smoothstep(Math.max(Math.abs(x-cx),Math.abs(z-cz)),3.5,7);
     result=lerp(result,y-.035,pad);
   }

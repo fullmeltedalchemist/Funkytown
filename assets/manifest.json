@@ -13,7 +13,8 @@
     "arch": "./assets/echo-arch.glb",
     "waterJug": "./assets/pump-water-jug.glb",
     "fuelCan": "./assets/creek-fuel-can.glb",
-    "transferPump": "./assets/creek-transfer-pump.glb"
+    "transferPump": "./assets/creek-transfer-pump.glb",
+    "echoSurveyTray": "./assets/echo-survey-tray.glb"
   },
   "placements": [
     {

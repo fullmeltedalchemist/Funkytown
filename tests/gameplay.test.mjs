@@ -438,3 +438,67 @@ test('wagon drives the actual basin ramp and turns in salvage through normal int
   assert.equal(m.driving,true);
   assert.equal(mission.cargo.some(item=>m.items.has(item.collider.handle)),false);
 });
+
+test('Second Address opens by three approaches and proves the slope with a simulated brass ball',async t=>{
+  const {SecondAddress}=await import('../src/second-address.js');
+  const {AssetPipeline}=await import('../src/assets.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker,STEP}=await import('../src/walker.js');
+  const {secondAddress,makeTerrain,height}=await import('../src/terrain.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  t.after(()=>world.free());
+  const scene=new T.Scene(),walker=new Walker(world,[25,secondAddress.y+1,30]);
+  const mechanics=new Mechanics(world,walker,scene,new T.Scene());
+  makeTerrain(scene,world,{floor:null,normal:null});
+  const pipeline=new AssetPipeline(scene,world);
+  const models={};
+  for(const [key,filename] of Object.entries({cabin:'ranger-cabin',echoSurveyTray:'echo-survey-tray',receiver:'field-receiver'})){
+    const bytes=await readFile(new URL('../assets/'+filename+'.glb',import.meta.url));
+    models[key]=(await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'')).scene;
+  }
+  const records=new Map();
+  const address=new SecondAddress(mechanics,pipeline,models,{records,record:(id)=>records.set(id,true)},()=>{});
+  const target=name=>[...mechanics.fixed.values()].find(item=>item.name===name);
+  const door=target('Ask to inspect the house as a utility worker');
+  assert.match(door.action(),/ledger/);
+  records.set('pond-records',true);
+  assert.match(door.action(),/meter/);
+  assert.equal(address.door.collider.isEnabled(),false);
+  address.route=null;
+  address.door.collider.setEnabled(true);
+  const camera=new T.PerspectiveCamera();
+  camera.position.set(secondAddress.x+1.36,secondAddress.y+1.5,secondAddress.z+6.7);
+  camera.lookAt(secondAddress.x+1.36,secondAddress.y+2.74,secondAddress.z+4.56);
+  camera.updateMatrixWorld(true);
+  world.step(mechanics.events);
+  assert.match(mechanics.grapple(camera),/releases/);
+  assert.equal(address.route,'grapple latch');
+  address.route=null;
+  address.door.collider.setEnabled(true);
+  walker.current.copy(address.mailbox).add(new T.Vector3(0,.9,0));
+  assert.match(target('Talk to the resident at the mailbox').action(),/Follow/);
+  for(let i=0;i<220;i++)address.tick(STEP);
+  assert.equal(address.route,'followed resident');
+  walker.teleport([secondAddress.x,height(secondAddress.x,secondAddress.z+5.5)+.9,secondAddress.z+5.5]);
+  for(let i=0;i<110&&walker.current.z>secondAddress.z+1.2;i++){
+    walker.step({x:0,z:1},0,mechanics.events);
+  }
+  assert.ok(walker.current.z<secondAddress.z+2.4,'the opened door must allow walking into the house '+walker.current.toArray());
+
+  const physicsUntil=phase=>{
+    for(let i=0;i<360&&address.trial.phase!==phase;i++){
+      world.step(mechanics.events);
+      mechanics.after();
+      address.tick(STEP);
+    }
+    assert.equal(address.trial.phase,phase);
+  };
+  assert.match(address.tryBall(),/before/);
+  physicsUntil('control-ready');
+  assert.match(address.tryBall(),/receiver/);
+  physicsUntil('proved');
+  assert.ok(records.has('echo-slope'));
+  assert.match(target('Compare the two addresses at the post office').action(),/signatures/);
+  assert.ok(records.has('second-address-filed'));
+});
