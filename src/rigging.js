@@ -5,6 +5,10 @@ import {part} from './mechanics.js';
 
 const timber=0x634632,steel=0x393e43,orange=0xd17a34;
 const up=new T.Vector3(0,1,0);
+const lineX=-17,launchZ=-17,landingZ=6;
+export function insideRescueCorridor(x,z,padding=0){
+  return Math.abs(x-lineX)<2.9+padding&&z>launchZ-6-padding&&z<landingZ+4+padding;
+}
 
 function beam(root,a,b,width,color){
   const offset=b.clone().sub(a);
@@ -18,8 +22,8 @@ export class RescueLine {
     Object.assign(this,{mechanics,notice,unlocked,completed,onComplete});
     this.root=new T.Group();
     mechanics.scenes[0].add(this.root);
-    this.launch=this.bank(-17,-17,5.6);
-    this.landing=this.bank(-17,6,3.0);
+    this.launch=this.bank(lineX,launchZ,5.6);
+    this.landing=this.bank(lineX,landingZ,3.0);
     this.position=new T.Vector3();
     this.lookYaw=Math.PI;
     this.progress=0;
@@ -37,6 +41,10 @@ export class RescueLine {
         part(this.root,[.33,.17,.33],[foot.x,foot.y+.05,foot.z],steel,.025);
       }
       beam(this.root,top.clone().add(new T.Vector3(-1.05,0,0)),top.clone().add(new T.Vector3(1.05,0,0)),.22,timber);
+      if(side<0){
+        const low=top.clone().add(new T.Vector3(0,-1.6,0));
+        beam(this.root,low.clone().add(new T.Vector3(-.94,0,0)),low.clone().add(new T.Vector3(.94,0,0)),.15,timber);
+      }
       const eye=new T.Mesh(new T.TorusGeometry(.17,.034,8,18),new T.MeshStandardMaterial({color:orange,metalness:.55,roughness:.45}));
       eye.position.copy(top);eye.rotation.y=Math.PI/2;this.root.add(eye);
     }
@@ -64,7 +72,7 @@ export class RescueLine {
     for(const z of [-.22,.16])part(this.load,[.56,.045,.065],[0,-1.08,z],steel);
     this.trolley.add(this.load);this.root.add(this.trolley);
 
-    this.controls=this.bank(-17,-18.6,.93);
+    this.controls=this.bank(lineX,launchZ-1.6,.93);
     const base=this.controls.clone().add(new T.Vector3(0,-.47,0));
     part(this.root,[.28,.97,.28],base.toArray(),timber);
     part(this.root,[.58,.31,.44],this.controls.toArray(),orange,.045);
@@ -73,7 +81,7 @@ export class RescueLine {
     part(this.crank,[.065,.35,.065],[0,.135,0],steel,.02);
     part(this.crank,[.16,.075,.095],[0,.29,-.075],steel,.022);
     this.root.add(this.crank);
-    const approach=this.bank(-17,-19.6,.7);
+    const approach=this.bank(lineX+.94,launchZ-2.6,.7);
     part(this.root,[.15,1.4,.15],approach.toArray(),timber);
     const placard=document.createElement('canvas');
     placard.width=512;placard.height=160;

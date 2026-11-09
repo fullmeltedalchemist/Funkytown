@@ -1,3 +1,4 @@
+import {insideRescueCorridor} from './rigging.js';
 import {Gear} from './gear.js';
 import {Finale,MailRoute} from './finale.js';
 import {Rescue} from './rescue.js';
@@ -44,6 +45,7 @@ function forest(pipeline,models){
   const rnd=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
   const grove={oak:[],birch:[],maple:[],underbrush:[],rocks:[]};
   function place(type,x,z,scale,sink=0){
+    if(insideRescueCorridor(x,z,type==='rocks'?scale*.48:1.2))return;
     grove[type].push({x,y:height(x,z)-sink,z,scale,yaw:rnd()*Math.PI*2});
   }
   for(let i=0;i<490;i++){

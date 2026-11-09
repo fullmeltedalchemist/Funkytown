@@ -431,12 +431,21 @@ export class Finale {
     };
     let sheriffArrived=false,showReady=false;
     const law=setup(sheriff,'Speak to the sheriff',()=>{
+      if(this.flood>.24)return '“I’ve closed the ford. If you need the far bank, take the ridge path until the intake drains.”';
+      if(!sheriffArrived&&this.stage>0)return '“The ford’s open again. I’ll check the turnout for anyone who got stranded.”';
       if(!sheriffArrived)return this.stage>=3?'“I’m heading to the lookout. We need to talk about that tape.”':'“Keep the creek crossing clear. I’m on patrol.”';
       if(this.choice==='public')return '“The whole town heard it. Bring the ledger to my office tomorrow. I’ll explain why I changed the report.”';
       if(this.choice==='private')return '“The ranger has your copy. Tell him to check the back page of the log before he calls me.”';
       return '“Yes, I changed the report. The voice on dispatch sounded like Cal, and Cal was standing right beside me.”';
     });
     const film=setup(projectionist,'Speak to the projectionist',()=>{
+      if(this.bag.records.has('restored-reel')&&this.bag.records.has('timeline-conflict')){
+        this.bag.record('projectionist-timecode','Projectionist’s timecode',
+          'The west-bank frame retains its original date stamp. It matches the postmark, one day after the official rescue date.');
+        return '“Look at the date in the corner. It matches Cal’s postmark. This reel can back up the letter.”';
+      }
+      if(this.choice==='public')return '“People are coming to movie night to see the west-bank footage for themselves.”';
+      if(this.choice==='private')return '“I’ll keep the original reel in its can until the ranger comes by.”';
       if(this.bag.records.has('restored-reel'))return '“That gate footage was spliced into a family reel. Whoever hid it expected nobody to check the last frame.”';
       return showReady?'“The reel is threaded and the lamp is warm. Movie night is ready.”':'“I’m carrying the reels out from the repair bench. Come back when the lamp is on.”';
     });
