@@ -454,7 +454,7 @@ test('Second Address opens by three approaches and proves the slope with a simul
   makeTerrain(scene,world,{floor:null,normal:null});
   const pipeline=new AssetPipeline(scene,world);
   const models={};
-  for(const [key,filename] of Object.entries({cabin:'ranger-cabin',echoSurveyTray:'echo-survey-tray',receiver:'field-receiver'})){
+  for(const [key,filename] of Object.entries({cabin:'ranger-cabin',echoSurveyTray:'echo-survey-tray',receiver:'field-receiver',kitchenClock:'stopped-kitchen-clock'})){
     const bytes=await readFile(new URL('../assets/'+filename+'.glb',import.meta.url));
     models[key]=(await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'')).scene;
   }
@@ -500,7 +500,10 @@ test('Second Address opens by three approaches and proves the slope with a simul
   assert.match(address.tryBall(),/receiver/);
   physicsUntil('proved');
   assert.ok(records.has('echo-slope'));
+  assert.match(target('Compare the two addresses at the post office').action(),/clock observation/);
+  assert.match(target('Inspect the stopped kitchen clock').action(),/alone/);
   assert.match(target('Compare the two addresses at the post office').action(),/signatures/);
+  assert.equal(address.objective(),null);
   assert.ok(records.has('second-address-filed'));
 });
 
@@ -610,4 +613,22 @@ test('wildlife reacts to physical shots, meat cooks, flares expire, and straps h
   mechanics.remove(second);
   line.tick();
   assert.equal(line.visual.visible,false);
+
+  mechanics.car.body.setGravityScale(0,true);
+  mechanics.car.body.setTranslation({x:0,y:12,z:0},true);
+  const towLoad=mechanics.crate([3,12,0]);
+  towLoad.body.setGravityScale(0,true);
+  world.step(mechanics.events);
+  camera.position.set(1.5,12,3);
+  camera.lookAt(0,12,0);camera.updateMatrixWorld(true);
+  assert.match(line.select(camera),/First hook/);
+  camera.lookAt(3,12,0);camera.updateMatrixWorld(true);
+  assert.match(line.select(camera),/rigged/);
+  mechanics.driving=true;
+  assert.match(line.select(camera),/reeling/);
+  const length=line.length;
+  for(let i=0;i<20;i++){frame();line.tick(STEP);}
+  assert.ok(line.length<length);
+  assert.match(line.select(camera),/stopped/);
+  line.clear();
 });

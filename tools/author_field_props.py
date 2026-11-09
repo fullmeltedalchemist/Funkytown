@@ -215,3 +215,25 @@ box("Front sight",(0,-.232,.071),(.013,.016,.017),gunmetal,.003)
 for z in (-.105,-.087,-.068):
     box("Grip rib",(0,.069,z),(.061,.014,.009),gunmetal,.003)
 export("field-flare-pistol.glb")
+
+reset()
+oak = material("Kitchen clock oak", (.25,.12,.06), 0,.71)
+dial = material("Aged ivory dial", (.78,.67,.44), 0,.76)
+steel = material("Blackened steel hands", (.075,.055,.041), .48,.38)
+brass = material("Brass bezel", (.63,.38,.13), .72,.34)
+for name,radius,depth,mat in [
+    ("Turned oak case",.244,.064,oak),
+    ("Brass rim",.221,.07,brass),
+    ("Paper dial",.202,.077,dial)
+]:
+    piece=lathe(name,[(radius,0),(radius,depth)],mat,48)
+    piece.rotation_euler.x=tau/4
+for i in range(12):
+    a=tau*i/12
+    tick=box("Hour marker",(.169*sin(a),-.079,.169*cos(a)),(.009,.006,.023),steel,.002)
+    tick.rotation_euler.y=a
+box("Stopped minute hand",(0,-.086,.073),(.014,.009,.157),steel,.003)
+box("Stopped hour hand",(-.047,-.089,.0),(.105,.009,.017),steel,.003)
+pin=lathe("Center rivet",[(.018,.092),(.018,.099)],brass,18)
+pin.rotation_euler.x=tau/4
+export("stopped-kitchen-clock.glb")

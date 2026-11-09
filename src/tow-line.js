@@ -13,7 +13,13 @@ export class TowLine {
   }
   select(camera){
     const m=this.mechanics;
-    if(m.area!==0||m.driving||m.carried)return 'Stand on foot with both hands free to rig the tow line.';
+    if(m.area!==0||m.carried)return 'Stand on foot with both hands free to rig the tow line.';
+    if(m.driving){
+      if(!this.joint||(this.first.item!==m.car&&this.second.item!==m.car))return 'Attach the tow line to the wagon before using its winch.';
+      this.reeling=!this.reeling;
+      this.reelTimer=0;
+      return this.reeling?'Winch reeling in. Press Rig again to stop.':'Winch stopped.';
+    }
     if(this.joint){this.clear();return 'Tow line released.';}
     const hit=m.aim(camera,12);
     if(!hit||hit.collider.isSensor())return 'Aim at the wagon, a loose prop, or a solid surface.';
@@ -50,9 +56,10 @@ export class TowLine {
     if(this.joint?.isValid())world.removeImpulseJoint(this.joint,true);
     if(this.second&&!this.second.item)world.removeRigidBody(this.second.body);
     this.joint=this.first=this.second=null;
+    this.reeling=false;
     this.visual.visible=false;
   }
-  tick(){
+  tick(dt=0){
     if(!this.first)return;
     const m=this.mechanics;
     if(m.area!==0||this.first.item===m.cargo||(m.cargo&&this.second?.item===m.cargo)||
@@ -62,6 +69,16 @@ export class TowLine {
       return;
     }
     if(!this.joint)return;
+    if(this.reeling&&m.driving){
+      this.reelTimer+=dt;
+      if(this.reelTimer>=.1&&this.length>.68){
+        this.reelTimer-=.1;
+        this.length=Math.max(.68,this.length-.085);
+        m.world.removeImpulseJoint(this.joint,true);
+        this.joint=m.world.createImpulseJoint(R.JointData.rope(this.length,this.first.point,this.second.point),
+          this.first.item.body,this.second.body,true);
+      }
+    }else this.reeling=false;
     const start=this.worldPoint(this.first.item.body,this.first.point);
     const end=this.worldPoint(this.second.body,this.second.point);
     if(start.distanceTo(end)>this.length+1.15){this.clear();return;}

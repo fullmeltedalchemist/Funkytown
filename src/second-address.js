@@ -63,6 +63,19 @@ export class SecondAddress {
       return '“The meter is this way. Keep up.” Follow her to the porch.';
     }});
 
+    this.clockPoint=at(.15,1.83,-2.45);
+    const clock=pipeline.prepare(models.kitchenClock,{position:this.clockPoint.toArray()});
+    scene.add(clock);
+    const clockSensor=mechanics.world.createCollider(R.ColliderDesc.ball(.27)
+      .setTranslation(...this.clockPoint.clone().add(new T.Vector3(0,0,.13)).toArray())
+      .setSensor(true).setCollisionGroups((128<<16)|2));
+    mechanics.tag(clockSensor,{name:'Inspect the stopped kitchen clock',action:()=>{
+      if(!this.route)return 'The clock is inside the house.';
+      if(bag.records.has('second-address-clock'))return 'The hands still read 9:00. The owner remembers Mom saying it only stops when it rains.';
+      bag.record('second-address-clock','The clock only stops when it rains',
+        'The occupant repeats a private line Mom used about her kitchen clock. This clock has the same cracked bezel and stopped hands, though it hangs at a different address.');
+      return 'From the porch, the resident says, “Your mom always said the kitchen clock only stops when it rains.” You remember her saying that when the two of you were alone.';
+    }});
     this.tray=at(0,.93,-.94);
     for(const z of [-.58,.58]){
       const top=.94-z*.13;
@@ -87,7 +100,9 @@ export class SecondAddress {
     mechanics.tag(trayPrompt,{name:'Release the brass survey ball',action:()=>this.tryBall()});
     const post=plots[2];
     this.drop=station(mechanics,0,groundPoint(post.x+3.4,post.z+3.6),'Compare the two addresses at the post office',()=>{
-      if(!bag.records.has('echo-slope'))return 'The clerk has the old map. Bring evidence from the dry address first.';
+      if(!bag.records.has('echo-slope')||!bag.records.has('second-address-clock')){
+        return 'The clerk has the old map. Bring the clock observation and the slope experiment from the dry address.';
+      }
       if(bag.records.has('second-address-filed'))return 'The clerk keeps both house records side by side.';
       bag.record('second-address-filed','Two addresses, one evacuee',
         'The clerk shows you two signatures dated the same night. One was filed after the reservoir covered its address. Ask who moves the original tapes during Founders’ Night.');
@@ -147,6 +162,8 @@ export class SecondAddress {
     const ball=this.ball;
     if(!m.items.has(ball.collider.handle)){
       this.ball=null;this.trial.phase=this.trial.phase==='echo'?'control-ready':'idle';
+      this.receiverLamp.intensity=0;
+      this.notice('The ball left the tray. Use the tray to reset and try again.');
       return;
     }
     this.ballAge+=dt;
@@ -161,15 +178,20 @@ export class SecondAddress {
     if(result==='echo'){
       this.bag.record('echo-slope','The uphill ball',
         'With the receiver off the brass ball rolled downhill. With it on, the ball climbed the same slope. Entered by '+this.route+'.');
-      this.notice('The ball climbs uphill. Bring the result to the post office and compare the two house records.');
+      this.notice(this.bag.records.has('second-address-clock')?
+        'The ball climbs uphill. Bring both clues to the post office.':
+        'The ball climbs uphill. Inspect the stopped clock before you leave.');
     }
   }
 
   objective(){
     if(this.mechanics.area!==0||!this.unlocked()||this.bag.records.has('second-address-filed'))return null;
-    if(this.bag.records.has('echo-slope'))return {text:'The Second Address · Compare records at the post office',target:this.drop};
-    if(this.route)return {text:'The Second Address · Test the slope inside the house',target:this.tray};
+    const clock=this.bag.records.has('second-address-clock');
+    if(clock&&this.bag.records.has('echo-slope'))return {text:'The Second Address · Compare records at the post office',target:this.drop};
+    if(this.route&&!clock)return {text:'The Second Address · Inspect the stopped clock',target:this.clockPoint};
+    if(this.route)return {text:this.trial.phase==='control-ready'?'The Second Address · Run the experiment with the receiver on':
+      'The Second Address · Test the slope inside the house',target:this.tray};
     if(this.follow!==undefined)return {text:'The Second Address · Follow the resident to the porch',target:this.resident.root.position};
-    return {text:'The Second Address · Find a way into the house listed twice',target:this.entry};
+    return {text:'The Second Address · Talk, grapple the eave latch, or follow the resident',target:this.entry};
   }
 }

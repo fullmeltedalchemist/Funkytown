@@ -20,7 +20,8 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] Give players three ways to open the entry: a utility bluff, a grapple release at the eave, or following the resident to the porch.
 - [x] Place a brass test ball and a sloped survey tray. Let the player watch the ball roll downhill first, then demonstrate the Echo pulling it uphill.
 - [x] Let players carry the resulting evidence to a post office drop and preserve the chosen route in their bag.
-- [ ] Add a fully furnished duplicate kitchen, the resident's private-memory contradiction scene, and an optional wagon getaway if the cover story is exposed.
+- [x] Add the resident's private-memory contradiction as a required clue at the Blender-authored kitchen clock. The post office requires both clues.
+- [ ] Finish furnishing the duplicate kitchen and build an optional wagon getaway if the cover story is exposed.
 - [ ] Play all three approaches and the handoff from a live save with desktop and touch controls.
 
 ## 3. Founders' Night
@@ -47,7 +48,8 @@ The central question is who returned after the reservoir evacuation. People who 
 
 - [x] First flare pistol, contact microphone and wagon ratchet straps. A flare is a physical projectile with a temporary light. The mic can contrast an operating pump with the silent Echo relay. Loose cargo can shift in turns and leave the rack in a hard impact.
 - [x] Two-hook tow line. A real rope joint connects a movable prop or wagon to a second object or an anchor on a solid surface.
-- [ ] Magnetic crawler, slingshot, lever-action rifle and a powered wagon winch. Add a recorder and playback function to the contact microphone.
+- [x] Powered wagon winch. When a tow line is attached to the wagon, Rig toggles reeling from the driver's seat.
+- [ ] Magnetic crawler, slingshot and lever-action rifle. Add a recorder and playback function to the contact microphone.
 - [ ] Material-based breakage, weight and buoyancy, movable furniture, persistent quest-object recovery, and cargo tie-downs.
 - [x] Authored cottontails that flee, can be shot and yield meat for the existing skillet and sharing loop.
 - [ ] Creek birds and a boar with distinct reactions. Add meat bait and trackable signs.

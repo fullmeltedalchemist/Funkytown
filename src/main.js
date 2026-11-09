@@ -212,7 +212,7 @@ async function boot(){
     notice(sample.message+' Contact signal '+Math.round(sample.strength*100)+'%.');
   }
   const towLine=new TowLine(mechanics);
-  bag.record('tow-line','Two-hook tow line','V or Rig · anchor a loose prop or wagon to a second object or a fixed surface.','Gear');
+  bag.record('tow-line','Two-hook tow line','V or Rig · rig two anchors on foot. If attached to the wagon, use Rig from the driver seat to reel in.','Gear');
   let cableAudio;
   function soundCable(speed){
     if(audio?.state!=='running')return;
@@ -344,7 +344,7 @@ async function boot(){
         salvage.tick(STEP);
         address.tick(STEP);
         wildlife.tick(STEP);
-        towLine.tick();
+        towLine.tick(STEP);
         if(!mechanics.driving){
           const transition=story.transition(walker.current,STEP);
           if(transition){
