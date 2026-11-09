@@ -173,6 +173,8 @@ test('camp cooking allows a hot meal, a burnt batch, and drinking from a finite 
 
 test('chapter route resets a wrong gauge order and persists each arch ending',async()=>{
   const {Chapters}=await import('../src/chapters.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker}=await import('../src/walker.js');
   await R.init();
   const storage=new Map();
   globalThis.localStorage={getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value)};
@@ -180,25 +182,41 @@ test('chapter route resets a wrong gauge order and persists each arch ending',as
     storage.clear();
     const world=new R.World({x:0,y:-9.81,z:0});
     const scenes=[new T.Scene(),new T.Scene()];
-    const tags=new Map();
-    const mechanics={world,scenes,onImpact:new Map(),tag:(collider,action)=>tags.set(collider.handle,action),
-      staticBox:(_size,position)=>({
-        visual:new T.Mesh(new T.BoxGeometry(),new T.MeshStandardMaterial()),
-        collider:world.createCollider(R.ColliderDesc.ball(.1).setTranslation(...position))
-      })};
+    const walker=new Walker(world,[0,2,0]);
+    const mechanics=new Mechanics(world,walker,...scenes);
+    const tags=mechanics.fixed;
+    const camera=new T.PerspectiveCamera();
+    function shootAt(point){
+      camera.position.copy(point).add(new T.Vector3(0,0,1.2));
+      camera.lookAt(point);camera.updateMatrixWorld(true);
+      world.step(mechanics.events);
+      mechanics.fire(camera);
+      for(let i=0;i<14;i++){
+        mechanics.before(camera,{x:0,z:0},{actions:new Set()});
+        world.step(mechanics.events);
+        mechanics.after();
+      }
+    }
     const story={area:0,gates:[new T.Vector3(),new T.Vector3()]};
     const finale={choice:'public'},bag={records:new Map(),record(){}};
     const chapter=new Chapters(mechanics,story,finale,bag,()=>{});
     const interact=(name)=>[...tags.values()].find(action=>action.name===name).action();
     assert.match(interact('Read the emergency dispatch ledger'),/Shoot blue/);
-    chapter.pulse(1);chapter.pulse(2);
+    const shootGauge=index=>shootAt(chapter.gauges[index].point);
+    shootGauge(1);
+    assert.equal(chapter.pulses,1);
+    assert.ok(chapter.gauges[1].visual.material.emissiveIntensity>1);
+    shootGauge(2);
     assert.equal(chapter.pulses,0);
-    chapter.pulse(1);chapter.pulse(0);chapter.pulse(2);
+    assert.ok(chapter.gauges[1].visual.material.emissiveIntensity<.2);
+    shootGauge(1);shootGauge(0);shootGauge(2);
     assert.equal(chapter.stage,2);
     interact('Read the exposed route marker');
     assert.match(interact('Recover Mom’s original recording'),/Grapple/);
-    const ring=[...tags.values()].find(action=>action.name==='Reflected porch ring');
-    ring.onGrapple();
+    mechanics.changeArea(1);
+    camera.position.copy(chapter.echoRing).add(new T.Vector3(0,-1.5,3));
+    camera.lookAt(chapter.echoRing);camera.updateMatrixWorld(true);
+    assert.match(mechanics.grapple(camera),/latch swings open/);
     interact('Recover Mom’s original recording');
     interact(ending==='seal'?'Seal the arch':'Keep the arch open for a rescue');
     assert.equal(story.archSealed,ending==='seal');

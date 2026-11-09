@@ -23,9 +23,9 @@ export class Chapters {
     const post=plots[2];
     this.ledger=station(mechanics,0,groundPoint(post.x+3.8,post.z-3.7),'Read the emergency dispatch ledger',()=>{
       if(!finale.choice)return 'The postmaster keeps the emergency ledger closed until the rescue tape is accounted for.';
-      if(this.stage!==0)return 'The warning lists a north gauge, a south gauge and a red relief target. Test them in that order.';
+      if(this.stage!==0)return 'The warning lists a blue gauge, an amber gauge and a red relief target. Test them in that order.';
       this.advance(1);
-      bag.record('flood-warning','Undelivered flood warning','Open the relief in order: blue north gauge, amber south gauge, red relief target.');
+      bag.record('flood-warning','Undelivered flood warning','Open the relief in order: blue gauge, amber gauge, red relief target.');
       if(bag.records.has('creek-pump-echo')){
         return 'The warning describes the same trick you caught at the pump. Trust the plates you can see move. Shoot blue, amber, then red at the lower spillway.';
       }
@@ -40,13 +40,13 @@ export class Chapters {
       {x:8.2,z:-2.4,label:'Red',color:0xd05d56}
     ].entries()){
       const base=groundPoint(x,z);
-      const post=part(mechanics.scenes[0],[.13,1.34,.14],[x,base.y+.67,z],0x64503d);
+      part(mechanics.scenes[0],[.13,1.34,.14],[x,base.y+.67,z],0x64503d);
       const {visual,collider}=mechanics.staticBox([.44,.42,.27],[x,base.y+1.23,z],color);
       visual.material.emissive.setHex(color);
       visual.material.emissiveIntensity=.16;
       mechanics.tag(collider,{name:label+' spillway gauge',action:()=>'Aim and shoot the plate. The warning gives the order.'});
       mechanics.onImpact.set(collider.handle,()=>this.pulse(i));
-      this.gauges.push({point:post.position.clone(),visual});
+      this.gauges.push({point:visual.position.clone(),visual});
     }
     this.marker=station(mechanics,0,groundPoint(9.8,-4.4),'Read the exposed route marker',()=>{
       if(this.stage<2)return 'A bolted lid hides the old route marker. The spillway test releases it.';
@@ -98,10 +98,12 @@ export class Chapters {
     if(this.stage!==1)return;
     if(index!==sequence[this.pulses]){
       this.pulses=0;
+      for(const gauge of this.gauges)gauge.visual.material.emissiveIntensity=.16;
       this.notice('Wrong plate. The relief resets. Blue, amber, red.');
       return;
     }
     this.pulses++;
+    this.gauges[index].visual.material.emissiveIntensity=1.15;
     if(this.pulses===3){
       this.advance(2);
       this.notice('Relief open. The route marker is exposed.');
