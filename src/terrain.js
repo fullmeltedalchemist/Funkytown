@@ -28,6 +28,11 @@ export const plots=[{name:'Vale House',x:12,z:26,yaw:-Math.PI/2,scale:.82},
   {name:'Bellwether Supply',x:10,z:13,yaw:-Math.PI/2,scale:.83},
   {name:'Post Office',x:-7,z:11,yaw:Math.PI/2,scale:.75}]
   .map(plot=>({...plot,y:rawHeight(plot.x,plot.z)+.045}));
+export const basin={x:-33,entry:30,back:9,floor:-2.35,water:-.34};
+export function basinInfluence(x,z){
+  return (1-smoothstep(Math.abs(x-basin.x),11,15))*
+    smoothstep(z,5,basin.back)*(1-smoothstep(z,basin.entry,39));
+}
 export function height(x,z){
   const yard=1-smoothstep(Math.max(Math.abs(x-cabinX)*.83,Math.abs(z-cabinZ)*.92),4.7,9);
   let result=lerp(rawHeight(x,z),cabinY-.035,yard);
@@ -35,7 +40,9 @@ export function height(x,z){
     const pad=1-smoothstep(Math.max(Math.abs(x-cx),Math.abs(z-cz)),3.5,7);
     result=lerp(result,y-.035,pad);
   }
-  return result;
+  const weight=basinInfluence(x,z);
+  const ramp=smoothstep(z,22,37);
+  return lerp(result,lerp(basin.floor,Math.max(2.5,result),ramp),weight);
 }
 export const spawn=[trailX(38),height(trailX(38),38)+1.1,38];
 export const inCreek=(x,z)=>Math.abs(z-creekZ(x))<creekWidth(x)*1.35&&height(x,z)<-1.71;

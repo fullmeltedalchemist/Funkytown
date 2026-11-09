@@ -1,3 +1,4 @@
+import {SalvageStreet} from './salvage-street.js';
 import {FieldProps} from './field-props.js';
 import {CreekEncounter} from './creek-encounter.js';
 import {CampLife} from './camp-life.js';
@@ -11,7 +12,7 @@ import {fieldPistol} from './effects.js';
 import * as T from 'three';
 import R from 'rapier';
 import {AssetPipeline} from './assets.js';
-import {cabinX,cabinY,cabinZ,height,inCreek,makeTerrain,plots,spawn,trailDistance,trailX} from './terrain.js';
+import {cabinX,cabinY,cabinZ,height,basinInfluence,inCreek,makeTerrain,plots,spawn,trailDistance,trailX} from './terrain.js';
 import {Walker,STEP} from './walker.js';
 import {Input} from './input.js';
 import {Mechanics,vec} from './mechanics.js';
@@ -49,6 +50,7 @@ function forest(pipeline,models){
   const rnd=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
   const grove={oak:[],birch:[],maple:[],underbrush:[],rocks:[]};
   function place(type,x,z,scale,sink=0){
+    if(basinInfluence(x,z)>.07)return;
     if(insideRescueCorridor(x,z,type==='rocks'?scale*.48:1.2))return;
     grove[type].push({x,y:height(x,z)-sink,z,scale,yaw:rnd()*Math.PI*2});
   }
@@ -186,6 +188,8 @@ async function boot(){
     if(event==='blast')playToolSound(110,28,.37,.30);
     if(event==='pump'||event==='echo')playToolSound(320,84,.42,.18,position);
   });
+  const salvage=new SalvageStreet(mechanics,pipeline,models,bag,chapters,campLife,notice,
+    ()=>playToolSound(540,330,.68,.23));
   let cableAudio;
   function soundCable(speed){
     if(audio?.state!=='running')return;
@@ -308,6 +312,7 @@ async function boot(){
         campLife.tick(STEP);
         creekEncounter.tick(STEP);
         fieldProps.tick(STEP);
+        salvage.tick(STEP);
         if(!mechanics.driving){
           const transition=story.transition(walker.current,STEP);
           if(transition){
@@ -355,7 +360,7 @@ async function boot(){
       water.uniforms.ripple.value.set(player.x,player.z,now*.001);lastWake=now;
     }
     story.animate(now*.001);
-    const objective=(rescue.showPractice?rescue.objective():null)??fieldProps.objective()??chapters.objective()??finale.objective()??rescue.objective();
+    const objective=(rescue.showPractice?rescue.objective():null)??salvage.objective()??fieldProps.objective()??chapters.objective()??finale.objective()??rescue.objective();
     $('guide').textContent=objective?.text??story.guide(player);
     const waypoint=objective?objective.target:story.waypoint();
     const arrow=$('bearing');

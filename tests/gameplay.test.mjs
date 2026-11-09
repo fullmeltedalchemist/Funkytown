@@ -292,3 +292,36 @@ test('field prop GLBs load and real impacts shatter a jug and detonate a fuel ca
   assert.equal(props.objective(),null);
   world.free();
 });
+
+test('submerged street warns once, recovers stranded players, and saves salvage rewards',async()=>{
+  const {SalvageClock,SalvageStreet}=await import('../src/salvage-street.js');
+  const {basin,height}=await import('../src/terrain.js');
+  const clock=new SalvageClock();
+  clock.start();
+  assert.equal(clock.advance(70),'bell');
+  assert.equal(clock.advance(1),'');
+  assert.equal(clock.advance(14),'flood');
+  assert.equal(clock.advance(1),'');
+  clock.start(true);
+  assert.equal(clock.remaining,115);
+  assert.ok(height(basin.x,13)<basin.water);
+  assert.ok(height(basin.x,34)>basin.water);
+
+  const removed=[],records=new Map(),site=Object.create(SalvageStreet.prototype);
+  const location=new T.Vector3(basin.x,0,13);
+  const walker={current:location,spawn:[1,1,1],teleport(position){this.current.set(...position);this.spawn=position;}};
+  const mechanics={walker,area:0,items:new Map(),remove(item){removed.push(item);this.items.delete(item.collider.handle);}};
+  Object.assign(site,{mechanics,clock,cargo:[],bag:{record:(id,name,result)=>records.set(id,{name,result})},notice(){}});
+  const wet={collider:{handle:1},body:{translation:()=>location.clone()}};
+  const dry={collider:{handle:2},body:{translation:()=>new T.Vector3(basin.x,1,34)},
+    salvage:{id:'pump',name:'Pump',result:'Pump recovered'}};
+  site.cargo.push(wet,dry);
+  mechanics.items.set(1,wet);mechanics.items.set(2,dry);
+  site.flood();
+  assert.deepEqual(removed,[wet]);
+  assert.equal(walker.current.z,32);
+  assert.deepEqual(walker.spawn,[1,1,1]);
+  assert.equal(site.deliver(dry),'Pump recovered');
+  assert.equal(records.get('pond-pump').name,'Pump');
+  assert.equal(clock.remaining,15);
+});

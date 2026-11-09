@@ -24,10 +24,7 @@ export class CampLife {
     this.food.position.y=1.055;this.food.visible=false;stove.body.add(this.food);
     this.heat=new T.PointLight(0xff973e,0,3,2);
     this.heat.position.set(0,.98,.18);stove.body.add(this.heat);
-    const pump=station(mechanics,0,groundPoint(cabinX+7.8,cabinZ+5.4),'Refill canteen and drink at the hand pump',()=>{
-      this.water=2;
-      return this.drink();
-    },{color:0x517b75});
+    const pump=station(mechanics,0,groundPoint(cabinX+7.8,cabinZ+5.4),'Refill canteen and drink at the hand pump',()=>this.refill(),{color:0x517b75});
     part(pump.body,[.08,.3,.09],[0,1.07,0],0x567e7b,.012);
     part(pump.body,[.28,.05,.055],[.12,1.22,0],0x344540,.017);
     station(mechanics,0,groundPoint(cabinX+5.5,cabinZ+5.6),'Eat a meal at the mess station',()=>this.eat());
@@ -66,6 +63,10 @@ export class CampLife {
     if(burned)return 'The batch burned. Clear the skillet and try a fresh batch from the pantry.';
     this.bag.record('camp-meal','Hot skillet meal','Eat at the mess station or share it with the ranger.','Cargo');
     return 'Meal packed. Eat at the mess station or deliver a plate for the ranger.';
+  }
+  refill(){
+    this.water=2;
+    return this.drink();
   }
   drink(){
     if(!this.water)return 'Canteen empty. Refill at the Foxglove Camp hand pump.';

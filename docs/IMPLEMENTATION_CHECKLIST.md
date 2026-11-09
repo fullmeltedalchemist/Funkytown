@@ -79,3 +79,9 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 - [ ] Verify jug glass, visible fill, the red fuel can, and the transfer pump on desktop and mobile. All three are authored Blender exports loaded via the GLB manifest.
 - [ ] Carry, throw, shoot, and wagon-haul the new props in the rendered game. Rapier tests cover thrown and shot jugs, splash creation, and a shot fuel can.
 - [ ] Play the water handoff and fuel delivery, follow the delayed start across the ford, and check the optional clue against the Chapter 2 ledger.
+
+## Submerged Street
+
+- [ ] Drive into the western pond basin, load each salvage option, and unload it at the high-bank station. The drain unlocks after recovering the original Echo recording.
+- [ ] Verify the warning bell, returning water, flooded cargo loss and retreat to the ramp. Automated checks cover the clock and player recovery.
+- [ ] Check that pump salvage extends later runs, water salvage opens the canteen refill, and the ledger is recorded in the bag.

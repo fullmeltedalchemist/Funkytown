@@ -125,10 +125,14 @@ export class Mechanics {
         this.cargo=this.carried;
         this.release();
         this.cargo.body.setEnabled(false);
-        this.cargo.visual.removeFromParent();
-        this.car.visual.add(this.cargo.visual);
-        this.cargo.visual.position.set(0,.62,1.02);
-        this.cargo.visual.rotation.set(0,0,0);
+        const model=this.cargo.visual;
+        // Fit the actual model to the rack floor, including assets with a foot-level origin.
+        model.removeFromParent();
+        model.position.set(0,0,0);
+        model.rotation.set(0,0,0);
+        const bounds=new T.Box3().setFromObject(model);
+        model.position.set(0,.43-bounds.min.y,1.02);
+        this.car.visual.add(model);
         return this.cargo.name+' secured on the wagon rack.';
       }
       this.release();return 'Set down.';
