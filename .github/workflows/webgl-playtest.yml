@@ -11,7 +11,7 @@ on:
       - '.github/workflows/webgl-playtest.yml'
 jobs:
   browser:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -45,6 +45,10 @@ jobs:
                 if(name==='touch'){
                   await page.locator('#touch-mode').tap();
                   await page.locator('#touch').waitFor({state:'visible'});
+                  await page.locator('#lantern-button').tap();
+                  await page.getByText('Signal lantern deployed.',{exact:false}).waitFor();
+                  await page.locator('#lantern-button').tap();
+                  await page.getByText('Signal lantern recalled.',{exact:false}).waitFor();
                   await page.locator('#bag-button').tap();
                 }else{
                   await page.locator('#start').click();
