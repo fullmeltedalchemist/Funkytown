@@ -424,4 +424,17 @@ test('wagon drives the actual basin ramp and turns in salvage through normal int
   walkTo(mission.drop.x+.9,mission.drop.z);
   assert.match(use(mission.drop),/extra thirty seconds/);
   assert.ok(records.has('pond-pump'));
+  mission.tick(mission.clock.remaining+STEP);
+  walkTo(mission.control.x,mission.control.z+1.3);
+  assert.match(use(mission.control),/Drain open/);
+  assert.equal(mission.clock.remaining,115);
+  const highPark=vec(m.car.body.translation());
+  walkTo(highPark.x+1.7,highPark.z-.3);
+  const hitBefore=use(highPark);
+  assert.match(hitBefore,/Wagon controls/,JSON.stringify({highPark,now:m.car.body.translation(),walker:walker.current}));
+  driveTo(17,1);
+  mission.tick(mission.clock.remaining+STEP);
+  assert.equal(m.car.body.translation().z,32);
+  assert.equal(m.driving,true);
+  assert.equal(mission.cargo.some(item=>m.items.has(item.collider.handle)),false);
 });

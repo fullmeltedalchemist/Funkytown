@@ -258,7 +258,7 @@ export class Mechanics {
     const right=new T.Vector3(1,0,0).applyQuaternion(rot);
     const current=vec(body.linvel()),along=current.dot(front),side=current.dot(right);
     const target=movement.z*(movement.z<0?6:15);
-    const accel=T.MathUtils.clamp((target-along)*3,-18,13);
+    const accel=T.MathUtils.clamp((target-along)*(movement.z<0?4.8:3),-18,13);
     const grip=movement.drift?1.1:8.5;
     const impulse=front.multiplyScalar(accel).addScaledVector(right,-side*grip).multiplyScalar(STEP*body.mass());
     body.applyImpulse(impulse,true);
@@ -279,6 +279,7 @@ export class Mechanics {
         undefined,undefined,this.walker.collider,this.walker.body);
       if(blocked)continue;
       this.driving=false;this.walker.body.setEnabled(true);
+      car.body.sleep();
       const spawn=this.walker.spawn;this.walker.teleport(pos.toArray());this.walker.spawn=spawn;
       return 'Exited wagon.';
     }
