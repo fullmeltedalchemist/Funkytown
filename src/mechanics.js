@@ -51,14 +51,14 @@ export class Mechanics {
     return {visual,collider};
   }
   tag(collider,interaction){this.fixed.set(collider.handle,interaction);}
-  dynamic({position,shape,visual,kind='prop',name,size,life=Infinity,area=this.area,home=null}){
+  dynamic({position,shape,visual,kind='prop',name,size,life=Infinity,area=this.area,home=null,breakEffect=null,impactLimit=6.5}){
     const body=this.world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(...position).setCcdEnabled(kind!=='water'));
     const bit=bits[kind];
     const mask=kind==='round'?bits.world|bits.prop|bits.car:kind==='water'?all&~(bits.water|bits.round):all;
     shape.setCollisionGroups(groups(bit,mask));
     if(kind==='round'||size)shape.setActiveEvents(R.ActiveEvents.COLLISION_EVENTS);
     const collider=this.world.createCollider(shape,body);
-    const item={body,collider,visual,kind,name,size,life,area,mask,home,speed:0};
+    const item={body,collider,visual,kind,name,size,life,area,mask,home,breakEffect,impactLimit,speed:0};
     this.items.set(collider.handle,item);
     if(visual){visual.position.set(...position);this.scenes[area].add(visual);}
     return item;
@@ -78,6 +78,8 @@ export class Mechanics {
   }
   remove(item){
     if(this.carried===item)this.carried=null;
+    if(this.cargo===item)this.cargo=null;
+    this.fixed.delete(item.collider.handle);
     this.items.delete(item.collider.handle);this.world.removeRigidBody(item.body);
     if(!item.visual)return;
     item.visual.removeFromParent();
@@ -88,7 +90,9 @@ export class Mechanics {
     const velocity=vec(item.body.linvel());
     const rotation=new T.Quaternion().copy(item.body.rotation());
     const area=item.area;
+    const effect=item.breakEffect;
     this.remove(item);
+    if(effect){effect(origin,velocity,area);return;}
     for(let i=0;i<6;i++){
       const offset=new T.Vector3((i%3-1)*.21,(i<3?-.13:.13),Math.sin(i*3)*.1).applyQuaternion(rotation);
       const visual=new T.Group();
@@ -115,6 +119,7 @@ export class Mechanics {
     if(this.driving)return this.exitCar();
     const target=this.target(camera);
     if(this.carried){
+      if(target?.accept)return target.accept(this.carried);
       if(target===this.car&&this.carried.size&&this.carried.area===0){
         if(this.cargo)return 'The wagon rack is full. Take out the current load first.';
         this.cargo=this.carried;
@@ -124,7 +129,7 @@ export class Mechanics {
         this.car.visual.add(this.cargo.visual);
         this.cargo.visual.position.set(0,.62,1.02);
         this.cargo.visual.rotation.set(0,0,0);
-        return 'Crate secured on the wagon rack.';
+        return this.cargo.name+' secured on the wagon rack.';
       }
       this.release();return 'Set down.';
     }
@@ -308,13 +313,14 @@ export class Mechanics {
     this.events.drainCollisionEvents((a,b,started)=>{
       if(!started)return;
       const one=this.items.get(a),two=this.items.get(b);
+      const solid=!(this.world.getCollider(a)?.isSensor()||this.world.getCollider(b)?.isSensor());
       if(one?.kind==='round'&&!spent.has(one)){spent.add(one);this.onImpact.get(b)?.();}
       if(two?.kind==='round'&&!spent.has(two)){spent.add(two);this.onImpact.get(a)?.();}
-      if(one?.size&&one!==this.cargo&&one!==this.carried&&(one.speed>6.5||two?.kind==='round'))broken.add(one);
-      if(two?.size&&two!==this.cargo&&two!==this.carried&&(two.speed>6.5||one?.kind==='round'))broken.add(two);
+      if(solid&&one?.size&&one!==this.cargo&&one!==this.carried&&(one.speed>one.impactLimit||two?.kind==='round'))broken.add(one);
+      if(solid&&two?.size&&two!==this.cargo&&two!==this.carried&&(two.speed>two.impactLimit||one?.kind==='round'))broken.add(two);
     });
     for(const item of spent)this.remove(item);
-    for(const item of broken)this.fracture(item);
+    for(const item of broken)if(this.items.has(item.collider.handle))this.fracture(item);
     for(const item of this.items.values()){
       if(item===this.cargo)continue;
       item.life-=STEP;

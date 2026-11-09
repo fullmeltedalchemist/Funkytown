@@ -1,3 +1,4 @@
+import {FieldProps} from './field-props.js';
 import {CreekEncounter} from './creek-encounter.js';
 import {CampLife} from './camp-life.js';
 import {Chapters} from './chapters.js';
@@ -158,7 +159,7 @@ async function boot(){
     }catch(error){console.warn('Ambient audio unavailable',error);}
   };
   for(const id of ['start','touch-mode'])$(id).addEventListener('click',unlockAudio);
-  const playToolSound=(from,to,duration,volume)=>{
+  const playToolSound=(from,to,duration,volume,position)=>{
     if(audio?.state!=='running')return;
     const time=audio.currentTime;
     const tone=audio.createOscillator(),gain=audio.createGain();
@@ -167,10 +168,24 @@ async function boot(){
     tone.frequency.exponentialRampToValueAtTime(to,time+duration);
     gain.gain.setValueAtTime(volume,time);
     gain.gain.exponentialRampToValueAtTime(.001,time+duration);
-    tone.connect(gain).connect(audio.destination);
-    tone.onended=()=>{tone.disconnect();gain.disconnect();};
+    tone.connect(gain);
+    const pan=position&&audio.createStereoPanner?audio.createStereoPanner():null;
+    if(pan){
+      const right=new T.Vector3(1,0,0).applyQuaternion(camera.quaternion);
+      const offset=position.clone().sub(camera.position);
+      const distance=offset.length();
+      pan.pan.value=T.MathUtils.clamp(offset.normalize().dot(right),-1,1);
+      gain.gain.setValueAtTime(volume*Math.max(.26,1-distance*.022),time);
+      gain.connect(pan).connect(audio.destination);
+    }else gain.connect(audio.destination);
+    tone.onended=()=>{tone.disconnect();gain.disconnect();pan?.disconnect();};
     tone.start(time);tone.stop(time+duration);
   };
+  const fieldProps=new FieldProps(mechanics,pipeline,models,rescue,bag,notice,(event,position)=>{
+    if(event==='glass')playToolSound(1750,460,.22,.16);
+    if(event==='blast')playToolSound(110,28,.37,.30);
+    if(event==='pump'||event==='echo')playToolSound(320,84,.42,.18,position);
+  });
   let cableAudio;
   function soundCable(speed){
     if(audio?.state!=='running')return;
@@ -292,6 +307,7 @@ async function boot(){
         mail.tick(now*.001);
         campLife.tick(STEP);
         creekEncounter.tick(STEP);
+        fieldProps.tick(STEP);
         if(!mechanics.driving){
           const transition=story.transition(walker.current,STEP);
           if(transition){
@@ -339,7 +355,7 @@ async function boot(){
       water.uniforms.ripple.value.set(player.x,player.z,now*.001);lastWake=now;
     }
     story.animate(now*.001);
-    const objective=(rescue.showPractice?rescue.objective():null)??chapters.objective()??finale.objective()??rescue.objective();
+    const objective=(rescue.showPractice?rescue.objective():null)??fieldProps.objective()??chapters.objective()??finale.objective()??rescue.objective();
     $('guide').textContent=objective?.text??story.guide(player);
     const waypoint=objective?objective.target:story.waypoint();
     const arrow=$('bearing');
@@ -353,9 +369,9 @@ async function boot(){
     if(now>noticeUntil)$('notice').textContent='';
     const target=input.active&&!mechanics.driving?mechanics.target(camera):null;
     const use=input.touch?'Use':'E';
-    $('hint').textContent=rescue.zipline.active?rescue.zipline.readout(input.touch):mechanics.driving?use+' · Exit wagon':mechanics.carried?(target===mechanics.car&&mechanics.carried.size?use+' · Secure crate to wagon':
+    $('hint').textContent=rescue.zipline.active?rescue.zipline.readout(input.touch):mechanics.driving?use+' · Exit wagon':mechanics.carried?(target?.acceptName?use+' · '+target.acceptName:target===mechanics.car&&mechanics.carried.size?use+' · Secure cargo to wagon':
         use+' · Set down / '+(input.touch?'Throw':'Q')+' · Throw'):
-      target===mechanics.car&&mechanics.canUnloadCargo()?use+' · Unload crate':target?.name?use+' · '+target.name:'';
+      target===mechanics.car&&mechanics.canUnloadCargo()?use+' · Unload cargo':target?.name?use+' · '+target.name:'';
     $('reticle').hidden=mechanics.driving;
     renderer.render(activeScene,camera);
     gear.capture(renderer.domElement,story.area,player);

@@ -26,6 +26,9 @@ export class Chapters {
       if(this.stage!==0)return 'The warning lists a north gauge, a south gauge and a red relief target. Test them in that order.';
       this.advance(1);
       bag.record('flood-warning','Undelivered flood warning','Open the relief in order: blue north gauge, amber south gauge, red relief target.');
+      if(bag.records.has('creek-pump-echo')){
+        return 'The warning describes the same trick you caught at the pump. Trust the plates you can see move. Shoot blue, amber, then red at the lower spillway.';
+      }
       return finale.choice==='public'?
         'The postmaster has marked the warning for you. Shoot blue, amber, then red at the lower spillway to expose the route marker.':
         'The ranger slipped the warning into the ledger. Shoot blue, amber, then red at the lower spillway to expose the route marker.';

@@ -187,7 +187,7 @@ test('chapter route resets a wrong gauge order and persists each arch ending',as
         collider:world.createCollider(R.ColliderDesc.ball(.1).setTranslation(...position))
       })};
     const story={area:0,gates:[new T.Vector3(),new T.Vector3()]};
-    const finale={choice:'public'},bag={record(){}};
+    const finale={choice:'public'},bag={records:new Map(),record(){}};
     const chapter=new Chapters(mechanics,story,finale,bag,()=>{});
     const interact=(name)=>[...tags.values()].find(action=>action.name===name).action();
     assert.match(interact('Read the emergency dispatch ledger'),/Shoot blue/);
@@ -205,4 +205,90 @@ test('chapter route resets a wrong gauge order and persists each arch ending',as
     assert.equal(new Chapters(mechanics,story,finale,bag,()=>{}).ending,ending);
     world.free();
   }
+});
+
+test('field prop GLBs load and real impacts shatter a jug and detonate a fuel can',async()=>{
+  const {AssetPipeline}=await import('../src/assets.js');
+  const {FieldProps}=await import('../src/field-props.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker,STEP}=await import('../src/walker.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  const scene=new T.Scene(),realm=new T.Scene();
+  const walker=new Walker(world,[0,1,8]);
+  const mechanics=new Mechanics(world,walker,scene,realm);
+  const pipeline=new AssetPipeline(scene,world);
+  async function model(path){
+    const bytes=await readFile(new URL('../assets/'+path,import.meta.url));
+    const gltf=await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
+    return gltf.scene;
+  }
+  const models={waterJug:await model('pump-water-jug.glb'),fuelCan:await model('creek-fuel-can.glb'),
+    transferPump:await model('creek-transfer-pump.glb')};
+  const sensor=world.createCollider(R.ColliderDesc.ball(.4).setSensor(true).setTranslation(0,1,10));
+  mechanics.tag(sensor,{});
+  const records=new Map();
+  const bag={records,record:id=>records.set(id,true)};
+  const sounds=[];
+  const props=new FieldProps(mechanics,pipeline,models,{rangerSensor:sensor,story:{state:4}},bag,()=>{},event=>sounds.push(event));
+  mechanics.staticBox([20,.2,20],[0,-.1,0],0x555555);
+  const frame=()=>{
+    mechanics.before(camera,{},{actions:new Set()});
+    world.step(mechanics.events);
+    mechanics.after();
+    props.tick(STEP);
+  };
+  const camera=new T.PerspectiveCamera();
+  camera.position.set(0,.4,2);
+  camera.lookAt(0,.4,0);
+  camera.updateMatrixWorld(true);
+  const jug={type:'water',position:[0,.36,0]};
+  props.stock(jug);
+  world.step(mechanics.events);
+  mechanics.fire(camera);
+  for(let i=0;i<15;i++)frame();
+  assert.ok(sounds.includes('glass'));
+  assert.ok(mechanics.drops.length>0);
+  assert.ok(!mechanics.items.has(jug.item.collider.handle));
+
+  const thrown={type:'water',position:[4,1,0]};
+  props.stock(thrown);
+  mechanics.grab(thrown.item);
+  mechanics.release(new T.Vector3(0,-8,0));
+  for(let i=0;i<15;i++)frame();
+  assert.ok(!mechanics.items.has(thrown.item.collider.handle));
+
+  const fuel={type:'fuel',position:[2,.36,0]};
+  props.stock(fuel);
+  camera.position.x=2;
+  camera.lookAt(2,.4,0);
+  camera.updateMatrixWorld(true);
+  for(let i=0;i<15;i++)frame();
+  mechanics.fire(camera);
+  for(let i=0;i<15;i++)frame();
+  assert.ok(sounds.includes('blast'));
+  assert.ok(!mechanics.items.has(fuel.item.collider.handle));
+
+  const delivery={type:'water',position:[7,.36,0]};
+  props.stock(delivery);
+  mechanics.grab(delivery.item);
+  assert.match(mechanics.fixed.get(sensor.handle).accept(delivery.item),/Thanks/);
+  assert.ok(records.has('pump-water-delivery'));
+  assert.equal(mechanics.carried,null);
+
+  const pump=[...mechanics.fixed.values()].find(tag=>tag.name==='Listen at the creek pump');
+  const relay=[...mechanics.fixed.values()].find(tag=>tag.name==='Inspect the silent relay by the ford');
+  assert.match(relay.action(),/cold/);
+  const deliveryFuel={type:'fuel',position:[7,.36,0]};
+  props.stock(deliveryFuel);
+  mechanics.grab(deliveryFuel.item);
+  assert.match(pump.accept(deliveryFuel.item),/delivered/);
+  assert.match(pump.action(),/motor starts/);
+  props.tick(1.4);
+  assert.deepEqual(sounds.slice(-2),['pump','echo']);
+  assert.ok(props.objective());
+  assert.match(relay.action(),/copied/);
+  assert.ok(records.has('creek-pump-echo'));
+  assert.equal(props.objective(),null);
+  world.free();
 });

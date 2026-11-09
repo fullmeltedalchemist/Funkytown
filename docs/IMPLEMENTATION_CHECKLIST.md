@@ -73,3 +73,9 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 - [ ] Playtest the first Chapters 2–4 route from a Chapter 1 save: emergency ledger, colored spillway gauges, Echo porch latch, and both arch endings. Expanded chapter environments and investigations remain open.
 - [ ] Playtest the camp pantry, skillet timing, mess station, hand pump, portable canteen, and the ranger supper/cache quest on phone.
 - [ ] Verify the creek firefly encounter in the rendered game.
+
+## Creek supply props and pump mystery
+
+- [ ] Verify jug glass, visible fill, the red fuel can, and the transfer pump on desktop and mobile. All three are authored Blender exports loaded via the GLB manifest.
+- [ ] Carry, throw, shoot, and wagon-haul the new props in the rendered game. Rapier tests cover thrown and shot jugs, splash creation, and a shot fuel can.
+- [ ] Play the water handoff and fuel delivery, follow the delayed start across the ford, and check the optional clue against the Chapter 2 ledger.

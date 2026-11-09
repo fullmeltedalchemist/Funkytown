@@ -10,7 +10,10 @@
     "valve": "./assets/sluice-valve.glb",
     "lantern": "./assets/camp-lantern.glb",
     "dish": "./assets/echo-dish.glb",
-    "arch": "./assets/echo-arch.glb"
+    "arch": "./assets/echo-arch.glb",
+    "waterJug": "./assets/pump-water-jug.glb",
+    "fuelCan": "./assets/creek-fuel-can.glb",
+    "transferPump": "./assets/creek-transfer-pump.glb"
   },
   "placements": [
     {
