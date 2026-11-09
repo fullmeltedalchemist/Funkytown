@@ -34,6 +34,12 @@ export class SecondAddress {
     const door=mechanics.staticBox([1.54,2.36,.12],at(0,1.4,2.55).toArray(),0x455d56);
     part(door.visual,[.11,.12,.08],[.54,-.04,.085],0xb8954d,.022);
     this.door=door;
+    const savedRoute=bag.records.get('second-address-entry')?.description;
+    if(bag.records.has('pond-records')&&['utility bluff','grapple latch','followed resident'].includes(savedRoute)){
+      this.route=savedRoute;
+      door.visual.visible=false;
+      door.collider.setEnabled(false);
+    }
     this.entry=at(0,1.38,3.55);
     mechanics.tag(door.collider,{name:'Ask to inspect the house as a utility worker',action:()=>this.open('utility bluff')});
     const latchPoint=at(1.36,2.74,4.56);
@@ -58,7 +64,9 @@ export class SecondAddress {
     this.personSensor=personSensor;
     mechanics.tag(personSensor,{name:'Talk to the resident at the mailbox',action:()=>{
       if(!this.unlocked())return '“Can I help you? The utility office is across town.”';
-      if(this.route)return '“Funny you should ask. Your mom used to say, ‘The kitchen clock only stops when it rains.’” She never said that outside the kitchen.';
+      if(this.route==='grapple latch')return '“Something just tripped the porch latch. If you’re here about the clock, go ahead. I’ve tried everything.”';
+      if(this.route==='utility bluff')return '“The meter is fine. It’s the clock that stopped. Your office sent you about that, right?”';
+      if(this.route)return '“I’ll stay out here. That clock makes me remember things that never happened to me.”';
       this.follow=0;
       return '“The meter is this way. Keep up.” Follow her to the porch.';
     }});
@@ -95,9 +103,11 @@ export class SecondAddress {
     const trayFloor=R.ColliderDesc.cuboid(.225,.031,.77).setTranslation(this.tray.x,this.tray.y+.02,this.tray.z)
       .setRotation(new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),.13));
     mechanics.world.createCollider(trayFloor);
-    const trayPrompt=mechanics.world.createCollider(R.ColliderDesc.ball(.22)
-      .setTranslation(this.tray.x,this.tray.y+.28,this.tray.z+.45).setSensor(true).setCollisionGroups((128<<16)|2));
-    mechanics.tag(trayPrompt,{name:'Release the brass survey ball',action:()=>this.tryBall()});
+    this.trayControl=at(.91,1.30,-1.19);
+    const trayPrompt=mechanics.world.createCollider(R.ColliderDesc.ball(.27)
+      .setTranslation(...this.trayControl.toArray()).setSensor(true).setCollisionGroups((128<<16)|2));
+    this.trayInteraction={name:'Release the brass survey ball',action:()=>this.tryBall()};
+    mechanics.tag(trayPrompt,this.trayInteraction);
     const post=plots[2];
     this.drop=station(mechanics,0,groundPoint(post.x+3.4,post.z+3.6),'Compare the two addresses at the post office',()=>{
       if(!bag.records.has('echo-slope')||!bag.records.has('second-address-clock')){
@@ -116,6 +126,7 @@ export class SecondAddress {
     if(!this.unlocked())return 'The address means nothing yet. Check the missing-person ledger from the submerged street.';
     if(this.route)return 'The front door is already open.';
     this.route=route;
+    this.bag.record('second-address-entry','Entry at the dry address',route);
     this.door.visual.visible=false;
     this.door.collider.setEnabled(false);
     return route==='utility bluff'?
@@ -163,6 +174,7 @@ export class SecondAddress {
     if(!m.items.has(ball.collider.handle)){
       this.ball=null;this.trial.phase=this.trial.phase==='echo'?'control-ready':'idle';
       this.receiverLamp.intensity=0;
+      this.trayInteraction.name='Reset the brass-ball experiment';
       this.notice('The ball left the tray. Use the tray to reset and try again.');
       return;
     }
@@ -174,8 +186,12 @@ export class SecondAddress {
       ball.body.applyImpulse({x:0,y:0,z:-8*force},true);
     }
     const result=this.trial.observe(offset);
-    if(result==='control')this.notice('It rolls downhill. Use the tray again to run the same test with the receiver on.');
+    if(result==='control'){
+      this.trayInteraction.name='Switch on the receiver and repeat the test';
+      this.notice('It rolls downhill. Use the receiver to repeat the same test with it on.');
+    }
     if(result==='echo'){
+      this.trayInteraction.name='Review the brass-ball experiment';
       this.bag.record('echo-slope','The uphill ball',
         'With the receiver off the brass ball rolled downhill. With it on, the ball climbed the same slope. Entered by '+this.route+'.');
       this.notice(this.bag.records.has('second-address-clock')?
@@ -190,7 +206,7 @@ export class SecondAddress {
     if(clock&&this.bag.records.has('echo-slope'))return {text:'The Second Address · Compare records at the post office',target:this.drop};
     if(this.route&&!clock)return {text:'The Second Address · Inspect the stopped clock',target:this.clockPoint};
     if(this.route)return {text:this.trial.phase==='control-ready'?'The Second Address · Run the experiment with the receiver on':
-      'The Second Address · Test the slope inside the house',target:this.tray};
+      'The Second Address · Release the test ball from the receiver stand',target:this.trayControl};
     if(this.follow!==undefined)return {text:'The Second Address · Follow the resident to the porch',target:this.resident.root.position};
     return {text:'The Second Address · Talk, grapple the eave latch, or follow the resident',target:this.entry};
   }

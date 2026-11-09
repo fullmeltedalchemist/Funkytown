@@ -105,6 +105,9 @@ export class Bag {
     };
     const records=[...this.records.values()];
     for(const category of ['Gear','Evidence','Cargo'])renderSection(category,records.filter(item=>(item.category||'Evidence')===category));
-    renderSection('Keepsakes',finds.filter(item=>this.ids.has(item.id)));
+    renderSection('Keepsakes',[
+      ...finds.filter(item=>this.ids.has(item.id)),
+      ...records.filter(item=>item.category==='Keepsakes')
+    ]);
   }
 }

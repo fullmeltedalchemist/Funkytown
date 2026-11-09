@@ -56,6 +56,39 @@ jobs:
                     await route.fulfill({response,body:code.replace(marker,fixture)});
                   });
                 }
+                if(name==='touch'){
+                  await page.addInitScript(()=>{
+                    localStorage.setItem('bellwether-bag-v1-records',JSON.stringify([
+                      ['pond-records',{name:'Missing-person ledger',description:'Seeded salvage reward',category:'Keepsakes'}]
+                    ]));
+                  });
+                  await page.route('**/src/main.js',async route=>{
+                    const response=await route.fetch();
+                    const code=await response.text();
+                    const marker='renderer.setAnimationLoop(now=>{';
+                    assert(code.includes(marker));
+                    const fixture=`
+                      window.__poseSecondAddress=(stop,target)=>{
+                        const x=secondAddress.x,z=secondAddress.z,y=secondAddress.y;
+                        const positions={
+                          porch:[x,y+1.14,z+4],
+                          room:[x,y+1.14,z+.34],
+                          post:[address.drop.x,height(address.drop.x,address.drop.z+1.6)+.9,address.drop.z+1.6]
+                        };
+                        const points={
+                          door:address.door.visual.position,clock:address.clockPoint,
+                          receiver:address.trayControl,post:address.drop
+                        };
+                        const place=positions[stop];
+                        const aim=points[target].clone().sub(new T.Vector3(place[0],place[1]+.58,place[2]));
+                        walker.teleport(place);
+                        yaw=Math.atan2(-aim.x,-aim.z);
+                        pitch=Math.atan2(aim.y,Math.hypot(aim.x,aim.z));
+                      };
+                    `;
+                    await route.fulfill({response,body:code.replace(marker,fixture+marker)});
+                  });
+                }
                 await page.goto('http://127.0.0.1:8080',{waitUntil:'domcontentloaded'});
                 assert(await page.evaluate(()=>Boolean(document.createElement('canvas').getContext('webgl2'))),'WebGL2 unavailable');
                 await page.getByRole('button',{name:'Walk the ridge'}).waitFor({timeout:90000});
@@ -80,6 +113,25 @@ jobs:
                   await page.locator('#hint').filter({hasText:'Drain the submerged street'}).waitFor();
                   await page.locator('#use').click();
                   await page.locator('#guide').filter({hasText:'Choose one load and get uphill'}).waitFor();
+                }
+                if(name==='touch'){
+                  await page.getByText('Missing-person ledger',{exact:true}).waitFor();
+                  await page.locator('#bag-button').tap();
+                  const aimAndUse=async(stop,target,label)=>{
+                    await page.evaluate(([stop,target])=>window.__poseSecondAddress(stop,target),[stop,target]);
+                    await page.locator('#hint').filter({hasText:label}).waitFor();
+                    await page.locator('#use').tap();
+                  };
+                  await aimAndUse('porch','door','utility worker');
+                  await page.locator('#guide').filter({hasText:'Inspect the stopped clock'}).waitFor();
+                  await aimAndUse('room','clock','Inspect the stopped kitchen clock');
+                  await aimAndUse('room','receiver','Release the brass survey ball');
+                  await page.locator('#guide').filter({hasText:'receiver on'}).waitFor({timeout:60000});
+                  await aimAndUse('room','receiver','Switch on the receiver and repeat the test');
+                  await page.locator('#guide').filter({hasText:'Compare records at the post office'}).waitFor({timeout:60000});
+                  await aimAndUse('post','post','Compare the two addresses');
+                  await page.locator('#bag-button').tap();
+                  await page.getByText('Two addresses, one evacuee',{exact:true}).waitFor();
                 }
                 assert.deepEqual(errors,[]);
               }catch(error){

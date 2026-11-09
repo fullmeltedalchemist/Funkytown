@@ -459,7 +459,8 @@ test('Second Address opens by three approaches and proves the slope with a simul
     models[key]=(await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'')).scene;
   }
   const records=new Map();
-  const address=new SecondAddress(mechanics,pipeline,models,{records,record:(id)=>records.set(id,true)},()=>{});
+  const bag={records,record:(id,name,description)=>records.set(id,{name,description})};
+  const address=new SecondAddress(mechanics,pipeline,models,bag,()=>{});
   const target=name=>[...mechanics.fixed.values()].find(item=>item.name===name);
   const door=target('Ask to inspect the house as a utility worker');
   assert.match(door.action(),/ledger/);
@@ -487,6 +488,14 @@ test('Second Address opens by three approaches and proves the slope with a simul
   }
   assert.ok(walker.current.z<secondAddress.z+2.4,'the opened door must allow walking into the house '+walker.current.toArray());
 
+  for(let i=0;i<110&&walker.current.z>secondAddress.z+.34;i++)walker.step({x:0,z:1},0,mechanics.events);
+  const useFromPlayer=point=>{
+    camera.position.copy(walker.current).add(new T.Vector3(0,.58,0));
+    camera.lookAt(point);
+    camera.updateMatrixWorld(true);
+    return mechanics.use(camera);
+  };
+  assert.match(useFromPlayer(address.clockPoint),/alone/);
   const physicsUntil=phase=>{
     for(let i=0;i<360&&address.trial.phase!==phase;i++){
       world.step(mechanics.events);
@@ -495,15 +504,21 @@ test('Second Address opens by three approaches and proves the slope with a simul
     }
     assert.equal(address.trial.phase,phase);
   };
-  assert.match(address.tryBall(),/before/);
+  assert.match(useFromPlayer(address.trayControl),/before/);
   physicsUntil('control-ready');
-  assert.match(address.tryBall(),/receiver/);
+  assert.match(useFromPlayer(address.trayControl),/receiver/);
   physicsUntil('proved');
   assert.ok(records.has('echo-slope'));
-  assert.match(target('Compare the two addresses at the post office').action(),/clock observation/);
-  assert.match(target('Inspect the stopped kitchen clock').action(),/alone/);
-  assert.match(target('Compare the two addresses at the post office').action(),/signatures/);
+  assert.equal(address.objective().target,address.drop);
+  const post=address.drop;
+  walker.teleport([post.x,height(post.x,post.z+1.6)+.9,post.z+1.6]);
+  world.step(mechanics.events);
+  assert.match(useFromPlayer(post),/signatures/);
   assert.equal(address.objective(),null);
+  const reloaded=new SecondAddress(mechanics,pipeline,models,bag,()=>{});
+  assert.equal(reloaded.route,'followed resident');
+  assert.equal(reloaded.door.collider.isEnabled(),false);
+  assert.equal(reloaded.objective(),null);
   assert.ok(records.has('second-address-filed'));
 });
 

@@ -98,3 +98,11 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 - [ ] Playtest flare aiming, tow-line rigging, winching, straps, mic and hunting on real iPhone and iPad.
 - [ ] Complete the world-wide pass for floating props, collision, grounded furniture and authored replacements. Include porch steps, interiors, the new ranch house, creek racks and Submerged Street.
 - [ ] Verify the entire opening-to-Second-Address route from a clean save. Check all three salvage deliveries, both ending paths, touch audio, objective readability and first-30-minute pacing.
+
+### Second Address playtest fixes in the draft
+
+- [x] Fixed missing mission-awarded Keepsakes in the Field Bag, including the salvaged ledger.
+- [x] Saved the chosen entrance so the unlocked door and its dialogue survive a reload.
+- [x] Moved the experiment interaction onto the receiver stand so the moving ball cannot obstruct the second run.
+- [x] Automated Rapier route uses actual aiming and interaction to inspect the clock, run both tests and file the result. The test stages the approach to the post office separately.
+- [ ] Verify the scripted WebGL touch run and complete an uninterrupted, real-device playthrough.
