@@ -325,3 +325,103 @@ test('submerged street warns once, recovers stranded players, and saves salvage 
   assert.equal(records.get('pond-pump').name,'Pump');
   assert.equal(clock.remaining,15);
 });
+
+test('wagon drives the actual basin ramp and turns in salvage through normal interactions',async t=>{
+  const {AssetPipeline}=await import('../src/assets.js');
+  const {SalvageStreet}=await import('../src/salvage-street.js');
+  const {Mechanics,vec}=await import('../src/mechanics.js');
+  const {Walker,STEP}=await import('../src/walker.js');
+  const {basin,height,makeTerrain}=await import('../src/terrain.js');
+  await R.init();
+  const originalDocument=globalThis.document;
+  globalThis.document={
+    createElement:()=>({getContext:()=>({fillRect(){},fillText(){},strokeRect(){}})}),
+    createElementNS:()=>({addEventListener(){},removeEventListener(){}})
+  };
+  t.after(()=>{globalThis.document=originalDocument;});
+  const world=new R.World({x:0,y:-9.81,z:0});
+  t.after(()=>world.free());
+  const scene=new T.Scene();
+  makeTerrain(scene,world,{floor:null,normal:null});
+  const x=basin.x;
+  const walker=new Walker(world,[x+2.8,height(x+2.8,33)+.9,33]);
+  const m=new Mechanics(world,walker,scene,new T.Scene());
+  const pipeline=new AssetPipeline(scene,world);
+  const models={};
+  for(const [key,path] of Object.entries({cabin:'ranger-cabin',transferPump:'creek-transfer-pump',waterJug:'pump-water-jug',lantern:'camp-lantern'})){
+    const bytes=await readFile(new URL('../assets/'+path+'.glb',import.meta.url));
+    models[key]=(await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'')).scene;
+  }
+  m.makeCar([x,height(x,33)+.74,33]);
+  const records=new Map();
+  const bag={records,record:(id,name,result)=>records.set(id,{name,result})};
+  const mission=new SalvageStreet(m,pipeline,models,bag,{stage:4},{refill(){}},()=>{},()=>{});
+  const camera=new T.PerspectiveCamera(),input={actions:new Set()};
+  function frame(move={},yaw=0){
+    const movement={x:0,z:0,...move};
+    m.before(camera,movement,input);
+    if(m.driving)world.step(m.events);
+    else walker.step(movement,yaw,m.events);
+    m.after();
+    mission.tick(STEP);
+  }
+  function aim(position){
+    camera.position.copy(walker.current);
+    camera.position.y+=.58;
+    camera.lookAt(position);
+    camera.updateMatrixWorld(true);
+  }
+  function use(position){
+    aim(position);
+    return m.use(camera);
+  }
+  function walkTo(x,z){
+    for(let i=0;i<400;i++){
+      const dx=x-walker.current.x,dz=z-walker.current.z;
+      if(Math.hypot(dx,dz)<.18)return;
+      frame({z:Math.min(1,Math.hypot(dx,dz)*1.4)},Math.atan2(-dx,-dz));
+    }
+    assert.fail('Walking route blocked near '+walker.current.toArray()+' to '+[x,z]+' car '+JSON.stringify(m.car.body.translation())+' velocity '+JSON.stringify(m.car.body.linvel()));
+  }
+  function driveTo(z,direction){
+    for(let i=0;i<1650;i++){
+      if(direction*(m.car.body.translation().z-z)<.28)return;
+      const car=m.car.body;
+      const front=new T.Vector3(0,0,-1).applyQuaternion(new T.Quaternion().copy(car.rotation()));
+      const desiredX=T.MathUtils.clamp((x-car.translation().x)*.32,-.65,.65);
+      const desiredYaw=Math.atan2(-desiredX*direction,1);
+      const yaw=Math.atan2(-front.x,-front.z);
+      const error=Math.atan2(Math.sin(desiredYaw-yaw),Math.cos(desiredYaw-yaw));
+      frame({z:direction*.5,x:T.MathUtils.clamp(-direction*error*2,-1,1)});
+    }
+    assert.fail('Wagon route blocked near '+JSON.stringify(m.car.body.translation())+' velocity '+JSON.stringify(m.car.body.linvel()));
+  }
+  for(let i=0;i<35;i++)frame();
+  assert.match(use(mission.control),/Drain open/);
+  assert.match(use(vec(m.car.body.translation())),/Wagon controls/);
+  driveTo(17,1);
+  for(let i=0;i<70;i++)frame();
+  assert.match(m.use(camera),/Exited wagon/);
+  const pump=mission.cargo.find(item=>item.salvage.id==='pump');
+  const pumpPosition=vec(pump.body.translation());
+  const lowPark=vec(m.car.body.translation());
+  walkTo(lowPark.x-2.15,lowPark.z+3.75);
+  walkTo(lowPark.x+2.15,lowPark.z+3.75);
+  walkTo(pumpPosition.x-.85,pumpPosition.z);
+  assert.match(use(pumpPosition),/Carrying Transfer pump/);
+  const car=vec(m.car.body.translation());
+  walkTo(car.x+1.55,car.z+1.25);
+  assert.match(use(car),/secured on the wagon rack/);
+  assert.equal(m.cargo,pump);
+  walkTo(car.x+1.55,car.z-.4);
+  assert.match(use(car),/Wagon controls/);
+  driveTo(32,-1);
+  for(let i=0;i<70;i++)frame();
+  assert.match(m.use(camera),/Exited wagon/);
+  const parked=vec(m.car.body.translation());
+  walkTo(parked.x-1.55,parked.z+1.25);
+  assert.match(use(parked),/Carrying Transfer pump/);
+  walkTo(mission.drop.x+.9,mission.drop.z);
+  assert.match(use(mission.drop),/extra thirty seconds/);
+  assert.ok(records.has('pond-pump'));
+});

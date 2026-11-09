@@ -247,7 +247,7 @@ export class Mechanics {
       hub.rotation.z=Math.PI*.5;hub.position.set(x+Math.sign(x)*.125,-.23,z);visual.add(hub);
     }
     this.car=this.dynamic({position,kind:'car',name:'Camp wagon',visual,
-      shape:R.ColliderDesc.cuboid(.84,.49,1.48).setDensity(7).setFriction(.18)});
+      shape:R.ColliderDesc.cuboid(.84,.49,1.48).setDensity(7).setFriction(.18).setFrictionCombineRule(R.CoefficientCombineRule.Min)});
     this.car.body.setEnabledRotations(false,true,false,true);
     this.carHome=position;
   }

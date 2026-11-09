@@ -39,6 +39,22 @@ jobs:
               const errors=[];
               page.on('pageerror',error=>errors.push(error.message));
               try{
+                if(name==='desktop'){
+                  // Set up a post-Chapter-3 save at the high bank. The drain still uses the normal E interaction.
+                  await page.addInitScript(()=>localStorage.setItem('bellwether-chapters-v1','{"stage":4}'));
+                  await page.route('**/src/main.js',async route=>{
+                    const response=await route.fetch();
+                    const code=await response.text();
+                    const marker='let yaw=.34,pitch=-.11,last=';
+                    assert(code.includes(marker));
+                    const fixture=`
+                      const drain=salvage.control;
+                      const testZ=drain.z+2.15;
+                      walker.teleport([drain.x,height(drain.x,testZ)+.855,testZ]);
+                      let yaw=0,pitch=Math.atan2(drain.y-walker.current.y-.58,2.15),last=`;
+                    await route.fulfill({response,body:code.replace(marker,fixture)});
+                  });
+                }
                 await page.goto('http://127.0.0.1:8080',{waitUntil:'domcontentloaded'});
                 assert(await page.evaluate(()=>Boolean(document.createElement('canvas').getContext('webgl2'))),'WebGL2 unavailable');
                 await page.getByRole('button',{name:'Walk the ridge'}).waitFor({timeout:90000});
@@ -58,6 +74,12 @@ jobs:
                   await page.keyboard.press('b');
                 }
                 await page.locator('#bag-panel').waitFor({state:'visible'});
+                if(name==='desktop'){
+                  await page.keyboard.press('b');
+                  await page.locator('#hint').filter({hasText:'Drain the submerged street'}).waitFor();
+                  await page.keyboard.press('e');
+                  await page.locator('#guide').filter({hasText:'Choose one load and get uphill'}).waitFor();
+                }
                 assert.deepEqual(errors,[]);
               }finally{
                 await page.screenshot({path:'playtest-results/'+name+'.png',timeout:15000})
