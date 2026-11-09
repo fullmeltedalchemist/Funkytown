@@ -60,3 +60,14 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 - [x] Wrong-bank voice: trace to the bend, verify with the ranger, or log and compare the call. Logic and production source verified.
 - [x] Chance events use story and location triggers, with a voice cooldown, unattended tow, and persistent grate jam until cleared. Required story clues remain independent.
 - [ ] Playtest all chance event triggers, optional paths, and consequences in the live game.
+
+
+## Next release pending verification
+
+- [ ] In-world rescue winch, selectable anchors, slack control, shelf failure, and a braked zip-line ride. Automated simulation covers the clutch, shelf, clean haul, and landing.
+- [ ] Camp scattergun pickup, weapon switching, signal lantern placement and recall.
+- [ ] Carry a bulky crate, secure it to the wagon, drive and unload from the rear. Job-specific packing choices remain open.
+- [ ] Grapple the envelope from the Vale House eave and recover Mom’s missing journal insert.
+- [ ] Illustrated reel frames and both animated bait-camera outcomes.
+- [ ] Inspect the supported tuning stations, relay dishes, spillway post, and keepsakes in the browser. Continue the remaining scene-wide floating-prop sweep.
+- [ ] Expand the later chapters and villager evidence reactions.

@@ -1,12 +1,13 @@
 import {person} from './rescue.js';
 import {openTape} from './tape.js';
+import {evidenceFrame} from './footage.js';
 import * as T from 'three';
 import R from 'rapier';
 import {height,cabinX,cabinZ,plots,trailX} from './terrain.js';
 
 const point=(x,z,y)=>new T.Vector3(x,height(x,z)+y,z);
 const key='bellwether-finale-v1';
-function chooseAtStation(title, prompt, choices, onChoice){
+function chooseAtStation(title, prompt, choices, onChoice, initialFrame){
   const dialog=document.createElement('dialog');
   dialog.id='field-work';
   const heading=document.createElement('h2');
@@ -16,6 +17,17 @@ function chooseAtStation(title, prompt, choices, onChoice){
   const feedback=document.createElement('p');
   feedback.setAttribute('role','status');
   dialog.append(heading,instructions);
+  const footage=document.createElement('canvas');
+  footage.className='field-footage';
+  footage.hidden=!initialFrame;
+  function showFrame(kind,frame){
+    footage.hidden=false;
+    footage.setAttribute('aria-label',kind==='reel'?'Film frame '+(frame+1):'Field camera sequence, frame '+(frame+1));
+    evidenceFrame(footage,kind,frame);
+  }
+  if(initialFrame)showFrame(...initialFrame);
+  let playback;
+  dialog.append(footage);
   for(const [label,value] of choices){
     const button=document.createElement('button');
     button.type='button';
@@ -23,6 +35,13 @@ function chooseAtStation(title, prompt, choices, onChoice){
     button.onclick=()=>{
       const result=onChoice(value);
       feedback.textContent=result.message;
+      if(result.frame)showFrame(...result.frame);
+      if(result.recording){
+        clearInterval(playback);
+        let frame=0;
+        showFrame(result.recording,frame);
+        playback=setInterval(()=>showFrame(result.recording,++frame%3),620);
+      }
       if(result.done)for(const option of dialog.querySelectorAll('button[data-choice]'))option.disabled=true;
     };
     button.dataset.choice='';
@@ -33,7 +52,7 @@ function chooseAtStation(title, prompt, choices, onChoice){
   close.textContent='Close';
   close.onclick=()=>dialog.close();
   dialog.append(feedback,close);
-  dialog.onclose=()=>dialog.remove();
+  dialog.onclose=()=>{clearInterval(playback);dialog.remove();};
   document.body.append(dialog);
   if(document.pointerLockElement)document.exitPointerLock();
   dialog.showModal();
@@ -237,14 +256,14 @@ export class Finale {
         'Scrub the reel. Mark damaged frames, preserve the intact footage, then review the splice. '+edit.preview(),
         [['Previous frame','back'],['Next frame','forward'],['Mark frame for removal','cut'],['Undo last cut','undo'],['Review splice','review']],
         action=>{
-          if(action==='back'||action==='forward')return {message:edit.step(action==='back'?-1:1)};
+          if(action==='back'||action==='forward')return {message:edit.step(action==='back'?-1:1),frame:['reel',edit.frame]};
           if(action==='cut')return {message:edit.cut()};
-          if(action==='undo')return {message:edit.undo()};
+          if(action==='undo')return {message:edit.undo(),frame:['reel',edit.frame]};
           const problem=edit.review();
           if(problem)return {message:problem};
           bag.record('restored-reel','Restored west-bank reel','The final intact frame shows the sheriff shutting the west-bank gate. The date stamp survived the splice.');
-          return {done:true,message:'Splice holds. The final frame shows the sheriff at the west-bank gate. The reel is in your backpack.'};
-        });
+          return {done:true,frame:['reel',5],message:'Splice holds. The final frame shows the sheriff at the west-bank gate. The reel is in your backpack.'};
+        },['reel',edit.frame]);
       return '';
     });
     const evidenceDesk=point(this.lookout.x+3.2,this.lookout.z+1.1,.95);
@@ -565,10 +584,10 @@ export class Finale {
           if(!watch.sighting)return {message:'Still recording. Check again in '+Math.max(1,Math.ceil((watch.angle==='bank'?12:6)-watch.elapsed))+' seconds.'};
           if(watch.sighting==='thief'){
             this.bag.record('bait-thief','Bait thief recording','A raccoon lifted the bait and left the pawprints behind Bellwether Supply.');
-            return {message:'A raccoon raids the crate. You can keep the recording and aim at the creek to investigate the second trail.'};
+            return {recording:'thief',message:'A raccoon raids the crate. You can keep the recording and aim at the creek to investigate the second trail.'};
           }
           this.bag.record('bait-echo','Creek bank Echo recording','A figure appears at the end of the trackway. In the next frame it is gone, with no return prints.');
-          return {done:true,message:'A figure flickers into view at the creek and disappears. The recording is filed in your backpack.'};
+          return {done:true,recording:'echo',message:'A figure flickers into view at the creek and disappears. The recording is filed in your backpack.'};
         });
       return '';
     });

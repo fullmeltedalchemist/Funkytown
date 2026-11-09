@@ -1,5 +1,6 @@
 import {Missions} from './missions.js';
 import {documentProp} from './props.js';
+import {part} from './mechanics.js';
 import * as T from 'three';
 import R from 'rapier';
 import {cabinX,cabinY,cabinZ,height,plots} from './terrain.js';
@@ -96,7 +97,7 @@ export class Story {
     }
     sign(town,'FOXGLOVE CAMP',new T.Vector3(cabinX,cabinY+2.55,cabinZ+4.71));
     this.clue(transformed(vale,-2.37,1.16,-1.38),0,'Read field journal',0,
-      'Mom’s journal: “Take the receiver to camp. Channel 5. The door below Foxglove heard my voice, then answered twice.”');
+      'Mom’s journal: “Take the receiver to camp. Channel 5. I clipped a loose page under the porch eave.”');
     this.clue(new T.Vector3(cabinX-2.37,cabinY+1.16,cabinZ-1.38),0,'Read Mom’s letter',1,
       '“Set the three sluices to 2, 1, 3. The arch kept the moment I crossed. Find that memory.”');
     this.shader=realityMaterial();
@@ -126,6 +127,39 @@ export class Story {
     mechanics.crate([144,.55,1],1);
     sign(realm,'THE ECHO GRID',new T.Vector3(140,2.55,-13.5));
     this.missions=new Missions(this,pipeline,models);
+  }
+  installJournalInsert(bag){
+    if(bag.records.has('eaves-insert'))return;
+    const vale=plots[0];
+    const {world,scenes}=this.mechanics;
+    const shelf=transformed(vale,0,2.73,5.04);
+    part(scenes[0],[.28,.09,.61],shelf.toArray(),0x63513d,.014);
+    const paper=new T.Group();
+    part(paper,[.17,.015,.23],[0,.018,0],0xd9b887);
+    part(paper,[.032,.024,.027],[0,.036,0],0x884135,.006);
+    paper.position.copy(shelf).add(new T.Vector3(0,.045,0));
+    scenes[0].add(paper);
+    const catchPoint=paper.position.clone().add(new T.Vector3(-.16,.02,0));
+    const sensor=world.createCollider(R.ColliderDesc.ball(.22)
+      .setTranslation(...catchPoint.toArray()).setSensor(true).setCollisionGroups((128<<16)|2));
+    const drop=transformed(vale,0,0,6);
+    const release=()=>{
+      drop.y=height(drop.x,drop.z)+.035;
+      paper.position.copy(drop);
+      const pickup=new T.Vector3(drop.x,drop.y+.15,drop.z);
+      sensor.setTranslation(pickup);
+      this.mechanics.tag(sensor,{name:'Recover the journal insert',action:()=>{
+        bag.record('eaves-insert','Mom’s missing journal insert',
+          'The second voice can only repeat things said near the water. Ask it about the porch light.');
+        paper.removeFromParent();
+        this.mechanics.fixed.delete(sensor.handle);
+        world.removeCollider(sensor,false);
+        return 'Journal insert recovered. Mom marked a way to test the second voice.';
+      }});
+      return 'The hook pulled the envelope down. Look for it below the porch eave.';
+    };
+    this.mechanics.tag(sensor,{name:'Envelope clipped under the eave',action:()=> 'Use your grapple to pull down the clip.',
+      onGrapple:release});
   }
   advance(state){
     this.state=state;
@@ -217,7 +251,8 @@ export function buildCampEquipment(mechanics,pipeline,models){
       name:'Camp lantern'});
   }
   const post=mechanics.staticBox([.20,2.18,.20],[x,y+1.1,z+2.15],0x654c40);
-  post.visual.visible=false;
+  post.visual.position.y=height(x,z+2.15)+1.09;
+  post.collider.setTranslation(post.visual.position);
   const valve=mechanics.staticBox([.39,.33,.29],[x,y+1.45,z+2.33],0x759794);
   valve.visual.visible=false;
   const hardware=pipeline.prepare(models.valve,{position:[x,y+1.45,z+2.33],scale:1.16});

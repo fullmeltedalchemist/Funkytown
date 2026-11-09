@@ -25,6 +25,13 @@ export class Walker {
     this.body.setTranslation(this.current,true);
     this.body.setNextKinematicTranslation(this.current);
   }
+  ride(position){
+    this.previous.copy(this.current);
+    this.current.copy(position);
+    this.velocity.set(0,0,0);
+    this.body.setTranslation(position,true);
+    this.body.setNextKinematicTranslation(position);
+  }
   step({x,z,jump,sprint,pull},yaw,events){
     const grounded=this.control.computedGrounded();
     this.grace=grounded?.105:Math.max(0,this.grace-STEP);

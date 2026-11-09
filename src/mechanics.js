@@ -113,15 +113,50 @@ export class Mechanics {
   }
   use(camera){
     if(this.driving)return this.exitCar();
-    if(this.carried){this.release();return 'Set down.';}
     const target=this.target(camera);
+    if(this.carried){
+      if(target===this.car&&this.carried.size&&this.carried.area===0){
+        if(this.cargo)return 'The wagon rack is full. Take out the current load first.';
+        this.cargo=this.carried;
+        this.release();
+        this.cargo.body.setEnabled(false);
+        this.cargo.visual.removeFromParent();
+        this.car.visual.add(this.cargo.visual);
+        this.cargo.visual.position.set(0,.62,1.02);
+        this.cargo.visual.rotation.set(0,0,0);
+        return 'Crate secured on the wagon rack.';
+      }
+      this.release();return 'Set down.';
+    }
     if(target?.action)return target.action();
     if(target?.kind==='car'){
+      if(this.canUnloadCargo())return this.unloadCargo();
       this.anchor=null;this.driving=true;this.walker.body.setEnabled(false);
       return 'Wagon controls: steer and accelerate with movement. Space or Jump drifts. Use exits.';
     }
     if(target?.kind==='prop')return this.grab(target);
     return '';
+  }
+  canUnloadCargo(){
+    if(!this.cargo||this.driving)return false;
+    const local=this.walker.current.clone().sub(vec(this.car.body.translation()))
+      .applyQuaternion(new T.Quaternion().copy(this.car.body.rotation()).invert());
+    return local.z>.85&&local.length()<3.6;
+  }
+  unloadCargo(){
+    if(this.driving||!this.cargo)return '';
+    const item=this.cargo;
+    const center=vec(this.car.body.translation());
+    if(center.distanceTo(this.walker.current)>3.6)return 'Stand by the wagon to unload its rack.';
+    const position=this.walker.current.clone().lerp(center,.35).add(new T.Vector3(0,.38,0));
+    this.cargo=null;
+    this.scenes[0].add(item.visual);
+    item.body.setTranslation(position,true);
+    item.body.setRotation({x:0,y:0,z:0,w:1},true);
+    item.body.setLinvel({x:0,y:0,z:0},true);
+    item.body.setAngvel({x:0,y:0,z:0},true);
+    item.body.setEnabled(true);
+    return this.grab(item);
   }
   grab(target){
     this.carried=target;target.body.setGravityScale(0,true);
@@ -134,17 +169,23 @@ export class Mechanics {
     item.collider.setCollisionGroups(groups(bits.prop,item.mask));
     if(velocity)item.body.setLinvel(velocity,true);
   }
-  fire(camera){
+  fire(camera,scatter=false){
     if(this.cooldown||this.carried||this.driving)return;
-    const dir=camera.getWorldDirection(new T.Vector3());
-    const round=this.dynamic({position:camera.position.toArray(),kind:'round',life:1.65,
-      visual:new T.Mesh(roundGeometry,roundMaterial),shape:R.ColliderDesc.ball(.065).setDensity(24)});
-    round.visual.quaternion.setFromUnitVectors(new T.Vector3(0,0,1),dir);
-    round.body.setRotation(round.visual.quaternion,true);
-    round.body.lockRotations(true,true);
-    round.body.setGravityScale(.16,true);
-    round.body.setLinvel(dir.multiplyScalar(47),true);
-    this.cooldown=.15;
+    const forward=camera.getWorldDirection(new T.Vector3());
+    const orientation=camera.getWorldQuaternion(new T.Quaternion());
+    for(let i=0;i<(scatter?5:1);i++){
+      const angle=i*Math.PI*.5;
+      const dir=i===0?forward.clone():new T.Vector3(Math.cos(angle)*.045,Math.sin(angle)*.045,-1)
+        .normalize().applyQuaternion(orientation);
+      const round=this.dynamic({position:camera.position.toArray(),kind:'round',life:scatter?.43:1.65,
+        visual:new T.Mesh(roundGeometry,roundMaterial),shape:R.ColliderDesc.ball(.065).setDensity(24)});
+      round.visual.quaternion.setFromUnitVectors(new T.Vector3(0,0,1),dir);
+      round.body.setRotation(round.visual.quaternion,true);
+      round.body.lockRotations(true,true);
+      round.body.setGravityScale(.16,true);
+      round.body.setLinvel(dir.multiplyScalar(scatter?36:47),true);
+    }
+    this.cooldown=scatter?.62:.15;
   }
   grapple(camera){
     if(this.driving)return '';
@@ -187,6 +228,8 @@ export class Mechanics {
     part(visual,[1.63,.53,2.98],[0,.05,0],0x8c4936,.19);
     part(visual,[1.39,.63,1.51],[0,.57,.25],0x304c50,.21);
     part(visual,[1.53,.15,1.72],[0,.94,.25],0xe0c393,.073);
+    for(const x of [-.47,.47])part(visual,[.06,.19,.72],[x,.47,1.01],0x454543,.022);
+    part(visual,[.98,.08,.7],[0,.39,1.01],0x575350,.025);
     for(const x of [-.58,.58])part(visual,[.3,.15,.1],[x,.17,-1.53],0xffe298,.045);
     for(const x of [-.81,.81])for(const z of [-.97,.97]){
       const wheel=new T.Mesh(new T.CylinderGeometry(.34,.34,.23,16),material(0x211d20));
@@ -236,7 +279,7 @@ export class Mechanics {
     this.cooldown=Math.max(0,this.cooldown-STEP);
     for(const item of this.items.values())if(item.size)item.speed=vec(item.body.linvel()).length();
     for(const item of this.items.values()){
-      if(item.area!==0||item.kind!=='prop'||item===this.carried)continue;
+      if(item===this.cargo||item.area!==0||item.kind!=='prop'||item===this.carried)continue;
       const p=item.body.translation();
       if(p.y>-1.49||!inCreek(p.x,p.z))continue;
       const velocity=item.body.linvel();
@@ -267,12 +310,13 @@ export class Mechanics {
       const one=this.items.get(a),two=this.items.get(b);
       if(one?.kind==='round'&&!spent.has(one)){spent.add(one);this.onImpact.get(b)?.();}
       if(two?.kind==='round'&&!spent.has(two)){spent.add(two);this.onImpact.get(a)?.();}
-      if(one?.size&&one!==this.carried&&(one.speed>6.5||two?.kind==='round'))broken.add(one);
-      if(two?.size&&two!==this.carried&&(two.speed>6.5||one?.kind==='round'))broken.add(two);
+      if(one?.size&&one!==this.cargo&&one!==this.carried&&(one.speed>6.5||two?.kind==='round'))broken.add(one);
+      if(two?.size&&two!==this.cargo&&two!==this.carried&&(two.speed>6.5||one?.kind==='round'))broken.add(two);
     });
     for(const item of spent)this.remove(item);
     for(const item of broken)this.fracture(item);
     for(const item of this.items.values()){
+      if(item===this.cargo)continue;
       item.life-=STEP;
       const p=item.body.translation();
       if(item===this.car&&(p.y<-10||Math.abs(p.x)>57||Math.abs(p.z)>57)){

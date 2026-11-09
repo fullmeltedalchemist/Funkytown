@@ -1,6 +1,6 @@
 import * as T from 'three';
 
-export function fieldPistol(){
+export function fieldPistol(scatter=false){
   const rig=new T.Group();
   const steel=new T.MeshStandardMaterial({color:0x35373a,roughness:.42,metalness:.52});
   const grip=new T.MeshStandardMaterial({color:0x463329,roughness:.87});
@@ -33,6 +33,15 @@ export function fieldPistol(){
   }
   hand(.028,-.084,.043,-.18);
   hand(-.042,-.079,-.028,.49);
+  if(scatter){
+    const stock=piece(new T.CapsuleGeometry(.042,.19,5,12),grip,0,-.012,-.205);
+    stock.rotation.x=Math.PI/2;
+    for(const x of [-.026,.026]){
+      piece(new T.CylinderGeometry(.021,.021,.4,16),steel,x,.03,-.31).rotation.x=Math.PI/2;
+      piece(new T.CircleGeometry(.016,16),leather,x,.03,-.511).rotation.y=Math.PI;
+    }
+    piece(new T.BoxGeometry(.067,.023,.2),steel,0,.049,-.37);
+  }
   return rig;
 }
 

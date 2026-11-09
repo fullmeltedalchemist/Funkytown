@@ -51,9 +51,12 @@ export class Bag {
     for(const item of finds){
       if(this.ids.has(item.id))continue;
       const {x,z,area,id,name}=item;
-      const y=(area?0:height(x,z))+.22;
+      const floor=area?-.015:height(x,z);
       const model=collectible(id);
-      model.position.set(x,y,z);model.rotation.set(.28,.23,.16);
+      model.position.set(x,floor,z);model.rotation.set(.06,.23,.045);
+      const bounds=new T.Box3().setFromObject(model);
+      model.position.y+=floor-bounds.min.y;
+      const y=model.position.y+.13;
       mechanics.scenes[area].add(model);
       const sensor=mechanics.world.createCollider(R.ColliderDesc.ball(.29).setTranslation(x,y,z)
         .setSensor(true).setCollisionGroups((128<<16)|2));

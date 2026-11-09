@@ -1,6 +1,8 @@
-import {openRigging} from './rigging.js';
+import {RescueLine} from './rigging.js';
 import * as T from 'three';
 import R from 'rapier';
+import {fieldPistol} from './effects.js';
+import {part} from './mechanics.js';
 import {cabinX,cabinZ,height,inCreek,trailX} from './terrain.js';
 
 const point=(x,z,h=0)=>new T.Vector3(x,height(x,z)+h,z);
@@ -108,15 +110,35 @@ export class Rescue {
     },true);
     const east=this.route[1],west=this.route[2];
     const rig=point(this.fire.x+1.6,this.fire.z+1.5);
-    this.marker(rig,0xc3a375,'Practice rescue rig',()=>{
-      if(this.stage<1)return 'Speak to the woman at the bank before using the practice line.';
-      if(bag.records.has('spare-pulley'))return 'The practice run is complete. Your spare pulley is in the gear section.';
-      openRigging(()=>{
-        bag.record('spare-pulley','Spare rescue pulley','Recovered after bringing the dummy across without a collision.','Gear');
+    this.zipline=new RescueLine(mechanics,notice,()=>story.state>=4&&this.stage>=1,
+      ()=>bag.records.has('spare-pulley'),()=>{
+        bag.record('spare-pulley','Spare rescue pulley','Recovered after bringing the practice stretcher across the creek.','Gear');
         bag.record('rigging-clue','Rescue rig test','A rig overloaded near the rock shelf, but the recovered line has clean cuts instead of torn fibers.');
-        notice('The Line That Held complete. Pulley and rigging evidence added to the bag.');
+        notice('The Line That Held complete. Use the winch again to ride the rescue line.');
       });
-      return '';
+    this.marker(rig,0xc3a375,'Read rescue practice sign',()=>{
+      if(this.stage<1)return 'Speak to the woman at the bank first.';
+      this.showPractice=true;
+      return 'The rescue winch is on the south bank upstream of the ford. Follow the arrow to the orange crank.';
+    });
+    const rack=point(this.fire.x+2.6,this.fire.z-1.1);
+    const rackTop=rack.y+.95;
+    part(town,[1.1,.1,.45],[rack.x,rackTop-.05,rack.z],0x64452e);
+    for(const x of [-.44,.44])for(const z of [-.16,.16]){
+      const ground=height(rack.x+x,rack.z+z);
+      part(town,[.085,rackTop-ground,.085],[rack.x+x,(ground+rackTop)/2,rack.z+z],0x64452e);
+    }
+    const gun=fieldPistol(true);
+    gun.rotation.set(0,Math.PI/2,Math.PI/2);
+    gun.position.set(rack.x+.24,rackTop+.18,rack.z);
+    gun.updateMatrixWorld(true);
+    gun.position.y+=rackTop-new T.Box3().setFromObject(gun).min.y;
+    town.add(gun);
+    gun.visible=!bag.records.has('scattergun');
+    this.register(rack,gun,'Collect camp scattergun',()=>{
+      bag.record('scattergun','Camp scattergun','X or the weapon button switches weapons. Fires five close-range physical pellets.','Gear');
+      gun.visible=false;
+      return 'Scattergun added. Use X or the weapon button to equip it.';
     });
     this.marker(east,0x929784,'East rescue marker',()=>{this.checkedEast=true;return 'East station: one bell. The dispatch claimed this was the pickup point.';});
     this.marker(west,0x9b7b55,'West rescue marker',()=>{
@@ -180,6 +202,10 @@ export class Rescue {
   }
   objective(){
     if(this.story.state<4||this.story.area!==0)return null;
+    if(this.showPractice){
+      if(this.zipline.active||this.zipline.completed())this.showPractice=false;
+      else return {text:'Optional · Find the orange rescue winch upstream',target:this.zipline.controls};
+    }
     const goals=['Meet the woman on the bank','Find the ranger on his camp rounds','Reconstruct the rescue · compare the bank markers','Recover the orange rope on the stand beside the two-bell post','Cut line recovered · the spillway investigation is next'];
     const targets=[this.bank,this.ranger.root.position,this.route[this.checkedEast?2:1],this.evidence,null];
     if(this.stage===2&&this.checkedEast)return {text:'Compare the two-bell post on the west bank',target:this.route[2]};

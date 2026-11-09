@@ -15,13 +15,13 @@
 </aside>
 <img id="photo-preview" alt="Last field photo" hidden>
 <div id="reticle" aria-hidden="true"></div>
-<div id="touch" hidden><div id="pad" aria-label="Movement stick"><i></i></div><div id="actions"><button id="pause">Pause</button><button id="bag-button">Bag</button><button id="gear-button" aria-pressed="false">Light</button><button id="photo-button">Photo</button><button id="fire">Fire</button><button id="grapple">Hook</button><button id="throw">Throw</button><button id="use">Use</button><button id="jump">Jump</button></div></div>
+<div id="touch" hidden><div id="pad" aria-label="Movement stick"><i></i></div><div id="actions"><button id="pause">Pause</button><button id="bag-button">Bag</button><button id="gear-button" aria-pressed="false">Light</button><button id="photo-button">Photo</button><button id="weapon-button" aria-label="Switch weapon">Pistol</button><button id="lantern-button">Lantern</button><button id="fire">Fire</button><button id="grapple">Hook</button><button id="throw">Throw</button><button id="use">Use</button><button id="jump">Jump</button></div></div>
 <div id="menu">
   <section>
     <small>BELLWETHER HOLLOW · PLAYABLE SCENE</small>
     <h1>Foxglove<br>Ridge</h1>
     <p>Follow the old footpath below the ridge. The ranger left a light on.</p>
-    <p class="help">Keyboard + mouse · WASD, Space, E · Click / F fire · Right click / G hook · Q throw · B bag · L flashlight · C camera<br>Touch · Left stick, drag to look, Use, Jump, Fire, Hook, Throw and Bag</p>
+    <p class="help">Keyboard + mouse · WASD, Space, E · Click / F fire · Right click / G hook · Q throw · B bag · L flashlight · C camera · X switch weapon · K signal lantern<br>Touch · Left stick, drag to look, Use, Jump, Fire, Hook, Throw and Bag</p>
     <div class="buttons"><button id="start" disabled>Loading scene…</button><button id="touch-mode" disabled>Use touch controls</button></div>
     <label class="import">Test a local GLB <input id="import" type="file" accept=".glb"></label>
     <p id="status" role="status"></p>
@@ -33,19 +33,6 @@
   <label>Dispatch offset <output></output><input type="range" min="-6" max="3" step=".1" value="0"></label>
   <ul></ul><p role="status"></p>
   <button data-play>Play both tracks</button><button data-align>Check alignment</button><button data-close>Back</button>
-</dialog>
-<dialog id="rigging">
-  <h2>The Line That Held</h2>
-  <svg viewBox="0 0 350 170" role="img" aria-label="Rescue dummy suspended above the creek">
-    <path d="M0 150H350V170H0Z" fill="#285158"/>
-    <path d="M145 150l38-44 34 44z" fill="#8d8371"/>
-    <line x1="30" y1="32" x2="30" y2="120" stroke="#d0af78" stroke-width="2"/>
-    <circle cx="30" cy="120" r="9" fill="#e69a57"/>
-  </svg>
-  <label>Anchor <select><option value="low">Low bank post</option><option value="high">High lookout beam</option></select></label>
-  <label>Line slack <input type="range" min=".1" max="2.1" step=".1" value=".9"></label>
-  <output></output><p role="status"></p>
-  <button data-haul>Haul 5%</button><button data-reset>Reset dummy</button><button data-close>Back</button>
 </dialog>
 <script type="module" src="./src/main.js"></script>
 </body>

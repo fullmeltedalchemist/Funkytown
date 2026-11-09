@@ -113,13 +113,15 @@ async function boot(){
   const story=new Story(mechanics,pipeline,models);
   buildCampEquipment(mechanics,pipeline,models);
   const bag=new Bag(mechanics);
+  story.installJournalInsert(bag);
   story.missions.equipBatteryBag(bag);
   const rescue=new Rescue(mechanics,story,bag,message=>notice(message));
   const finale=new Finale(mechanics,rescue,bag,pipeline,models,water,message=>notice(message));
   const mail=new MailRoute(mechanics,bag,pipeline,models,finale);
   scene.add(camera);
-  const tool=fieldPistol();
-  camera.add(tool);
+  const pistol=fieldPistol(),scattergun=fieldPistol(true);
+  let scatter=false;
+  camera.add(pistol,scattergun);
   world.step();
   let noticeUntil=0;
   const notice=(message)=>{
@@ -161,10 +163,41 @@ async function boot(){
     tone.onended=()=>{tone.disconnect();gain.disconnect();};
     tone.start(time);tone.stop(time+duration);
   };
+  let cableAudio;
+  function soundCable(speed){
+    if(audio?.state!=='running')return;
+    const now=audio.currentTime;
+    if(!cableAudio&&speed){
+      const tone=audio.createOscillator(),gain=audio.createGain();
+      tone.type='triangle';
+      gain.gain.value=0;
+      tone.connect(gain).connect(audio.destination);
+      tone.start();
+      cableAudio={tone,gain};
+    }
+    if(cableAudio){
+      cableAudio.tone.frequency.setTargetAtTime(43+speed*21,now,.055);
+      cableAudio.gain.gain.setTargetAtTime(Math.min(.085,speed*.007),now,.07);
+    }
+  }
   const gear=new Gear(camera,bag,notice);
   bag.record('field-pistol','Field pistol','Click, press F, or tap Fire to shoot physical rounds. Set down any carried item and exit the wagon first.','Gear');
   bag.record('grapple-hook','Grappling hook','Right click, press G, or tap Hook. Aim at trees, roofs, walls, or the brass spillway ring.','Gear');
-  const input=new Input(renderer.domElement,()=>notice(mechanics.use(camera)),()=>bag.toggle(),()=>gear.toggle(),()=>gear.takePhoto());
+  bag.record('signal-lantern','Signal lantern','K or Lantern · leave a warm light beside you. Use again to recall.','Gear');
+  const input=new Input(renderer.domElement,()=>{
+    if(rescue.zipline.active)return notice(rescue.zipline.use());
+    notice(mechanics.use(camera));
+    if(rescue.zipline.active){
+      yaw=rescue.zipline.lookYaw;
+      pitch=rescue.zipline.active==='haul'?.21:0;
+    }
+  },()=>bag.toggle(),()=>gear.toggle(),()=>gear.takePhoto(),()=>{
+    if(rescue.zipline.active)return;
+    if(!bag.records.has('scattergun'))return notice('Find the scattergun in the camp supply rack.');
+    scatter=!scatter;
+    $('weapon-button').textContent=scatter?'Scattergun':'Pistol';
+    notice(scatter?'Scattergun equipped. Short-range spread.':'Field pistol equipped.');
+  },()=>{if(!rescue.zipline.active)gear.deployLantern(mechanics,camera);});
   $('start').disabled=false;
   $('start').textContent='Walk the ridge';
   $('touch-mode').disabled=false;
@@ -214,10 +247,20 @@ async function boot(){
       while(accumulator>=STEP){
         const move=input.movement();
         move.drift ||= move.jump && mechanics.driving;
+        if(rescue.zipline.active){
+          const wasRiding=rescue.zipline.active==='ride';
+          rescue.zipline.step(move,STEP);
+          world.step(mechanics.events);
+          mechanics.after();
+          input.actions.clear();
+          if(wasRiding&&!rescue.zipline.active)pitch=0;
+          accumulator-=STEP;
+          continue;
+        }
         if(input.actions.has('fire')){
           const before=mechanics.cooldown;
-          mechanics.fire(camera);
-          if(mechanics.cooldown>before)playToolSound(168,41,.13,.28);
+          mechanics.fire(camera,scatter);
+          if(mechanics.cooldown>before)playToolSound(scatter?94:168,41,scatter?.23:.13,.28);
         }
         if(input.actions.has('grapple')){
           const result=mechanics.grapple(camera);
@@ -229,6 +272,7 @@ async function boot(){
         if(mechanics.driving)world.step(mechanics.events);
         else {
           if(story.area===0&&finale.onFloodedFord(walker.current)){move.x*=.58;move.z*=.58;move.sprint=false;}
+          if(mechanics.carried?.size){move.x*=.75;move.z*=.75;move.sprint=false;}
           walker.step({...move,pull:mechanics.anchor},yaw,mechanics.events);
         }
         mechanics.after();
@@ -263,10 +307,15 @@ async function boot(){
       camera.position.y+=.58;
       camera.rotation.set(pitch,yaw,0,'YXZ');
     }
+    const riding=input.active&&rescue.zipline.active==='ride';
+    soundCable(riding?rescue.zipline.speed:0);
+    if(riding)camera.rotation.z=Math.sin(now*.008)*Math.min(.042,rescue.zipline.speed*.003);
     camera.updateMatrixWorld();
-    tool.visible=!mechanics.driving&&!mechanics.carried;
+    const tool=scatter?scattergun:pistol;
+    pistol.visible=scattergun.visible=false;
+    tool.visible=!mechanics.driving&&!mechanics.carried&&!rescue.zipline.active;
     const stride=mechanics.driving?0:Math.min(1,Math.hypot(walker.velocity.x,walker.velocity.z)/5);
-    const recoil=Math.max(0,mechanics.cooldown-.065);
+    const recoil=Math.min(.15,Math.max(0,mechanics.cooldown-(scatter?.45:.065)));
     tool.position.set(.173+Math.sin(now*.008)*.009*stride,-.19+Math.cos(now*.016)*.006*stride,-.49+recoil*.58);
     tool.rotation.x=recoil*.9;
     mechanics.drawWater(now*.001);
@@ -278,7 +327,7 @@ async function boot(){
       water.uniforms.ripple.value.set(player.x,player.z,now*.001);lastWake=now;
     }
     story.animate(now*.001);
-    const objective=finale.objective()??rescue.objective();
+    const objective=(rescue.showPractice?rescue.objective():null)??finale.objective()??rescue.objective();
     $('guide').textContent=objective?.text??story.guide(player);
     const waypoint=objective?objective.target:story.waypoint();
     const arrow=$('bearing');
@@ -290,10 +339,11 @@ async function boot(){
     }
     $('hud').querySelector('strong').textContent=story.area?'THE ECHO GRID':'FOXGLOVE RIDGE';
     if(now>noticeUntil)$('notice').textContent='';
-    const target=input.active&&!mechanics.driving&&!mechanics.carried?mechanics.target(camera):null;
+    const target=input.active&&!mechanics.driving?mechanics.target(camera):null;
     const use=input.touch?'Use':'E';
-    $('hint').textContent=mechanics.driving?use+' · Exit wagon':mechanics.carried?use+' · Set down / '+(input.touch?'Throw':'Q')+' · Throw':
-      target?.name?use+' · '+target.name:'';
+    $('hint').textContent=rescue.zipline.active?rescue.zipline.readout(input.touch):mechanics.driving?use+' · Exit wagon':mechanics.carried?(target===mechanics.car&&mechanics.carried.size?use+' · Secure crate to wagon':
+        use+' · Set down / '+(input.touch?'Throw':'Q')+' · Throw'):
+      target===mechanics.car&&mechanics.canUnloadCargo()?use+' · Unload crate':target?.name?use+' · '+target.name:'';
     $('reticle').hidden=mechanics.driving;
     renderer.render(activeScene,camera);
     gear.capture(renderer.domElement,story.area,player);

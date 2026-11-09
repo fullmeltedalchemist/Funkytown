@@ -39,12 +39,6 @@ button:disabled{opacity:.45}.buttons{display:flex;gap:8px;flex-wrap:wrap}
 #tape output{float:right;color:#ffe0a2}
 #tape ul{padding-left:20px;line-height:1.5}
 #tape button{margin:3px}
-#rigging{width:min(470px,calc(100vw - 24px));max-height:90dvh;padding:18px;background:#202825;color:#eee3cd;border:1px solid #a88c63;border-radius:14px}
-#rigging::backdrop{background:#111b}
-#rigging svg{display:block;width:100%;max-height:175px;background:#182423;border-radius:8px}
-#rigging label,#rigging output{display:block;margin:8px 0}
-#rigging input{width:100%;accent-color:#b8925c}
-#rigging button{margin:3px}
 #bag-panel{max-height:calc(100dvh - 140px);overflow:auto}
 #bag-panel h3{margin:5px 0;color:#f0cb8d;font-size:13px}
 #photo-preview{position:fixed;z-index:3;right:18px;top:18px;width:min(220px,42vw);border:5px solid #eadbc1;border-bottom-width:12px;box-shadow:0 3px 16px #0008;pointer-events:none}
@@ -56,3 +50,5 @@ button:disabled{opacity:.45}.buttons{display:flex;gap:8px;flex-wrap:wrap}
 #actions button{min-width:44px;min-height:44px}
 #actions #use{min-width:64px;background:#ffe4aa}
 @media(max-width:540px){#actions{max-width:168px}#touch{gap:12px}}
+.field-footage{display:block;width:100%;aspect-ratio:480/218;margin:8px 0;border-radius:5px}
+.field-footage[hidden]{display:none}

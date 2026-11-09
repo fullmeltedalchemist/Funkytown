@@ -9,7 +9,8 @@ const dependencies=new Map([
 ]);
 registerHooks({
   resolve(name,context,next){
-    const url=dependencies.get(name);
+    const url=dependencies.get(name)??(name.startsWith('three/addons/')
+      ?new URL('../vendor/addons/'+name.slice('three/addons/'.length),import.meta.url).href:null);
     return url?{url,shortCircuit:true}:next(name,context);
   }
 });
@@ -119,3 +120,27 @@ if(liveUrl){
     }));
   });
 }
+
+test('creek line trips the clutch, strikes the low shelf and rewards a clean haul and ride',async()=>{
+  globalThis.document={createElement:()=>({getContext:()=>({fillRect(){},fillText(){}})})};
+  const {RescueLine}=await import('../src/rigging.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  let completed=false,notice='';
+  let position;
+  const line=new RescueLine({world,tag(){},scenes:[new T.Scene()],walker:{ride:p=>{position=p.clone();}}},
+    message=>{notice=message;},()=>true,()=>completed,()=>{completed=true;});
+  const run=(x=0,jump=false)=>{
+    for(let i=0;i<900&&line.active;i++)line.step({x,z:1,jump:jump&&i===0},1/60);
+  };
+  line.start();run(-1);
+  assert.match(notice,/clutch/);
+  line.start();run(0,true);
+  assert.match(notice,/shelf/);
+  line.start();run();
+  assert.equal(completed,true);
+  line.start();run();
+  assert.equal(line.active,null);
+  assert.equal(position.z,line.landing.z+1.3);
+  world.free();
+});

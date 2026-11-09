@@ -1,5 +1,6 @@
 import * as T from 'three';
 import R from 'rapier';
+import {part} from './mechanics.js';
 import {cabinX,cabinZ,height,plots} from './terrain.js';
 
 const vec=(p)=>new T.Vector3(p.x,p.y,p.z);
@@ -49,6 +50,8 @@ export class Missions {
       const lamp=dish.getObjectByName('relayLamp');
       lamp.material=lamp.material.clone();
       m.scenes[1].add(dish);
+      part(m.scenes[1],[.23,p.y,.23],[p.x,p.y*.5-.03,p.z],0x554660,.022);
+      part(m.scenes[1],[.54,.09,.54],[p.x,.026,p.z],0x493d56,.019);
       return {lamp,collider};
     });
     this.targets.forEach(({collider},i)=>m.onImpact.set(collider.handle,()=>this.hitRelay(i)));
@@ -58,7 +61,14 @@ export class Missions {
     const collider=m.world.createCollider(R.ColliderDesc.cuboid(.43,.47,.34)
       .setTranslation(point.x,point.y,point.z).setSensor(true).setCollisionGroups((128<<16)|2));
     m.tag(collider,{name,action});
-    m.scenes[area].add(pipeline.prepare(models[asset],{position:point.toArray(),scale:.86}));
+    const scene=m.scenes[area];
+    const model=pipeline.prepare(models[asset],{position:point.toArray(),scale:.86});
+    const floor=area===1?-.015:height(point.x,point.z);
+    const base=Math.max(floor+.15,point.y-.27);
+    const bounds=new T.Box3().setFromObject(model);
+    if(!bounds.isEmpty())model.position.y+=base-bounds.min.y;
+    part(scene,[.48,base-floor,.44],[point.x,(base+floor)*.5,point.z],0x594735,.025);
+    scene.add(model);
   }
   equipBatteryBag(bag){
     this.bag=bag;
