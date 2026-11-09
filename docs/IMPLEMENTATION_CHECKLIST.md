@@ -1,6 +1,6 @@
-# Chapter 1 implementation checklist
+# Funkytown implementation and release checklist
 
-A checked item is confirmed live. Partial and awaiting playtest are called out explicitly.
+A checked item is confirmed live. Live source verification, automated gameplay coverage, and hands-on playtesting are separate. See [the mission roadmap](MISSION_ROADMAP.md) for planned work.
 
 ## Story and investigation
 
@@ -23,7 +23,8 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 - [x] Evidence: compare Cal’s letter and dispatch tape at the lookout and log the discrepancy without consuming either original. Production source verified.
 - [x] Postmaster discusses the timestamp in the dispatch ledger after the discrepancy is logged. Production source verified.
 - [ ] Playtest both evidence comparison paths and add conversations with other villagers.
-- [ ] Cargo: one-slot mail packing is live. Add bulky hand and wagon cargo and job-specific packing choices.
+- [x] One-slot mail packing and bulky hand and wagon cargo are live. The wagon supports straps, loose-cargo motion and ejection.
+- [ ] Expand job-specific packing, fragile load protection and multi-item choices.
 
 ## Villagers
 
@@ -45,11 +46,13 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 - [x] Last Delivery: the neighbor’s note offers a second way to learn the caretaker’s new address after delivering the Vale House letter. Production source verified.
 - [ ] Playtest the full Last Delivery route with both the forwarding slip and neighbor clue.
 - [x] The Line That Held: choose anchors, manage slack and tension, reset after failure, and earn the pulley and clue. Logic tests passed and production source verified.
-- [ ] Playtest the rigging dialog and rewards in-game on phone.
+- [ ] Playtest the in-world winch, stretcher haul, reward and zip-line ride on phone.
 - [x] The Wrong Reel: scrub frame descriptions, mark damaged frames, undo cuts, and recover the west-bank reel as evidence. Puzzle logic and production source verified.
-- [ ] Add illustrated film frames and playtest the reel bench in-game.
+- [x] Illustrated film frames are live.
+- [ ] Playtest the reel bench in-game.
 - [x] Night at the Bait Shop: set bait, inspect pawprints, aim the camera, and wait for either the raccoon or the Echo. Timing logic and production source verified.
-- [ ] Add visual recordings and playtest both bait shop outcomes in-game.
+- [x] Animated camera outcomes are live.
+- [ ] Playtest both bait shop outcomes in-game.
 
 ## Chance events
 
@@ -62,13 +65,13 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 - [ ] Playtest all chance event triggers, optional paths, and consequences in the live game.
 
 
-## Next release pending verification
+## Published features and remaining playtests
 
-- [ ] In-world rescue winch, selectable anchors, slack control, shelf failure, and a braked zip-line ride. Automated simulation covers the clutch, shelf, clean haul, and landing.
-- [ ] Camp scattergun pickup, weapon switching, signal lantern placement and recall.
-- [ ] Carry a bulky crate, secure it to the wagon, drive and unload from the rear. Job-specific packing choices remain open.
-- [ ] Grapple the envelope from the Vale House eave and recover Mom’s missing journal insert.
-- [ ] Illustrated reel frames and both animated bait-camera outcomes.
+- [x] In-world rescue winch, selectable anchors, slack control, shelf failure, and a braked zip-line ride. Automated simulation covers the clutch, shelf, clean haul, and landing.
+- [x] Camp scattergun pickup, weapon switching, signal lantern placement and recall.
+- [x] Carry a bulky crate, secure it to the wagon, drive and unload from the rear. The automated Submerged Street route verifies wagon loading and unloading.
+- [x] Grapple the envelope from the Vale House eave and recover Mom’s missing journal insert.
+- [ ] Playtest scattergun pickup, weapon switching, lantern use, and the Vale House eave recovery on desktop and touch.
 - [ ] Inspect the supported tuning stations, relay dishes, spillway post, and keepsakes in the browser. Continue the remaining scene-wide floating-prop sweep.
 - [ ] Playtest the first Chapters 2–4 route from a Chapter 1 save: emergency ledger, colored spillway gauges, Echo porch latch, and both arch endings. Expanded chapter environments and investigations remain open.
 - [ ] Playtest the camp pantry, skillet timing, mess station, hand pump, portable canteen, and the ranger supper/cache quest on phone.
@@ -85,3 +88,13 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 - [ ] Drive into the western pond basin, load each salvage option, and unload it at the high-bank station. The drain unlocks after recovering the original Echo recording.
 - [ ] Verify the warning bell, returning water, flooded cargo loss and retreat to the ramp. Automated checks cover the clock and player recovery.
 - [ ] Check that pump salvage extends later runs, water salvage opens the canteen refill, and the ledger is recorded in the bag.
+
+## The Second Address and field equipment
+
+- [x] Release `e85c8cb` published to the existing Funkytown site. All 16 changed production files matched the release. Thirteen automated checks passed, including production file checks.
+- [x] The salvaged ledger unlocks the dry address. Entry by bluff, grapple latch or following the resident. The post office requires the stopped-clock observation and both runs of the brass-ball experiment.
+- [x] Published the powered wagon winch, tow line, cargo straps, flare pistol, contact mic and cottontails. The clock, tray, flare pistol and cottontail use authored GLB models.
+- [ ] Complete all three rendered Second Address routes and the post office handoff on desktop and touch. Check hints, aim targets, clue-order flexibility and save/reload before and after filing.
+- [ ] Playtest flare aiming, tow-line rigging, winching, straps, mic and hunting on real iPhone and iPad.
+- [ ] Complete the world-wide pass for floating props, collision, grounded furniture and authored replacements. Include porch steps, interiors, the new ranch house, creek racks and Submerged Street.
+- [ ] Verify the entire opening-to-Second-Address route from a clean save. Check all three salvage deliveries, both ending paths, touch audio, objective readability and first-30-minute pacing.
