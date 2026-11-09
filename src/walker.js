@@ -32,18 +32,18 @@ export class Walker {
     this.body.setTranslation(position,true);
     this.body.setNextKinematicTranslation(position);
   }
-  step({x,z,jump,sprint,pull},yaw,events){
+  step({x,z,jump,sprint,pull,sprintBoost,jumpBoost},yaw,events){
     const grounded=this.control.computedGrounded();
     this.grace=grounded?.105:Math.max(0,this.grace-STEP);
     this.jumpBuffer=jump?.13:Math.max(0,this.jumpBuffer-STEP);
     const wish=new T.Vector3(x,0,-z).clampLength(0,1).applyAxisAngle(new T.Vector3(0,1,0),yaw);
-    const speed=sprint?6.2:4.35;
+    const speed=sprint?(sprintBoost?7.05:6.2):4.35;
     wish.multiplyScalar(speed);
     const blend=1-Math.exp(-(grounded?(wish.lengthSq()?24:33):7)*STEP);
     this.velocity.x=T.MathUtils.lerp(this.velocity.x,wish.x,blend);
     this.velocity.z=T.MathUtils.lerp(this.velocity.z,wish.z,blend);
     if(this.grace&&this.jumpBuffer){
-      this.velocity.y=4.85;this.grace=this.jumpBuffer=0;
+      this.velocity.y=jumpBoost?5.25:4.85;this.grace=this.jumpBuffer=0;
     }else if(grounded&&this.velocity.y<=0)this.velocity.y=-1.9;
     else this.velocity.y=Math.max(-26,this.velocity.y-15.8*STEP);
     if(pull){

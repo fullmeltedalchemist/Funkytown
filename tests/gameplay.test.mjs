@@ -144,3 +144,65 @@ test('creek line trips the clutch, strikes the low shelf and rewards a clean hau
   assert.equal(position.z,line.landing.z+1.3);
   world.free();
 });
+
+test('camp cooking allows a hot meal, a burnt batch, and drinking from a finite canteen',async()=>{
+  const {CampLife}=await import('../src/camp-life.js');
+  const records=new Map();
+  const bag={records,record:(id)=>records.set(id,true),forget:id=>records.delete(id)};
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  const camp=new CampLife({world,tag(){},scenes:[new T.Scene()]},bag,()=>{});
+  bag.record('camp-ingredients');
+  assert.match(camp.cook(),/heat/);
+  camp.tick(4);
+  assert.match(camp.cook(),/simmering/);
+  camp.tick(2);
+  assert.match(camp.cook(),/Meal packed/);
+  assert.match(camp.eat(),/eat/);
+  assert.ok(camp.energy>0);
+  bag.record('camp-ingredients');
+  camp.cook();
+  camp.tick(13);
+  assert.match(camp.cook(),/burned/);
+  assert.equal(records.has('camp-meal'),false);
+  camp.water=1;
+  assert.match(camp.drink(),/You drink/);
+  assert.match(camp.drink(),/empty/);
+  world.free();
+});
+
+test('chapter route resets a wrong gauge order and persists each arch ending',async()=>{
+  const {Chapters}=await import('../src/chapters.js');
+  await R.init();
+  const storage=new Map();
+  globalThis.localStorage={getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value)};
+  for(const ending of ['seal','hold']){
+    storage.clear();
+    const world=new R.World({x:0,y:-9.81,z:0});
+    const scenes=[new T.Scene(),new T.Scene()];
+    const tags=new Map();
+    const mechanics={world,scenes,onImpact:new Map(),tag:(collider,action)=>tags.set(collider.handle,action),
+      staticBox:(_size,position)=>({
+        visual:new T.Mesh(new T.BoxGeometry(),new T.MeshStandardMaterial()),
+        collider:world.createCollider(R.ColliderDesc.ball(.1).setTranslation(...position))
+      })};
+    const story={area:0,gates:[new T.Vector3(),new T.Vector3()]};
+    const finale={choice:'public'},bag={record(){}};
+    const chapter=new Chapters(mechanics,story,finale,bag,()=>{});
+    const interact=(name)=>[...tags.values()].find(action=>action.name===name).action();
+    assert.match(interact('Read the emergency dispatch ledger'),/Shoot blue/);
+    chapter.pulse(1);chapter.pulse(2);
+    assert.equal(chapter.pulses,0);
+    chapter.pulse(1);chapter.pulse(0);chapter.pulse(2);
+    assert.equal(chapter.stage,2);
+    interact('Read the exposed route marker');
+    assert.match(interact('Recover Mom’s original recording'),/Grapple/);
+    const ring=[...tags.values()].find(action=>action.name==='Reflected porch ring');
+    ring.onGrapple();
+    interact('Recover Mom’s original recording');
+    interact(ending==='seal'?'Seal the arch':'Keep the arch open for a rescue');
+    assert.equal(story.archSealed,ending==='seal');
+    assert.equal(new Chapters(mechanics,story,finale,bag,()=>{}).ending,ending);
+    world.free();
+  }
+});

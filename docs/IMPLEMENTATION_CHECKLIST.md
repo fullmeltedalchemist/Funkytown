@@ -70,4 +70,6 @@ A checked item is confirmed live. Partial and awaiting playtest are called out e
 - [ ] Grapple the envelope from the Vale House eave and recover Mom’s missing journal insert.
 - [ ] Illustrated reel frames and both animated bait-camera outcomes.
 - [ ] Inspect the supported tuning stations, relay dishes, spillway post, and keepsakes in the browser. Continue the remaining scene-wide floating-prop sweep.
-- [ ] Expand the later chapters and villager evidence reactions.
+- [ ] Playtest the first Chapters 2–4 route from a Chapter 1 save: emergency ledger, colored spillway gauges, Echo porch latch, and both arch endings. Expanded chapter environments and investigations remain open.
+- [ ] Playtest the camp pantry, skillet timing, mess station, hand pump, portable canteen, and the ranger supper/cache quest on phone.
+- [ ] Verify the creek firefly encounter in the rendered game.

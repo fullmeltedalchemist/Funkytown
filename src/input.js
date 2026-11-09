@@ -7,7 +7,7 @@ export class Input {
   actions=new Set();
   touch=matchMedia('(pointer:coarse)').matches;
   dragMode=false;
-  constructor(canvas,onUse,onBag,onGear,onPhoto,onWeapon,onLantern){
+  constructor(canvas,onUse,onBag,onGear,onPhoto,onWeapon,onLantern,onDrink){
     this.canvas=canvas;
     const menu=document.querySelector('#menu'),pad=document.querySelector('#pad');
     let drag=null,pointer=null;
@@ -47,6 +47,7 @@ export class Input {
       if(e.code==='KeyC'||e.code==='Digit2')onPhoto();
       if(e.code==='KeyX')onWeapon();
       if(e.code==='KeyK')onLantern();
+      if(e.code==='KeyU')onDrink();
       if(e.code==='KeyF')this.actions.add('fire');
       if(e.code==='KeyG')this.actions.add('grapple');
       if(e.code==='KeyQ')this.actions.add('throw');
@@ -109,6 +110,7 @@ export class Input {
     document.querySelector('#photo-button').onclick=onPhoto;
     document.querySelector('#weapon-button').onclick=onWeapon;
     document.querySelector('#lantern-button').onclick=onLantern;
+    document.querySelector('#drink-button').onclick=onDrink;
     document.querySelector('#pause').onclick=()=>this.toggle(false);
   }
   movement(){

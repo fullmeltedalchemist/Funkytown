@@ -79,6 +79,7 @@ export class Story {
   state=persisted();
   area=0;
   markers=[];
+  portals=[];
   constructor(mechanics,pipeline,models){
     this.mechanics=mechanics;
     const [town,realm]=mechanics.scenes;
@@ -197,6 +198,7 @@ export class Story {
     const portal=new T.Mesh(new T.PlaneGeometry(2.73,2.92,22,25),this.shader);
     portal.position.set(x,y+1.49,z);
     this.mechanics.scenes[area].add(portal);
+    this.portals[area]=portal;
   }
   transition(position,dt){
     this.wait=Math.max(0,(this.wait||0)-dt);
@@ -204,6 +206,7 @@ export class Story {
     if(this.wait||Math.abs(gate.x-position.x)>1.25||Math.abs(gate.z-position.z)>.6||
        Math.abs(position.y-gate.y)>2.4)return null;
     this.wait=1.2;
+    if(this.area===0&&this.archSealed)return {notice:'The arch is sealed.'};
     if(this.area===0&&this.state<2)return {notice:'The arch is sealed. Read the letter in the lodge.'};
     if(this.area===0&&this.state===2&&!this.missions.calibrated())return {notice:'Set the three sluices before crossing.'};
     if(this.area===1)this.missions.relayTime=0;
@@ -226,6 +229,7 @@ export class Story {
   }
   animate(time){
     this.shader.uniforms.time.value=time;
+    this.portals[0].visible=!this.archSealed;
     for(const {gem,y,stage} of this.markers){
       gem.visible=this.state>=stage&&this.state<=stage+1;
       gem.rotation.y=time*1.6;gem.position.y=y+Math.sin(time*3)*.08;

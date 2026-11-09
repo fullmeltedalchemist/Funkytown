@@ -1,3 +1,6 @@
+import {CreekEncounter} from './creek-encounter.js';
+import {CampLife} from './camp-life.js';
+import {Chapters} from './chapters.js';
 import {insideRescueCorridor} from './rigging.js';
 import {Gear} from './gear.js';
 import {Finale,MailRoute} from './finale.js';
@@ -120,6 +123,9 @@ async function boot(){
   const rescue=new Rescue(mechanics,story,bag,message=>notice(message));
   const finale=new Finale(mechanics,rescue,bag,pipeline,models,water,message=>notice(message));
   const mail=new MailRoute(mechanics,bag,pipeline,models,finale);
+  const campLife=new CampLife(mechanics,bag,message=>notice(message));
+  const chapters=new Chapters(mechanics,story,finale,bag,message=>notice(message));
+  const creekEncounter=new CreekEncounter(mechanics,bag,message=>notice(message));
   scene.add(camera);
   const pistol=fieldPistol(),scattergun=fieldPistol(true);
   let scatter=false;
@@ -199,7 +205,8 @@ async function boot(){
     scatter=!scatter;
     $('weapon-button').textContent=scatter?'Scattergun':'Pistol';
     notice(scatter?'Scattergun equipped. Short-range spread.':'Field pistol equipped.');
-  },()=>{if(!rescue.zipline.active)gear.deployLantern(mechanics,camera);});
+  },()=>{if(!rescue.zipline.active)gear.deployLantern(mechanics,camera);},
+    ()=>{if(!rescue.zipline.active)notice(campLife.drink());});
   $('start').disabled=false;
   $('start').textContent='Walk the ridge';
   $('touch-mode').disabled=false;
@@ -274,14 +281,17 @@ async function boot(){
         if(mechanics.driving)world.step(mechanics.events);
         else {
           if(story.area===0&&finale.onFloodedFord(walker.current)){move.x*=.58;move.z*=.58;move.sprint=false;}
+          if(input.touch&&campLife.energy>0&&Math.hypot(...input.stick)>.96)move.sprint=true;
           if(mechanics.carried?.size){move.x*=.75;move.z*=.75;move.sprint=false;}
-          walker.step({...move,pull:mechanics.anchor},yaw,mechanics.events);
+          walker.step({...move,pull:mechanics.anchor,sprintBoost:campLife.energy>0,jumpBoost:campLife.hydrated>0},yaw,mechanics.events);
         }
         mechanics.after();
         story.missions.tick(STEP);
         rescue.tick(now*.001);
         finale.tick(STEP);
         mail.tick(now*.001);
+        campLife.tick(STEP);
+        creekEncounter.tick(STEP);
         if(!mechanics.driving){
           const transition=story.transition(walker.current,STEP);
           if(transition){
@@ -329,7 +339,7 @@ async function boot(){
       water.uniforms.ripple.value.set(player.x,player.z,now*.001);lastWake=now;
     }
     story.animate(now*.001);
-    const objective=(rescue.showPractice?rescue.objective():null)??finale.objective()??rescue.objective();
+    const objective=(rescue.showPractice?rescue.objective():null)??chapters.objective()??finale.objective()??rescue.objective();
     $('guide').textContent=objective?.text??story.guide(player);
     const waypoint=objective?objective.target:story.waypoint();
     const arrow=$('bearing');

@@ -49,6 +49,8 @@ jobs:
                   await page.getByText('Signal lantern deployed.',{exact:false}).waitFor();
                   await page.locator('#lantern-button').tap();
                   await page.getByText('Signal lantern recalled.',{exact:false}).waitFor();
+                  await page.locator('#drink-button').tap();
+                  await page.getByText('Canteen empty.',{exact:false}).waitFor();
                   await page.locator('#bag-button').tap();
                 }else{
                   await page.locator('#start').click();
