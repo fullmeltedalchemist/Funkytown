@@ -115,7 +115,7 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 - [x] Automated Rapier test verifies the Second Address unlock, following the truck with normal wagon physics, the missed-tail receipt fallback, and recovery of the original tape.
 - [x] The storehouse now requires a grapple release and a physical case handoff. Automated tests aim and grapple the ring, carry the case on foot across town, file it, and recover a lost case.
 - [ ] Hosted touch-browser check of the receipt, grapple and pickup. Real-device playthrough still needs the full drive and handoff.
-- [ ] Play the parade recorder, backstage bluff, and wagon pursuit in the rendered game. Verify truck impacts and the full extraction aftermath. Gameplay tests cover boarding the float, collecting its recording, the stagehand lead, the pursuit, and the receipt fallback.
+- [ ] Play the parade recorder, backstage bluff, and wagon pursuit in the rendered game. Verify truck impacts, the new ranger and family briefing, and the full extraction aftermath. Gameplay tests cover boarding the float, collecting its recording, the stagehand lead, the pursuit, and the receipt fallback.
 
 - [x] Interaction sensors no longer block walking. The Founders’ Night return test carries the case past the receipt stand on the direct approach.
 

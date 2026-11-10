@@ -48,7 +48,7 @@ The central question is who returned after the reservoir evacuation. People who 
 
 **Hook.** The original records establish who may still be alive beyond the arch. The ranger witnessed a copy taking somebody's place.
 
-- [ ] Meet the ranger and a family with conflicting goals before the decision.
+- [x] After filing the archive tape, hear the ranger’s eyewitness account and Cal’s family disagree before deciding the arch’s fate.
 - [ ] Unlock rescue approaches through the pump, the sound experiment or help earned from townspeople.
 - [ ] Build an actual extraction route with physical equipment and a recoverable failure state.
 - [ ] Connect the existing seal/open ending to who returned, who answers the radio and what changes at the diner and both addresses.

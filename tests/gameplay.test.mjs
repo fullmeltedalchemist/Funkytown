@@ -173,6 +173,7 @@ test('camp cooking allows a hot meal, a burnt batch, and drinking from a finite 
 
 test('chapter route resets a wrong gauge order and persists each arch ending',async()=>{
   const {Chapters}=await import('../src/chapters.js');
+  const {Rescue}=await import('../src/rescue.js');
   const {Mechanics}=await import('../src/mechanics.js');
   const {Walker}=await import('../src/walker.js');
   await R.init();
@@ -197,8 +198,11 @@ test('chapter route resets a wrong gauge order and persists each arch ending',as
         mechanics.after();
       }
     }
-    const story={area:0,gates:[new T.Vector3(),new T.Vector3()]};
-    const finale={choice:'public'},bag={records:new Map(),record(){}};
+    const story={area:0,state:4,gates:[new T.Vector3(),new T.Vector3()]};
+    const records=new Map(),bag={records,record:(id,name)=>records.set(id,name)};
+    storage.set('bellwether-rescue-v1','4');
+    const rescue=new Rescue(mechanics,story,bag,()=>{});
+    const finale={choice:'public',rescue};
     const chapter=new Chapters(mechanics,story,finale,bag,()=>{});
     const interact=(name)=>[...tags.values()].find(action=>action.name===name).action();
     assert.match(interact('Read the emergency dispatch ledger'),/Shoot blue/);
@@ -218,7 +222,19 @@ test('chapter route resets a wrong gauge order and persists each arch ending',as
     camera.lookAt(chapter.echoRing);camera.updateMatrixWorld(true);
     assert.match(mechanics.grapple(camera),/latch swings open/);
     interact('Recover Mom’s original recording');
-    interact(ending==='seal'?'Seal the arch':'Keep the arch open for a rescue');
+    mechanics.changeArea(0);
+    const archChoice=ending==='seal'?'Seal the arch':'Keep the arch open for a rescue';
+    if(ending==='hold'){
+      records.set('founders-original-tape',true);
+      chapter.tick();
+      assert.match(interact(archChoice),/Hear the ranger/);
+      assert.match(chapter.objective().text,/Ask the ranger/);
+      assert.match(interact('Speak to the ranger'),/other Cal/);
+      assert.match(chapter.objective().text,/Hear Cal’s family/);
+      assert.match(interact('Hear Cal’s family out'),/Cricket/);
+      assert.ok(records.has('extraction-ranger')&&records.has('extraction-family'));
+    }
+    interact(archChoice);
     assert.equal(story.archSealed,ending==='seal');
     assert.equal(new Chapters(mechanics,story,finale,bag,()=>{}).ending,ending);
     world.free();
