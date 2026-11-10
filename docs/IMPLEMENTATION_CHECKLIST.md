@@ -146,3 +146,5 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 ### Game audio lifecycle
 
 - [ ] Verify footsteps, water steps, wagon motor and tape playback on desktop and touch. Check that phone lock, app switching and leaving the page silence all game audio. Automated checks cover visibility, page lifecycle and focus events.
+
+- [ ] Verify magnetic pickup at the four world locations on desktop and touch. Automated physics tests pull all four finds into the bag and check that they stay recovered on reload.

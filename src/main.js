@@ -1,3 +1,4 @@
+import {FieldMagnet} from './field-magnet.js';
 import {watchAudioFocus} from './audio-focus.js';
 import {installFairground,nearFairground} from './fairground.js';
 import {installFieldRange} from './field-range.js';
@@ -250,6 +251,8 @@ async function boot(){
   bag.record('flare-pistol','Flare pistol','Cycle weapons with X or the weapon button. Fire a bouncing light that burns for twelve seconds.','Gear');
   bag.record('contact-mic','Contact microphone','M or Mic · aim at a surface and record its vibration. J or Speaker plays the recording from a placeable speaker.','Gear');
   const loopRoad=new LoopRoad(mechanics,story,bag,notice);
+  const magnet=new FieldMagnet(mechanics,bag,notice);
+  bag.record('field-magnet','Field magnet','N or Magnet · recover dropped metal around camp, the archive bay and the supply shop.','Gear');
   const recorder=new FieldRecorder(mechanics,pipeline,models.receiver,bag,playToolSound);
   function sampleContact(){
     if(mechanics.driving||rescue.zipline.active)return;
@@ -299,7 +302,8 @@ async function boot(){
   },()=>{if(!rescue.zipline.active)gear.deployLantern(mechanics,camera);},
     ()=>{if(!rescue.zipline.active)notice(campLife.drink());},
     ()=>{if(!rescue.zipline.active)notice(mechanics.toggleStrap());},sampleContact,()=>{if(!rescue.zipline.active)notice(towLine.select(camera));},
-    ()=>{if(!rescue.zipline.active)notice(recorder.deploy(camera));});
+    ()=>{if(!rescue.zipline.active)notice(recorder.deploy(camera));},
+    ()=>{if(!rescue.zipline.active)notice(magnet.use(camera));});
   $('start').disabled=false;
   $('start').textContent='Walk the ridge';
   $('touch-mode').disabled=false;
@@ -415,6 +419,7 @@ async function boot(){
         chapters.tick();
         extraction.tick(STEP);
         loopRoad.tick(STEP);
+        magnet.tick(STEP,camera);
         recorder.tick(STEP);
         const pebble=mechanics.pebbleNoise;
         wildlife.tick(STEP,pebble?.area===0?pebble.position:recorder.area===0?recorder.source:null);

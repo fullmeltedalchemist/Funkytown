@@ -1344,3 +1344,38 @@ test('game audio focus handles lock, navigation, freeze and overlapping backgrou
   emit(host,'pagehide');
   assert.equal(states.at(-1),true);
 });
+
+test('the field magnet pulls four physical finds into the bag and skips recovered finds on reload',async t=>{
+  const {FieldMagnet}=await import('../src/field-magnet.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker,STEP}=await import('../src/walker.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  t.after(()=>world.free());
+  const walker=new Walker(world,[0,1,0]);
+  const m=new Mechanics(world,walker,new T.Scene(),new T.Scene());
+  const records=new Map(),bag={records,record:(id,name)=>records.set(id,name)};
+  const magnet=new FieldMagnet(m,bag,()=>{});
+  const camera=new T.PerspectiveCamera();
+  camera.position.set(0,1.58,0);
+  camera.lookAt(0,1.4,-4);camera.updateMatrixWorld(true);
+  const finds=[...m.items.values()].filter(item=>item.magneticFind);
+  assert.equal(finds.length,4);
+  for(const item of finds){
+    item.body.setGravityScale(0,true);
+    item.body.setTranslation({x:0,y:1.4,z:-4},true);
+    item.body.setLinvel({x:0,y:0,z:0},true);
+    world.step(m.events);
+    assert.match(magnet.use(camera),/attached/);
+    for(let i=0;i<150&&magnet.pull;i++){
+      magnet.tick(STEP,camera);
+      world.step(m.events);
+      m.after();
+    }
+    assert.ok(records.has('magnet-'+item.magneticFind.id));
+    assert.equal(m.items.has(item.collider.handle),false);
+    assert.equal(magnet.line.visible,false);
+  }
+  new FieldMagnet(m,bag,()=>{});
+  assert.equal([...m.items.values()].some(item=>item.magneticFind),false);
+});

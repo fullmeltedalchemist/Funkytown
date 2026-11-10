@@ -69,7 +69,8 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] Give full and empty jugs different mass, flotation and break effects. Both drift in the current.
 - [ ] Extend buoyancy, balance, friction and break thresholds across boards, tires and lanterns. Verify lodging against gates.
 - [ ] Build everyday physics scenes: a diner tablecloth that drags tableware and draws the owner's attention, a workbench and inspection pit with dropped tools, movable furniture, and flour or chalk that records physical footprints and marks.
-- [ ] Make the magnetic pickup recover dropped tools, keys, license plates and lures. Let the camera crawler scout under doors, traverse suitable steel surfaces, pull a latch, and thread a line through a pipe.
+- [x] Recover a dropped spanner, gate key, truck plate and fishing lure with the Field Kit magnet.
+- [ ] Let the camera crawler scout under doors, traverse suitable steel surfaces, pull a latch, and thread a line through a pipe.
 - [x] Give flares a lookout acknowledgement, a drifting light on water and the ability to reveal Echo tracks.
 - [x] Add quiet pebble distractions and breakable targets. The lever rifle can ring the distant bell, drop a counterweight and hit existing hunting targets. Preserve the scattergun’s close-range spread.
 - [ ] Add a climbing harness so the player can stop mid-grapple and work on a latch or attach a line. Add bolt cutters for chained routes and a portable stove, kettle and water filter for camp away from Foxglove.
