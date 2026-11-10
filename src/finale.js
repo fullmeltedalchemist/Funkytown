@@ -212,7 +212,7 @@ export class Finale {
         this.hold=0;
         if(this.gates.filter(n=>n===2).length>=2)this.flood=1;
         valve.rotation.z=this.gates[i]*Math.PI/3;
-        return (this.flood>.5?'The ford is flooding. Correct the gates or take the bank. ':'')+'Gates '+this.gates.join(' / ')+' · balance the intake. Target: 2 / 0 / 1.';
+        return (this.flood>.24?'The ford is flooding. Correct the gates or take the bank. ':'')+'Gates '+this.gates.join(' / ')+' · balance the intake. Target: 2 / 0 / 1.';
       });
     }
     this.model(this.intake,pipeline,models.arch,.48);
@@ -647,7 +647,8 @@ export class Finale {
     if(this.stage===0){
       if(!this.boomAligned)return {text:'Grapple the brass ring to secure the spillway boom',target:this.boomPoint};
       const index=this.gates.findIndex((n,i)=>n!==[2,0,1][i]);
-      return {text:'Balance intake gates 2 / 0 / 1 · '+this.gates.join(' / ')+' · pressure '+Math.round(this.pressure*100)+'%',target:this.positions[index]??this.intake};
+      const detour=this.flood>.24?'Ford closed · use the high bank · ':'';
+      return {text:detour+'Balance intake gates 2 / 0 / 1 · '+this.gates.join(' / ')+' · pressure '+Math.round(this.pressure*100)+'%',target:this.positions[index]??this.intake};
     }
     if(this.stage===1)return {text:'Search the drained intake chamber',target:this.intake};
     if(this.stage===2)return {text:'Align the dispatch tape with the siren and winch',target:this.lookout};

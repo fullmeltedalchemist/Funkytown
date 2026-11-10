@@ -9,7 +9,7 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 - [ ] Playtest all three marker-reconstruction approaches from start to finish in the browser. Automated coverage verifies the wagon, creek and grapple branches, prompt order and the recovered rope after reload.
 - [ ] Deploy and complete a rendered playthrough of the new ford emergency before the woman/ranger conversation. The ford emergency is live. The hosted WebGL fixture passed the radio and high-bank intervention using set starting positions. Automated gameplay tests also cover grapple, on-foot and missed-wagon recovery. The uninterrupted rendered routes remain open.
 - [x] Spillway: grapple the boom into its catch, balance the gates, and recover from a flooded ford by correcting the gate settings. Verified in production source.
-- [ ] Playtest boom aiming, flooded ford, bank detour, and recovery end to end.
+- [ ] Playtest boom aiming, flooded ford, bank detour, and recovery end to end in the browser. Gameplay tests now verify boom targeting, high-bank guidance, gate correction, and intake recovery.
 - [x] Search the intake and recover Cal’s jacket and dispatch cassette.
 - [x] Lookout minigame: play two tracks and align siren and winch cues. Audio on phone still needs testing.
 - [x] Broadcast or share privately: ending choice persists and changes the post office radio response. Production source verified.

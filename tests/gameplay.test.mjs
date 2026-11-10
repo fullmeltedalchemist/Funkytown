@@ -898,3 +898,49 @@ test('the rescue markers recognize each approach and the recovered rope stays go
     assert.equal(start().line.visible,false);
   }
 });
+
+test('the spillway boom can be aimed at, flooded gates warn of the bank detour, and correcting them opens the intake',async t=>{
+  const {Finale}=await import('../src/finale.js');
+  const {AssetPipeline}=await import('../src/assets.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker,STEP}=await import('../src/walker.js');
+  const {height,trailX}=await import('../src/terrain.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  t.after(()=>world.free());
+  const scene=new T.Scene(),walker=new Walker(world,[0,0,0]);
+  const m=new Mechanics(world,walker,scene,new T.Scene());
+  m.car={visual:new T.Group()};
+  const pipeline=new AssetPipeline(scene,world);
+  const model=new T.Group();
+  const models={valve:model,arch:model,receiver:model,lantern:model};
+  const records=new Map(),bag={records,record:(id,name)=>records.set(id,name)};
+  const rescue={stage:4,story:{area:0}};
+  const water={uniforms:{current:{value:0},flood:{value:0}}};
+  const finale=new Finale(m,rescue,bag,pipeline,models,water,()=>{});
+  const camera=new T.PerspectiveCamera();
+  const aim=point=>{
+    camera.position.copy(point).add(new T.Vector3(0,.19,1.2));
+    camera.lookAt(point);camera.updateMatrixWorld(true);
+  };
+  world.step(m.events);
+  aim(finale.boomPoint.clone().add(new T.Vector3(0,.22,0)));
+  assert.match(m.grapple(camera),/pull the boom/);
+  const use=point=>{aim(point);return m.use(camera);};
+  assert.match(use(finale.positions[0]),/1 \/ 0 \/ 0/);
+  assert.match(use(finale.positions[0]),/2 \/ 0 \/ 0/);
+  assert.match(use(finale.positions[1]),/2 \/ 1 \/ 0/);
+  assert.match(use(finale.positions[1]),/ford is flooding/);
+  const ford=new T.Vector3(trailX(-1),height(trailX(-1),-1),-1);
+  assert.equal(finale.onFloodedFord(ford),true);
+  assert.equal(finale.onFloodedFord(ford.clone().add(new T.Vector3(3,0,0))),false);
+  assert.match(finale.objective().text,/use the high bank/);
+  assert.match(rescue.spillwayReaction(),/Take the high bank/);
+  assert.match(use(finale.intake),/still under pressure/);
+  use(finale.positions[1]);
+  use(finale.positions[2]);
+  for(let i=0;i<420;i++)finale.tick(STEP);
+  assert.equal(finale.onFloodedFord(ford),false);
+  assert.match(use(finale.intake),/dispatch tape/);
+  assert.ok(records.has('dispatch-tape'));
+});
