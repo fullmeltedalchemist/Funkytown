@@ -25,6 +25,7 @@ export class Chapters {
       else if(this.stage===5)this.stage=4;
     }catch{}
     story.archSealed=this.ending==='seal';
+    finale.echoEnding=()=>this.ending;
     const post=plots[2];
     this.ledger=station(mechanics,0,groundPoint(post.x+3.8,post.z-3.7),'Read the emergency dispatch ledger',()=>{
       if(!finale.choice)return 'The postmaster keeps the emergency ledger closed until the rescue tape is accounted for.';
@@ -134,7 +135,7 @@ export class Chapters {
     };
   }
   briefingAvailable(){
-    return this.stage===4&&this.bag.records.has(archiveTape);
+    return (this.stage===4||this.ending==='hold')&&this.bag.records.has(archiveTape);
   }
   briefingObjective(){
     if(!this.family||!this.briefingAvailable()||this.story.area!==0)return null;
@@ -186,7 +187,7 @@ export class Chapters {
   objective(){
     if(!this.finale.choice)return null;
     const area=this.story.area;
-    if(this.stage===5)return {text:this.ending==='seal'?'The Way Back · Arch sealed':'The Way Back · Search crossing open',target:null};
+    if(this.stage===5)return this.briefingObjective()??{text:this.ending==='seal'?'The Way Back · Arch sealed':'The Way Back · Search crossing open',target:null};
     if(area===1&&this.stage!==3)return {text:'Return through the arch to Foxglove Camp',target:this.story.gates[1]};
     if(this.stage===0)return {text:'Chapter 2 · Read the emergency dispatch ledger',target:this.ledger};
     if(this.stage===1)return {text:'Shoot the gauges in order · blue, amber, red',target:this.gauges[sequence[this.pulses]].point};

@@ -75,7 +75,7 @@ export class Extraction {
 
   available(){
     const records=this.bag.records;
-    return this.chapters.stage===4&&records.has('founders-original-tape')&&
+    return (this.chapters.stage===4||this.chapters.ending==='hold')&&records.has('founders-original-tape')&&
       records.has('extraction-ranger')&&records.has('extraction-family')&&!records.has(resultKey);
   }
   show(visible){

@@ -1050,6 +1050,11 @@ test('the Echo extraction opens three plans and recovers a timed-out harness bef
   for(const id of ['founders-original-tape','extraction-ranger','extraction-family'])records.set(id,true);
   extraction.tick(STEP);
   assert.ok(extraction.house);
+  chapters.stage=5;chapters.ending='seal';
+  assert.equal(extraction.available(),false);
+  chapters.ending='hold';
+  assert.equal(extraction.available(),true);
+  chapters.stage=4;chapters.ending='';
   assert.match(useAt(extraction.plans[0]),/Bring the transfer pump/);
   records.set('pond-pump',true);records.set('synced-audio',true);
   assert.match(useAt(extraction.plans[0]),/transfer pump lowers/);
