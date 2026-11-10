@@ -153,3 +153,5 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 
 - [ ] Verify the workshop camera, gate, latch, pull line and movable props in the rendered game on desktop and touch. Automated tests drive the crawler through the workshop and verify the repaired door on reload.
 - [ ] Verify portable camp placement, stove timing, packing and creek filtration on desktop and touch. Automated tests cover cooking at the portable stove, packing, and the filter condition.
+
+- [ ] Verify the climbing harness and both service-gate approaches on desktop and touch. Automated tests cover lock and release, latch height, cutter unlock, and the gate state after reload.

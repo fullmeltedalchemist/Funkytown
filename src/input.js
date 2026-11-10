@@ -8,7 +8,7 @@ export class Input {
   touch=matchMedia('(pointer:coarse)').matches;
   dragMode=false;
   toolsOpen=false;
-  constructor(canvas,onUse,onBag,onGear,onPhoto,onWeapon,onLantern,onDrink,onStrap,onMic,onRig,onPlayback,onMagnet,onCrawler,onCamp){
+  constructor(canvas,onUse,onBag,onGear,onPhoto,onWeapon,onLantern,onDrink,onStrap,onMic,onRig,onPlayback,onMagnet,onCrawler,onCamp,onHarness,onCutters){
     this.canvas=canvas;
     const menu=document.querySelector('#menu'),pad=document.querySelector('#pad');
     const kit=document.querySelector('#tool-panel'),tools=document.querySelector('#tools-button');
@@ -72,6 +72,8 @@ export class Input {
       if(e.code==='KeyN')onMagnet();
       if(e.code==='KeyH')onCrawler();
       if(e.code==='KeyP')onCamp();
+      if(e.code==='KeyY')onHarness();
+      if(e.code==='KeyO')onCutters();
       if(e.code==='KeyV')onRig();
       if(e.code==='KeyF')this.actions.add('fire');
       if(e.code==='KeyG')this.actions.add('grapple');
@@ -135,7 +137,7 @@ export class Input {
     const kitActions={
       'gear-button':onGear,'photo-button':onPhoto,'weapon-button':onWeapon,
       'lantern-button':onLantern,'drink-button':onDrink,'strap-button':onStrap,
-      'mic-button':onMic,'rig-button':onRig,'speaker-button':onPlayback,'magnet-button':onMagnet,'crawler-button':onCrawler,'camp-kit-button':onCamp
+      'mic-button':onMic,'rig-button':onRig,'speaker-button':onPlayback,'magnet-button':onMagnet,'crawler-button':onCrawler,'camp-kit-button':onCamp,'harness-button':onHarness,'cutters-button':onCutters
     };
     for(const [id,action] of Object.entries(kitActions)){
       document.getElementById(id).onclick=()=>{

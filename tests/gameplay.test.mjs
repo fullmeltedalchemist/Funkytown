@@ -1441,3 +1441,45 @@ test('portable camp cooks on its own stove, packs safely and filters near the cr
   kit.kit.position.set(-12,0,-4);
   assert.match(kit.refill(),/drink from the canteen/);
 });
+
+test('a locked harness permits the raised latch and earned cutters open the gate from the ground',async t=>{
+  const {ServiceGate}=await import('../src/service-gate.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker}=await import('../src/walker.js');
+  await R.init();
+  for(const method of ['harness','cutters']){
+    const world=new R.World({x:0,y:-9.81,z:0});
+    t.after(()=>world.free());
+    const walker=new Walker(world,[0,1,0]);
+    const m=new Mechanics(world,walker,new T.Scene(),new T.Scene());
+    const records=new Map(),bag={records,record:(id,name)=>records.set(id,name)};
+    const gate=new ServiceGate(m,bag);
+    const position=gate.gate.visual.position;
+    const camera=new T.PerspectiveCamera();
+    camera.position.copy(position).add(new T.Vector3(0,.35,1.65));
+    camera.lookAt(position);camera.updateMatrixWorld(true);
+    world.step(m.events);
+    assert.match(gate.cut(camera),/unlock/);
+    assert.match(m.toggleHarness(),/Attach/);
+    const latch=[...m.fixed.values()].find(item=>item.name==='Pull the raised service latch');
+    assert.match(latch.action(),/Lock your climbing harness/);
+    if(method==='harness'){
+      m.anchor=position.clone().add(new T.Vector3(0,2.5,0));
+      walker.velocity.set(3,4,-2);
+      assert.match(m.toggleHarness(),/locked/);
+      assert.equal(walker.velocity.length(),0);
+      assert.equal(m.harnessSuspended,true);
+      assert.match(latch.action(),/Climb higher/);
+      walker.teleport(position.clone().add(new T.Vector3(0,1.2,.6)).toArray());
+      assert.match(latch.action(),/swings clear/);
+      assert.match(m.grapple(camera),/released/);
+      assert.equal(m.harnessSuspended,false);
+    }else{
+      records.set('workshop-crawler-repair',true);
+      assert.match(gate.cut(camera),/snap the chain/);
+    }
+    assert.equal(gate.gate.collider.isEnabled(),false);
+    assert.ok(records.has('workshop-service-gate'));
+    assert.equal(new ServiceGate(m,bag).gate.collider.isEnabled(),false);
+  }
+});

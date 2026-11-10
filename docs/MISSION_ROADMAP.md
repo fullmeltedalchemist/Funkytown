@@ -76,7 +76,7 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] Give flares a lookout acknowledgement, a drifting light on water and the ability to reveal Echo tracks.
 - [x] Add quiet pebble distractions and breakable targets. The lever rifle can ring the distant bell, drop a counterweight and hit existing hunting targets. Preserve the scattergun’s close-range spread.
 - [x] Add a portable stove, kettle and water filter for camp away from Foxglove.
-- [ ] Add a climbing harness and bolt cutters for chained routes.
+- [x] Lock the climbing harness mid-grapple to work a raised latch or attach a tow line. Earn bolt cutters from the crawler repair and use them as a ground-level alternative at the chained workshop gate.
 - [ ] Test two-hook and winch scenarios beyond pulling a crate: jammed gates, wreck recovery, mill wheels, lowering a load through a window and catching a runaway cooler.
 - [ ] Add mission-specific wagon packing, padding for fragile evidence and multi-item choices. Tune gravel drift, body lean, ditch bounce, prop impacts and forgiving recovery. Preserve optional foot routes where appropriate.
 - [ ] Add persistent quest-object recovery, and use sleeping bodies, nearby activation and bounded debris to keep mobile play responsive.

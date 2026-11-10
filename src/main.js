@@ -1,3 +1,4 @@
+import {ServiceGate} from './service-gate.js';
 import {PortableCamp} from './portable-camp.js';
 import {Workshop,nearWorkshop} from './workshop.js';
 import {FieldMagnet} from './field-magnet.js';
@@ -256,6 +257,8 @@ async function boot(){
   const portableCamp=new PortableCamp(mechanics,campLife);
   bag.record('portable-camp','Portable camp kit','P or Camp kit · set down a stove, kettle and filter. Cook with your packed ingredients and refill beside the creek.','Gear');
   const workshop=new Workshop(mechanics,bag);
+  const serviceGate=new ServiceGate(mechanics,bag);
+  bag.record('climbing-harness','Climbing harness','Y or Harness · lock in place while attached to the grapple. Use it again to resume pulling.','Gear');
   bag.record('field-crawler','Workshop crawler','H or Crawler · connect near the workshop. Steer through its camera and use the latch or pull line.','Gear');
   const magnet=new FieldMagnet(mechanics,bag,notice);
   bag.record('field-magnet','Field magnet','N or Magnet · recover dropped metal around camp, the archive bay and the supply shop.','Gear');
@@ -312,7 +315,9 @@ async function boot(){
     ()=>{if(!rescue.zipline.active)notice(recorder.deploy(camera));},
     ()=>{if(!rescue.zipline.active)notice(magnet.use(camera));},
     ()=>{if(!rescue.zipline.active)notice(workshop.toggle());},
-    ()=>{if(!rescue.zipline.active&&!workshop.active)notice(portableCamp.toggle(camera));});
+    ()=>{if(!rescue.zipline.active&&!workshop.active)notice(portableCamp.toggle(camera));},
+    ()=>{if(!rescue.zipline.active&&!workshop.active)notice(mechanics.toggleHarness());},
+    ()=>{if(!rescue.zipline.active&&!workshop.active)notice(serviceGate.cut(camera));});
   $('start').disabled=false;
   $('start').textContent='Walk the ridge';
   $('touch-mode').disabled=false;
@@ -406,7 +411,10 @@ async function boot(){
         mechanics.before(camera,move,input);
         input.actions.clear();
         if(mechanics.driving)world.step(mechanics.events);
-        else {
+        else if(mechanics.harnessSuspended){
+          walker.ride(walker.current);
+          world.step(mechanics.events);
+        }else {
           if(story.area===0&&finale.onFloodedFord(walker.current)){move.x*=.58;move.z*=.58;move.sprint=false;}
           if(input.touch&&campLife.energy>0&&Math.hypot(...input.stick)>.96)move.sprint=true;
           if(mechanics.carried?.size){move.x*=.75;move.z*=.75;move.sprint=false;}
@@ -442,7 +450,7 @@ async function boot(){
         wildlife.tick(STEP,pebble?.area===0?pebble.position:recorder.area===0?recorder.source:null);
         checkLookoutSignal(mechanics,finale.lookout,bag,notice,point=>playToolSound(620,860,.42,.2,point));
         towLine.tick(STEP);
-        if(!mechanics.driving){
+        if(!mechanics.driving&&!mechanics.harnessSuspended){
           const transition=story.transition(walker.current,STEP);
           if(transition){
             notice(transition.notice);

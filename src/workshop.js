@@ -129,6 +129,7 @@ export class Workshop {
     if(this.bag.records.has(key))return 'The cable is in place. Recall the crawler to return to your view.';
     if(this.x<.18||this.z>-2.1)return 'Move to the right and line up with the pipe mouth.';
     this.cable.visible=true;
+    this.bag.record('bolt-cutters','Bolt cutters','Use O or Cutters on the chained workshop service gate.','Gear');
     this.bag.record(key,'Workshop signal cable restored','The crawler opened the latch and threaded a pull line through the old workshop conduit.');
     return 'The crawler threads the pipe. The shop has its signal line back.';
   }

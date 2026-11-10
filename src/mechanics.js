@@ -28,6 +28,7 @@ export class Mechanics {
   drops=[];
   carried=null;
   anchor=null;
+  harnessLocked=false;
   driving=false;
   cooldown=0;
   creekFlow=.76;
@@ -247,8 +248,19 @@ export class Mechanics {
       this.onPebble?.(position);
     }
   }
+  get harnessSuspended(){return this.harnessLocked&&!!this.anchor;}
+  toggleHarness(){
+    if(this.driving||!this.anchor)return 'Attach your grapple before locking the climbing harness.';
+    this.harnessLocked=!this.harnessLocked;
+    if(this.harnessLocked){
+      this.walker.velocity.set(0,0,0);
+      return 'Harness locked. You can use a latch or rig a line from here.';
+    }
+    return 'Harness unlocked. The grapple can pull again.';
+  }
   grapple(camera){
     if(this.driving)return '';
+    this.harnessLocked=false;
     if(this.anchor){this.anchor=null;return 'Hook released.';}
     const direction=camera.getWorldDirection(new T.Vector3());
     const hit=this.aim(camera,42);
@@ -364,7 +376,7 @@ export class Mechanics {
         else body.setLinvel(target.sub(body.translation()).multiplyScalar(13).clampLength(0,14),true);
       }
     }
-    if(this.anchor&&this.anchor.distanceTo(this.walker.current)<1.2)this.anchor=null;
+    if(this.anchor&&!this.harnessSuspended&&this.anchor.distanceTo(this.walker.current)<1.2)this.anchor=null;
   }
   resetProp(item,position){
     item.body.setTranslation(position,true);
