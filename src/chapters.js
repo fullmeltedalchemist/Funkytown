@@ -1,10 +1,15 @@
 import * as T from 'three';
+import R from 'rapier';
+import {person} from './rescue.js';
 import {part} from './mechanics.js';
 import {cabinX,cabinZ,plots} from './terrain.js';
 import {groundPoint,station} from './field-stations.js';
 
 const key='bellwether-chapters-v1';
 const sequence=[1,0,2];
+const archiveTape='founders-original-tape';
+const rangerBriefing='extraction-ranger';
+const familyBriefing='extraction-family';
 const echo=(x,z,y=-.015)=>new T.Vector3(x,y,z);
 
 export class Chapters {
@@ -89,6 +94,59 @@ export class Chapters {
       {color:0x6f5085}).point;
     station(mechanics,0,groundPoint(cabinX+2.3,cabinZ-9.2),'Keep the arch open for a rescue',()=>this.finish('hold'),
       {color:0x5d8c88});
+    this.installBriefing(mechanics,finale.rescue);
+  }
+  installBriefing(mechanics,rescue){
+    if(!rescue)return;
+    rescue.extractionBriefing=()=>{
+      if(!this.briefingAvailable())return '';
+      if(this.bag.records.has(rangerBriefing)&&this.bag.records.has(familyBriefing))return '';
+      if(this.bag.records.has(rangerBriefing))return '“I heard two men answer to Cal. Before you decide, hear what the family needs from you.”';
+      this.bag.record(rangerBriefing,'The ranger’s eyewitness account',
+        'The ranger watched one Cal climb the bank. The original radio kept answering from across the water. He wants another crossing before anyone shuts the arch.');
+      return '“I pulled one man out. Then the other Cal called my name from the far bank. I left him there. We can go back, but first hear the family out.”';
+    };
+    this.ranger=rescue.ranger.root;
+    const base=groundPoint(cabinX+6.8,cabinZ+4.8);
+    this.family=base.clone().add(new T.Vector3(0,1.03,0));
+    const parent=person(0x5e6f5b).root;
+    parent.position.copy(base);
+    parent.rotation.y=-Math.PI*.32;
+    const child=person(0x83704b).root;
+    child.position.copy(groundPoint(base.x+.58,base.z+.32));
+    child.scale.setScalar(.68);
+    child.rotation.y=parent.rotation.y;
+    parent.visible=child.visible=false;
+    mechanics.scenes[0].add(parent,child);
+    const target=mechanics.world.createCollider(R.ColliderDesc.capsule(.31,.39)
+      .setTranslation(...this.family.toArray()).setSensor(true).setCollisionGroups((128<<16)|2));
+    target.setEnabled(false);
+    mechanics.tag(target,{name:'Hear Cal’s family out',action:()=>{
+      if(!this.bag.records.has(familyBriefing)){
+        this.bag.record(familyBriefing,'Cal’s family at Foxglove Camp',
+          'Cal’s sister wants the arch closed to protect her child. Her child heard Cal use a private family nickname on the other bank and wants to leave the way open.');
+      }
+      return 'His sister says, “Close it before another one walks into our kitchen.” Her child tugs her sleeve. “The voice across the water called me Cricket. Only Uncle Cal calls me that.”';
+    }});
+    this.showFamily=visible=>{
+      parent.visible=child.visible=visible;
+      target.setEnabled(visible);
+    };
+  }
+  briefingAvailable(){
+    return this.stage===4&&this.bag.records.has(archiveTape);
+  }
+  briefingObjective(){
+    if(!this.family||!this.briefingAvailable()||this.story.area!==0)return null;
+    if(!this.bag.records.has(rangerBriefing))return {text:'Chapter 4 · Ask the ranger who came back',target:this.ranger.position};
+    if(!this.bag.records.has(familyBriefing))return {text:'Chapter 4 · Hear Cal’s family out at camp',target:this.family};
+    return null;
+  }
+  tick(){
+    const visible=this.briefingAvailable();
+    if(visible===this.familyVisible)return;
+    this.familyVisible=visible;
+    this.showFamily?.(visible);
   }
   advance(stage){
     this.stage=stage;
@@ -112,6 +170,7 @@ export class Chapters {
   finish(ending){
     if(this.ending)return this.ending==='seal'?'The arch is sealed.':'The arch stays open for the search party.';
     if(this.stage!==4)return 'Recover the original recording before deciding what to do with the arch.';
+    if(this.briefingObjective())return 'Hear the ranger and Cal’s family out before deciding what to do with the crossing.';
     this.ending=ending;
     this.story.archSealed=ending==='seal';
     this.advance(5);
@@ -130,6 +189,6 @@ export class Chapters {
     if(this.stage===2)return {text:'Read the exposed route marker',target:this.marker};
     if(this.stage===3)return area===1?{text:this.released?'Recover the original recording':'Chapter 3 · Grapple the brass porch ring',
       target:this.released?this.recordingPoint:this.echoRing}:{text:'Chapter 3 · Cross into the Echo Grid',target:this.story.gates[0]};
-    return {text:'Chapter 4 · Seal the arch or keep it open for a rescue',target:this.arch};
+    return this.briefingObjective()??{text:'Chapter 4 · Seal the arch or keep it open for a rescue',target:this.arch};
   }
 }

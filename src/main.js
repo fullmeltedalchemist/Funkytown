@@ -352,6 +352,7 @@ async function boot(){
         salvage.tick(STEP);
         address.tick(STEP);
         founders.tick(STEP);
+        chapters.tick();
         wildlife.tick(STEP);
         towLine.tick(STEP);
         if(!mechanics.driving){

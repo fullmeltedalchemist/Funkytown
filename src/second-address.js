@@ -1,7 +1,7 @@
 import * as T from 'three';
 import R from 'rapier';
 import {part,vec} from './mechanics.js';
-import {height,plots,secondAddress as lot} from './terrain.js';
+import {height,plots,secondAddress as lot,trailX} from './terrain.js';
 import {groundPoint,station} from './field-stations.js';
 import {person} from './rescue.js';
 
@@ -19,6 +19,9 @@ export class SurveyTrial {
   }
 }
 
+const getawayKey='second-address-getaway';
+const leadKey='founders-depot';
+
 export class SecondAddress {
   trial=new SurveyTrial();
   constructor(mechanics,pipeline,models,bag,notice){
@@ -31,6 +34,7 @@ export class SecondAddress {
       node.material=node.material.clone();
       node.material.color.multiply(new T.Color(0xaec6ad));
     });
+    pipeline.place(models.pairedKitchen,{position:at(0,.3,0).toArray(),collider:'authored'});
     const door=mechanics.staticBox([1.54,2.36,.12],at(0,1.4,2.55).toArray(),0x455d56);
     part(door.visual,[.11,.12,.08],[.54,-.04,.085],0xb8954d,.022);
     this.door=door;
@@ -58,6 +62,16 @@ export class SecondAddress {
     this.mailbox=groundPoint(lot.x+4.3,lot.z+5.45);
     this.walkIn=groundPoint(lot.x+1.3,lot.z+4.95);
     this.front=groundPoint(lot.x+1.35,lot.z+4.55);
+    this.escapeRoute=[
+      {name:'the orchard turnout',point:groundPoint(20,30)},
+      {name:'the ridge fork',point:groundPoint(11,34)},
+      {name:'the main road',point:groundPoint(trailX(36),36)}
+    ];
+    const inspector=person(0x39444b);
+    this.inspector=inspector;
+    inspector.root.visible=false;
+    scene.add(inspector.root);
+    this.inspectorStart=groundPoint(lot.x+7,lot.z+7.4);
     resident.root.position.copy(this.mailbox);
     const personSensor=mechanics.world.createCollider(R.ColliderDesc.ball(.45).setSensor(true)
       .setTranslation(this.mailbox.x,this.mailbox.y+1,this.mailbox.z).setCollisionGroups((128<<16)|2));
@@ -65,7 +79,14 @@ export class SecondAddress {
     mechanics.tag(personSensor,{name:'Talk to the resident at the mailbox',action:()=>{
       if(!this.unlocked())return '“Can I help you? The utility office is across town.”';
       if(this.route==='grapple latch')return '“Something just tripped the porch latch. If you’re here about the clock, go ahead. I’ve tried everything.”';
-      if(this.route==='utility bluff')return '“The meter is fine. It’s the clock that stopped. Your office sent you about that, right?”';
+      if(this.route==='utility bluff'){
+        if(this.getaway)return '“Take the wagon around the orchard. I’ll keep him at the house.”';
+        if(bag.records.has(getawayKey)||bag.records.has('second-address-filed')){
+          return '“Take both observations to the post office. The clerk knows what to do with them.”';
+        }
+        if(this.hasBothClues())return this.startGetaway();
+        return '“The meter is fine. It’s the clock that stopped. Your office sent you about that, right?”';
+      }
       if(this.route)return '“I’ll stay out here. That clock makes me remember things that never happened to me.”';
       this.follow=0;
       return '“The meter is this way. Keep up.” Follow her to the porch.';
@@ -81,7 +102,7 @@ export class SecondAddress {
       if(!this.route)return 'The clock is inside the house.';
       if(bag.records.has('second-address-clock'))return 'The hands still read 9:00. The owner remembers Mom saying it only stops when it rains.';
       bag.record('second-address-clock','The clock only stops when it rains',
-        'The occupant repeats a private line Mom used about her kitchen clock. This clock has the same cracked bezel and stopped hands, though it hangs at a different address.');
+        'The occupant repeats a private line Mom used about her kitchen clock. The cracked clock and the child’s chair with red tape match the kitchen at the flooded address.');
       return 'From the porch, the resident says, “Your mom always said the kitchen clock only stops when it rains.” You remember her saying that when the two of you were alone.';
     }});
     this.tray=at(0,.93,-.94);
@@ -110,10 +131,11 @@ export class SecondAddress {
     mechanics.tag(trayPrompt,this.trayInteraction);
     const post=plots[2];
     this.drop=station(mechanics,0,groundPoint(post.x+3.4,post.z+3.6),'Compare the two addresses at the post office',()=>{
-      if(!bag.records.has('echo-slope')||!bag.records.has('second-address-clock')){
+      if(!this.hasBothClues()){
         return 'The clerk has the old map. Bring the clock observation and the slope experiment from the dry address.';
       }
       if(bag.records.has('second-address-filed'))return 'The clerk keeps both house records side by side.';
+      if(this.getaway)this.finishGetaway(false);
       bag.record('second-address-filed','Two addresses, one evacuee',
         'The clerk shows you two signatures dated the same night. One was filed after the reservoir covered its address. Ask who moves the original tapes during Founders’ Night.');
       return 'Two signatures, same night. The clerk whispers that the original tapes leave the archive during the parade.';
@@ -121,6 +143,53 @@ export class SecondAddress {
   }
 
   unlocked(){return this.bag.records.has('pond-records');}
+
+  hasBothClues(){
+    return this.bag.records.has('echo-slope')&&this.bag.records.has('second-address-clock');
+  }
+
+  startGetaway(){
+    this.getaway={time:45,checkpoint:0};
+    this.inspector.root.position.copy(this.inspectorStart);
+    this.inspector.root.visible=true;
+    return 'A real utility inspector calls from the lane. “Nobody sent a crew.” The resident points uphill. “Take the wagon around the orchard and I can get the archive route to you. You can still file both clues at the post office.”';
+  }
+
+  finishGetaway(escaped){
+    this.getaway=null;
+    this.inspector.root.visible=false;
+    this.bag.record(getawayKey,escaped?'Slipped the utility inspector':'Utility cover exposed',
+      escaped?'The resident slipped the archive delivery destination over the radio.':
+        'The utility inspector wrote down the wagon plate. Both observations can still be filed at the post office.');
+    if(!escaped)return 'The inspector got your plate. The post office can still file both clues and has a backup delivery receipt.';
+    if(!this.bag.records.has(leadKey)){
+      this.bag.record(leadKey,'Archive delivery destination',
+        'The resident radioed after the getaway. The parade load goes to the creek storehouse.');
+    }
+    return 'You clear the ridge. The resident radios that the archive load goes to the creek storehouse. File both clues at the post office first.';
+  }
+
+  tickGetaway(dt){
+    const run=this.getaway,m=this.mechanics;
+    if(!run||m.area!==0)return;
+    run.time-=dt;
+    const {root,legs}=this.inspector;
+    const step=Math.min(1,(45-run.time)/6);
+    root.position.lerpVectors(this.inspectorStart,this.mailbox,step);
+    root.position.y=height(root.position.x,root.position.z);
+    root.rotation.y=Math.atan2(this.mailbox.x-this.inspectorStart.x,this.mailbox.z-this.inspectorStart.z);
+    legs.forEach((leg,i)=>{leg.rotation.x=step===1?0:Math.sin(step*34+i*Math.PI)*.3;});
+    if(run.time<=0){
+      this.notice(this.finishGetaway(false));
+      return;
+    }
+    if(!m.driving)return;
+    const target=this.escapeRoute[run.checkpoint].point;
+    const wagon=m.car.body.translation();
+    if(Math.hypot(wagon.x-target.x,wagon.z-target.z)>4.2)return;
+    run.checkpoint++;
+    if(run.checkpoint===this.escapeRoute.length)this.notice(this.finishGetaway(true));
+  }
 
   open(route){
     if(!this.unlocked())return 'The address means nothing yet. Check the missing-person ledger from the submerged street.';
@@ -155,6 +224,7 @@ export class SecondAddress {
 
   tick(dt){
     const m=this.mechanics;
+    this.tickGetaway(dt);
     if(this.follow!==undefined&&!this.route&&m.area===0){
       const root=this.resident.root;
       if(root.position.distanceTo(m.walker.current)<5.6&&!m.driving){
@@ -203,7 +273,12 @@ export class SecondAddress {
   objective(){
     if(this.mechanics.area!==0||!this.unlocked()||this.bag.records.has('second-address-filed'))return null;
     const clock=this.bag.records.has('second-address-clock');
-    if(clock&&this.bag.records.has('echo-slope'))return {text:'The Second Address · Compare records at the post office',target:this.drop};
+    if(this.getaway){
+      const stop=this.escapeRoute[this.getaway.checkpoint];
+      return {text:'Optional getaway · Drive through '+stop.name+' · '+Math.ceil(this.getaway.time)+' s',
+        target:stop.point};
+    }
+    if(this.hasBothClues())return {text:'The Second Address · Compare records at the post office',target:this.drop};
     if(this.route&&!clock)return {text:'The Second Address · Inspect the stopped clock',target:this.clockPoint};
     if(this.route)return {text:this.trial.phase==='control-ready'?'The Second Address · Run the experiment with the receiver on':
       'The Second Address · Release the test ball from the receiver stand',target:this.trayControl};

@@ -24,8 +24,9 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] Place a brass test ball and a sloped survey tray. Let the player watch the ball roll downhill first, then demonstrate the Echo pulling it uphill.
 - [x] Let players carry the resulting evidence to a post office drop and preserve the chosen route in their bag.
 - [x] Add the resident's private-memory contradiction as a required clue at the Blender-authored kitchen clock. The post office requires both clues.
-- [ ] Finish furnishing the duplicate kitchen. Recreate the flooded home's layout and its distinctive short-legged chair. Add a distinct roof entry or late resident route if playtesting shows the current three ways of opening one door feel too similar.
-- [ ] Build an optional wagon getaway if the cover story is exposed. Preserve a recoverable lead for Founders’ Night if the chase fails.
+- [x] Furnish both kitchens with the same Blender-authored cupboard, enamel kettle, low chair with a red-taped leg, and stopped clock.
+- [ ] Assess whether the three door approaches need a distinct roof entry or late resident route after playtesting.
+- [x] Offer an optional timed wagon getaway when the utility bluff is exposed. Reaching the road earns an early archive tip. Losing the getaway leaves both clues and the post office receipt route available.
 - [ ] Play all three approaches and the handoff from a live save with desktop and touch controls.
 
 ## 3. Founders' Night
@@ -34,18 +35,20 @@ The central question is who returned after the reservoir evacuation. People who 
 
 - [x] First playable route from the post office dispatch board to the south-road archive truck and creek storehouse. Track the truck in the wagon or read the backup receipt and retrieve the original tape.
 - [x] Load a Blender-authored archive truck through the GLB pipeline. The first pass uses a scripted truck path.
-- [ ] Build the full parade scene with a physical float, spectator barriers, an archive loading bay and truck collision behavior.
-- [ ] Offer a float-mounted recorder, a backstage bluff and a wagon pursuit. Give each approach a different quality of evidence and witness response.
+- [x] Stage a walkable parade float, spectator barriers and spectators. Give the moving archive truck physical collision.
+- [ ] Expand the parade beyond the staged float and build out the archive loading bay.
+- [x] Offer a float-mounted recorder, a backstage bluff and a wagon pursuit. The recorder preserves the order in the Field Bag. The stagehand gives an off-the-record tip. A successful tail confirms the destination by observation.
 - [x] Make the truck chase recoverable if contact is lost. The delivery receipt reveals the same destination.
 - [ ] Add a fairground ramp, loose barrels, breakable roadside props and wagon cargo shift. Verify handbrake recovery on touch.
 - [x] Authored tape case through the GLB pipeline. Grapple the loading cage open, carry or haul the case, and file it with the clerk. Restore the case if lost.
-- [ ] Author the float through the GLB pipeline. Validate truck ground clearance and route readability on touch.
+- [x] Author the float through the GLB pipeline with a walkable deck, side rails and rear steps.
+- [ ] Validate the truck’s ground clearance and the parade route’s readability on touch.
 
 ## 4. The rescue Mom left unfinished
 
 **Hook.** The original records establish who may still be alive beyond the arch. The ranger witnessed a copy taking somebody's place.
 
-- [ ] Meet the ranger and a family with conflicting goals before the decision.
+- [x] After filing the archive tape, hear the ranger’s eyewitness account and Cal’s family disagree before deciding the arch’s fate.
 - [ ] Unlock rescue approaches through the pump, the sound experiment or help earned from townspeople.
 - [ ] Build an actual extraction route with physical equipment and a recoverable failure state.
 - [ ] Connect the existing seal/open ending to who returned, who answers the radio and what changes at the diner and both addresses.

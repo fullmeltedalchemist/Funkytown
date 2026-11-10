@@ -100,6 +100,8 @@ export class Rescue {
         'She calls you Cal. Then she whispers, “Your mother knew which bank I was on.”';
     });
     this.register(this.route[0],ranger.root,'Speak to the ranger',()=>{
+      const briefing=this.extractionBriefing?.();
+      if(briefing)return briefing;
       if(this.stage>=4&&bag?.records.has('cals-letter')&&bag.records.has('dispatch-tape')){
         if(!bag.records.has('timeline-conflict'))bag.record('timeline-conflict','The missing day','Cal’s letter was postmarked a day after the official rescue date. The original tape runs beyond the official transcript.');
         return [this.spillwayReaction?.(), 'You show the ranger the letter and tape. He taps the postmark: “The report is a day early. And they cut the recording short.”'].filter(Boolean).join(' ');
@@ -169,6 +171,7 @@ export class Rescue {
     }
     town.add(stand);
     line.position.copy(this.evidence);town.add(line);this.line=line;
+    line.visible=this.stage<4;
     this.register(this.evidence.clone().add(new T.Vector3(0,-.98,0)),line,'Recover the cut rescue line',()=>{
       if(this.stage<3)return 'The line runs back toward the two-bell marker.';
       if(this.stage===3){

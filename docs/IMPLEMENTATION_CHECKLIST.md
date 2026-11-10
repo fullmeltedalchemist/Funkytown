@@ -6,10 +6,10 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 
 - [x] Prologue, woman on the bank, and first ranger conversation.
 - [x] Rescue reconstruction: compare both stations, use a wagon, creek, or grapple approach, then recover the cut line. Verified in production source.
-- [ ] Playtest all three existing marker-reconstruction approaches and their prompts from start to finish.
-- [ ] Deploy and complete a rendered playthrough of the new ford emergency before the woman/ranger conversation. Automated gameplay tests drive the radio trigger, grapple, high-bank and on-foot interventions and the missed-wagon recovery.
+- [ ] Playtest all three marker-reconstruction approaches from start to finish in the browser. Automated coverage verifies the wagon, creek and grapple branches, prompt order and the recovered rope after reload.
+- [ ] Deploy and complete a rendered playthrough of the new ford emergency before the woman/ranger conversation. The ford emergency is live. The hosted WebGL fixture passed the radio and high-bank intervention using set starting positions. Automated gameplay tests also cover grapple, on-foot and missed-wagon recovery. The uninterrupted rendered routes remain open.
 - [x] Spillway: grapple the boom into its catch, balance the gates, and recover from a flooded ford by correcting the gate settings. Verified in production source.
-- [ ] Playtest boom aiming, flooded ford, bank detour, and recovery end to end.
+- [ ] Playtest boom aiming, flooded ford, bank detour, and recovery end to end in the browser. Gameplay tests now verify boom targeting, high-bank guidance, gate correction, and intake recovery.
 - [x] Search the intake and recover Cal’s jacket and dispatch cassette.
 - [x] Lookout minigame: play two tracks and align siren and winch cues. Audio on phone still needs testing.
 - [x] Broadcast or share privately: ending choice persists and changes the post office radio response. Production source verified.
@@ -95,6 +95,7 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 - [x] Release `e85c8cb` published to the existing Funkytown site. All 16 changed production files matched the release. Thirteen automated checks passed, including production file checks.
 - [x] The salvaged ledger unlocks the dry address. Entry by bluff, grapple latch or following the resident. The post office requires the stopped-clock observation and both runs of the brass-ball experiment.
 - [x] Published the powered wagon winch, tow line, cargo straps, flare pistol, contact mic and cottontails. The clock, tray, flare pistol and cottontail use authored GLB models.
+- [ ] Drive the optional Second Address getaway on desktop and touch. Check the archive tip on success and post office receipt fallback after a timeout. Automated coverage verifies checkpoint order, vehicle requirement and clue preservation.
 - [ ] Complete all three rendered Second Address routes and the post office handoff on desktop and touch. Check hints, aim targets, clue-order flexibility and save/reload before and after filing.
 - [ ] Playtest flare aiming, tow-line rigging, winching, straps, mic and hunting on real iPhone and iPad.
 - [ ] Complete the world-wide pass for floating props, collision, grounded furniture and authored replacements. Include porch steps, interiors, the new ranch house, creek racks and Submerged Street.
@@ -114,7 +115,7 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 - [x] Automated Rapier test verifies the Second Address unlock, following the truck with normal wagon physics, the missed-tail receipt fallback, and recovery of the original tape.
 - [x] The storehouse now requires a grapple release and a physical case handoff. Automated tests aim and grapple the ring, carry the case on foot across town, file it, and recover a lost case.
 - [ ] Hosted touch-browser check of the receipt, grapple and pickup. Real-device playthrough still needs the full drive and handoff.
-- [ ] Parade, backstage and float routes, truck collision behavior, and the full extraction aftermath.
+- [ ] Play the parade recorder, backstage bluff, and wagon pursuit in the rendered game. Verify truck impacts, the new ranger and family briefing, and the full extraction aftermath. Gameplay tests cover boarding the float, collecting its recording, the stagehand lead, the pursuit, and the receipt fallback.
 
 - [x] Interaction sensors no longer block walking. The Founders’ Night return test carries the case past the receipt stand on the direct approach.
 

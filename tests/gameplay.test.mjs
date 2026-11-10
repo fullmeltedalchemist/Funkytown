@@ -173,6 +173,7 @@ test('camp cooking allows a hot meal, a burnt batch, and drinking from a finite 
 
 test('chapter route resets a wrong gauge order and persists each arch ending',async()=>{
   const {Chapters}=await import('../src/chapters.js');
+  const {Rescue}=await import('../src/rescue.js');
   const {Mechanics}=await import('../src/mechanics.js');
   const {Walker}=await import('../src/walker.js');
   await R.init();
@@ -197,8 +198,11 @@ test('chapter route resets a wrong gauge order and persists each arch ending',as
         mechanics.after();
       }
     }
-    const story={area:0,gates:[new T.Vector3(),new T.Vector3()]};
-    const finale={choice:'public'},bag={records:new Map(),record(){}};
+    const story={area:0,state:4,gates:[new T.Vector3(),new T.Vector3()]};
+    const records=new Map(),bag={records,record:(id,name)=>records.set(id,name)};
+    storage.set('bellwether-rescue-v1','4');
+    const rescue=new Rescue(mechanics,story,bag,()=>{});
+    const finale={choice:'public',rescue};
     const chapter=new Chapters(mechanics,story,finale,bag,()=>{});
     const interact=(name)=>[...tags.values()].find(action=>action.name===name).action();
     assert.match(interact('Read the emergency dispatch ledger'),/Shoot blue/);
@@ -218,7 +222,19 @@ test('chapter route resets a wrong gauge order and persists each arch ending',as
     camera.lookAt(chapter.echoRing);camera.updateMatrixWorld(true);
     assert.match(mechanics.grapple(camera),/latch swings open/);
     interact('Recover Mom’s original recording');
-    interact(ending==='seal'?'Seal the arch':'Keep the arch open for a rescue');
+    mechanics.changeArea(0);
+    const archChoice=ending==='seal'?'Seal the arch':'Keep the arch open for a rescue';
+    if(ending==='hold'){
+      records.set('founders-original-tape',true);
+      chapter.tick();
+      assert.match(interact(archChoice),/Hear the ranger/);
+      assert.match(chapter.objective().text,/Ask the ranger/);
+      assert.match(interact('Speak to the ranger'),/other Cal/);
+      assert.match(chapter.objective().text,/Hear Cal’s family/);
+      assert.match(interact('Hear Cal’s family out'),/Cricket/);
+      assert.ok(records.has('extraction-ranger')&&records.has('extraction-family'));
+    }
+    interact(archChoice);
     assert.equal(story.archSealed,ending==='seal');
     assert.equal(new Chapters(mechanics,story,finale,bag,()=>{}).ending,ending);
     world.free();
@@ -366,7 +382,7 @@ test('wagon drives the actual basin ramp and turns in salvage through normal int
   const m=new Mechanics(world,walker,scene,new T.Scene());
   const pipeline=new AssetPipeline(scene,world);
   const models={};
-  for(const [key,path] of Object.entries({cabin:'ranger-cabin',transferPump:'creek-transfer-pump',waterJug:'pump-water-jug',lantern:'camp-lantern'})){
+  for(const [key,path] of Object.entries({cabin:'ranger-cabin',pairedKitchen:'paired-kitchen',kitchenClock:'stopped-kitchen-clock',transferPump:'creek-transfer-pump',waterJug:'pump-water-jug',lantern:'camp-lantern'})){
     const bytes=await readFile(new URL('../assets/'+path+'.glb',import.meta.url));
     models[key]=(await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'')).scene;
   }
@@ -472,7 +488,7 @@ test('Second Address opens by three approaches and proves the slope with a simul
   makeTerrain(scene,world,{floor:null,normal:null});
   const pipeline=new AssetPipeline(scene,world);
   const models={};
-  for(const [key,filename] of Object.entries({cabin:'ranger-cabin',echoSurveyTray:'echo-survey-tray',receiver:'field-receiver',kitchenClock:'stopped-kitchen-clock'})){
+  for(const [key,filename] of Object.entries({cabin:'ranger-cabin',pairedKitchen:'paired-kitchen',echoSurveyTray:'echo-survey-tray',receiver:'field-receiver',kitchenClock:'stopped-kitchen-clock'})){
     const bytes=await readFile(new URL('../assets/'+filename+'.glb',import.meta.url));
     models[key]=(await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'')).scene;
   }
@@ -538,6 +554,52 @@ test('Second Address opens by three approaches and proves the slope with a simul
   assert.equal(reloaded.door.collider.isEnabled(),false);
   assert.equal(reloaded.objective(),null);
   assert.ok(records.has('second-address-filed'));
+
+  records.delete('second-address-filed');
+  reloaded.route='utility bluff';
+  const resident=[...mechanics.fixed.values()].findLast(item=>item.name==='Talk to the resident at the mailbox');
+  const finish=[...mechanics.fixed.values()].findLast(item=>item.name==='Compare the two addresses at the post office');
+  assert.match(resident.action(),/Nobody sent a crew/);
+  assert.match(reloaded.objective().text,/orchard turnout/);
+  const wagonPosition=reloaded.escapeRoute[0].point.clone();
+  mechanics.car={body:{translation:()=>wagonPosition}};
+  reloaded.tick(STEP);
+  assert.equal(reloaded.getaway.checkpoint,0,'walking through a checkpoint must not count');
+  const getawayStart={x:25,z:29.5};
+  mechanics.makeCar([getawayStart.x,height(getawayStart.x,getawayStart.z)+.75,getawayStart.z]);
+  const getawayCar=mechanics.car.body;
+  getawayCar.setRotation(new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),Math.PI*.53),true);
+  mechanics.driving=true;
+  walker.body.setEnabled(false);
+  for(let i=0;i<1000&&reloaded.getaway;i++){
+    const current=getawayCar.translation();
+    const target=reloaded.escapeRoute[reloaded.getaway.checkpoint].point;
+    const forward=new T.Vector3(0,0,-1).applyQuaternion(getawayCar.rotation());
+    const yaw=Math.atan2(-forward.x,-forward.z);
+    const desired=Math.atan2(current.x-target.x,current.z-target.z);
+    const difference=Math.atan2(Math.sin(desired-yaw),Math.cos(desired-yaw));
+    mechanics.drive({x:T.MathUtils.clamp(-difference*2.8,-1,1),z:.44});
+    world.step(mechanics.events);
+    mechanics.after();
+    reloaded.tick(STEP);
+  }
+  walker.body.setEnabled(true);
+  assert.equal(reloaded.getaway,null,JSON.stringify(getawayCar.translation()));
+  assert.ok(records.has('founders-depot'));
+  assert.equal(reloaded.inspector.root.visible,false);
+  assert.match(finish.action(),/Two signatures/);
+  assert.ok(records.has('second-address-filed'));
+
+  for(const key of ['second-address-filed','second-address-getaway','founders-depot'])records.delete(key);
+  mechanics.driving=false;
+  assert.match(resident.action(),/Nobody sent a crew/);
+  reloaded.tick(46);
+  assert.equal(reloaded.getaway,null);
+  assert.equal(records.get('second-address-getaway').name,'Utility cover exposed');
+  assert.equal(records.has('founders-depot'),false);
+  assert.match(finish.action(),/Two signatures/);
+  assert.ok(records.has('second-address-filed'),'failed getaway must preserve the post office handoff');
+
 });
 
 test('wildlife reacts to physical shots, meat cooks, flares expire, and straps hold cargo',async t=>{
@@ -680,7 +742,7 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   makeTerrain(scene,world,{floor:null,normal:null});
   const pipeline=new AssetPipeline(scene,world);
   const models={};
-  for(const [key,filename] of Object.entries({archiveTruck:'archive-truck',archiveTapeCase:'archive-tape-case'})){
+  for(const [key,filename] of Object.entries({archiveTruck:'archive-truck',archiveTapeCase:'archive-tape-case',paradeFloat:'founders-parade-float',receiver:'field-receiver'})){
     const bytes=await readFile(new URL('../assets/'+filename+'.glb',import.meta.url));
     models[key]=(await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'')).scene;
   }
@@ -739,10 +801,12 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   walker.body.setEnabled(false);
   mission.tick(STEP);
   assert.equal(mission.tail.started,true);
+  assert.equal(mission.truckBody.isEnabled(),true);
   // Lose the truck on the first attempt and read the fallback without driving.
   mechanics.driving=false;
   mission.tick(10);
   assert.equal(mission.tail,null);
+  assert.equal(mission.truckBody.isEnabled(),false);
   assert.ok(!records.has('founders-depot'));
   assert.match(receipt(),/creek storehouse/);
   assert.match(depot(),/Grapple/);
@@ -753,7 +817,8 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   walker.body.setEnabled(true);
   walker.teleport([nearCase.x,height(nearCase.x,nearCase.z)+.9,nearCase.z]);
   walkTo(8.6,10.6);
-  walkTo(2,15);
+  walkTo(2,14.4);
+  walkTo(-3.6,14.4);
   walkTo(mission.dispatch.x,mission.dispatch.z+1.55);
   assert.equal(mechanics.carried,mission.case);
   aim(walker.current.clone().add(new T.Vector3(0,.58,0)),mission.dispatch);
@@ -785,6 +850,17 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   assert.ok(mechanics.items.has(mission.case.collider.handle),'a lost case must restock');
   assert.match(pickUpCase(),/Carrying Archive tape case/);
   assert.match(handOff(),/Two people answer/);
+
+  const {x:floatX,y,z:floatZ}=mission.float.position;
+  walker.teleport([floatX,height(floatX,floatZ+3.9)+.9,floatZ+3.9]);
+  walkTo(floatX,floatZ+1.98);
+  assert.ok(walker.current.y>y+1.45,'boarding steps should reach the deck');
+  aim(walker.current.clone().add(new T.Vector3(0,.58,0)),mission.recorder);
+  assert.match(mechanics.use(camera),/catches an order/);
+  assert.ok(records.has('founders-float-audio'));
+  records.delete('founders-depot');
+  assert.match(interact('Ask the stagehand where the archive load goes'),/Route crew/);
+  assert.match(records.get('founders-depot').description,/backstage bluff/);
 });
 
 test('the ford rescue records each intervention and recovers from a missed wagon',async t=>{
@@ -846,4 +922,101 @@ test('the ford rescue records each intervention and recovers from a missed wagon
     const restored=new FordRescue(m,pipeline,models,story,{stage:0},bag,()=>{},()=>{});
     assert.equal(restored.objective(),null);
   }
+});
+
+test('the rescue markers recognize each approach and the recovered rope stays gone after reload',async t=>{
+  const {Rescue}=await import('../src/rescue.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker}=await import('../src/walker.js');
+  const {height,inCreek,trailX}=await import('../src/terrain.js');
+  await R.init();
+  const previous=globalThis.localStorage;
+  const saved=new Map();
+  globalThis.localStorage={getItem:key=>saved.get(key),setItem:(key,value)=>saved.set(key,value)};
+  t.after(()=>{globalThis.localStorage=previous;});
+  const world=new R.World({x:0,y:-9.81,z:0});
+  t.after(()=>world.free());
+  const walker=new Walker(world,[0,0,0]);
+  const m=new Mechanics(world,walker,new T.Scene(),new T.Scene());
+  const records=new Map();
+  const bag={records,record:(id,name)=>records.set(id,name)};
+  const start=()=>new Rescue(m,{state:4,area:0},bag,()=>{});
+  const use=name=>[...m.fixed.values()].findLast(item=>item.name===name).action();
+  for(const route of ['Wagon','Creek','Grapple']){
+    saved.clear();
+    const rescue=start();
+    use('Speak to the woman');
+    use('Speak to the ranger');
+    assert.match(use('West rescue marker'),/Compare this with the east marker/);
+    assert.match(use('East rescue marker'),/one bell/);
+    assert.match(rescue.objective().text,/west bank/);
+    m.driving=route==='Wagon';
+    m.anchor=route==='Grapple'?{}:null;
+    const carPosition=new T.Vector3(trailX(-1),0,-1);
+    m.car={body:{translation:()=>carPosition,linvel:()=>({z:2})}};
+    for(let i=0;i<7;i++){
+      if(route==='Wagon')carPosition.z+=.22;
+      if(route==='Grapple'){
+        const x=1+i*.46,z=-1;
+        walker.current.set(x,height(x,z)+2,z);
+      }
+      if(route==='Creek'){
+        const x=-7-i*.46,z=-3.3;
+        assert.ok(inCreek(x,z));
+        walker.current.set(x,-.8,z);
+      }
+      rescue.traceApproach();
+    }
+    assert.match(use('West rescue marker'),new RegExp('^'+route+':'));
+    assert.match(rescue.objective().text,/orange rope/);
+    assert.match(use('Recover the cut rescue line'),/Recovered/);
+    assert.equal(records.get('cut-line'),'Cut rescue line');
+    assert.equal(start().line.visible,false);
+  }
+});
+
+test('the spillway boom can be aimed at, flooded gates warn of the bank detour, and correcting them opens the intake',async t=>{
+  const {Finale}=await import('../src/finale.js');
+  const {AssetPipeline}=await import('../src/assets.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker,STEP}=await import('../src/walker.js');
+  const {height,trailX}=await import('../src/terrain.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  t.after(()=>world.free());
+  const scene=new T.Scene(),walker=new Walker(world,[0,0,0]);
+  const m=new Mechanics(world,walker,scene,new T.Scene());
+  m.car={visual:new T.Group()};
+  const pipeline=new AssetPipeline(scene,world);
+  const model=new T.Group();
+  const models={valve:model,arch:model,receiver:model,lantern:model};
+  const records=new Map(),bag={records,record:(id,name)=>records.set(id,name)};
+  const rescue={stage:4,story:{area:0}};
+  const water={uniforms:{current:{value:0},flood:{value:0}}};
+  const finale=new Finale(m,rescue,bag,pipeline,models,water,()=>{});
+  const camera=new T.PerspectiveCamera();
+  const aim=point=>{
+    camera.position.copy(point).add(new T.Vector3(0,.19,1.2));
+    camera.lookAt(point);camera.updateMatrixWorld(true);
+  };
+  world.step(m.events);
+  aim(finale.boomPoint.clone().add(new T.Vector3(0,.22,0)));
+  assert.match(m.grapple(camera),/pull the boom/);
+  const use=point=>{aim(point);return m.use(camera);};
+  assert.match(use(finale.positions[0]),/1 \/ 0 \/ 0/);
+  assert.match(use(finale.positions[0]),/2 \/ 0 \/ 0/);
+  assert.match(use(finale.positions[1]),/2 \/ 1 \/ 0/);
+  assert.match(use(finale.positions[1]),/ford is flooding/);
+  const ford=new T.Vector3(trailX(-1),height(trailX(-1),-1),-1);
+  assert.equal(finale.onFloodedFord(ford),true);
+  assert.equal(finale.onFloodedFord(ford.clone().add(new T.Vector3(3,0,0))),false);
+  assert.match(finale.objective().text,/use the high bank/);
+  assert.match(rescue.spillwayReaction(),/Take the high bank/);
+  assert.match(use(finale.intake),/still under pressure/);
+  use(finale.positions[1]);
+  use(finale.positions[2]);
+  for(let i=0;i<420;i++)finale.tick(STEP);
+  assert.equal(finale.onFloodedFord(ford),false);
+  assert.match(use(finale.intake),/dispatch tape/);
+  assert.ok(records.has('dispatch-tape'));
 });
