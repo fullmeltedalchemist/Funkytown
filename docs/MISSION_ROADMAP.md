@@ -49,10 +49,11 @@ The central question is who returned after the reservoir evacuation. People who 
 **Hook.** The original records establish who may still be alive beyond the arch. The ranger witnessed a copy taking somebody's place.
 
 - [x] After filing the archive tape, hear the ranger’s eyewitness account and Cal’s family disagree before deciding the arch’s fate.
-- [ ] Unlock rescue approaches through the pump, the sound experiment or help earned from townspeople.
-- [ ] Build an actual extraction route with physical equipment and a recoverable failure state.
+- [x] Unlock three extraction plans through the salvaged pump, the aligned rescue recording or guidance from Cal’s family. Each gives a different route and crossing window.
+- [x] Carry Cal in a physical harness through the marked Echo crossing. Losing the harness or running out of time returns him to the shelter for another attempt.
 - [ ] Connect the existing seal/open ending to who returned, who answers the radio and what changes at the diner and both addresses.
-- [ ] Author the crossing markers, extraction harness and the alternate-side house through the asset pipeline.
+- [x] Author the extraction harness as a Blender GLB and place a colliding cabin as the reflected shelter.
+- [ ] Author unique crossing markers and a distinct alternate-side house.
 
 ## Systems that serve these missions
 

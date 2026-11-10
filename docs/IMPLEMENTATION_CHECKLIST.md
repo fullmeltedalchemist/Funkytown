@@ -119,6 +119,10 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 
 - [x] Interaction sensors no longer block walking. The Founders’ Night return test carries the case past the receipt stand on the direct approach.
 
+### Echo extraction
+
+- [ ] Play all three extraction routes, the timeout and retry, the harness handoff and both post-rescue arch endings in the rendered game. Physics tests carry the harness through the guide route and verify the three unlocks and timeout recovery.
+
 ### Touch HUD and gadget controls
 
 - [x] Draft implementation groups utilities into a field kit. Primary actions use accessible icons, with Fire/Throw switching by carry state and the prompt placed at the reticle.

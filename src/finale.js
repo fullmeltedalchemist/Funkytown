@@ -239,6 +239,8 @@ export class Finale {
     this.bulletin=bulletin;
     this.supportedModel(bulletin,pipeline,models.receiver,.55);
     this.station(bulletin,'Check the post office radio',()=>{
+      const ending=bag.records.get('arch-choice')?.description;
+      if(ending&&bag.records.has('extraction-return'))return 'Post office relay: '+ending;
       if(this.choice==='public')return 'The postmaster cuts into the broadcast. “I logged Cal’s parcel the morning after the rescue. If the sheriff wants that ledger, he can ask me in front of everyone.”';
       if(this.choice==='private')return 'The public channel is quiet. On the ranger’s frequency: “I have Cal’s tape locked up. Meet me at dawn, before the sheriff starts his rounds.”';
       if(this.stage>0)return 'Post office advisory: the ford has reopened. Keep clear of the intake while the ranger checks the gate seals.';

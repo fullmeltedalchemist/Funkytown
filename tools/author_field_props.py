@@ -391,3 +391,18 @@ box("COL_display",(0,.85,1.38),(1.55,1.36,1.38),iron,0)
 for side in (-1,1):
     box("COL_rail_"+str(side),(side*1.16,0,1.22),(.09,4,.75),iron,0)
 export("founders-parade-float.glb")
+
+reset()
+canvas = material("Waxed orange rescue canvas", (.62,.25,.055), roughness=.82)
+tape = material("Woven harness straps", (.12,.20,.17), roughness=.95)
+alloy = material("Rescue stretcher tubing", (.44,.49,.46), .66,.42)
+box("Molded stretcher bed",(0,0,.13),(.67,1.83,.16),canvas,.075)
+box("Head pad",(0,.66,.26),(.42,.34,.09),tape,.034)
+for x in (-.345,.345):
+    box("Carrying rail",(x,0,.21),(.065,2.12,.064),alloy,.027)
+    for y in (-.88,.88):
+        box("Bent handle",(x*.82,y,.17),(.12,.17,.065),alloy,.023)
+for y in (-.46,.04,.39):
+    box("Occupant restraint",(0,y,.365),(.72,.11,.025),tape,.012)
+    box("Restraint buckle",(.18,y,.38),(.085,.105,.031),alloy,.011)
+export("echo-extraction-harness.glb")

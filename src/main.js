@@ -4,6 +4,7 @@ import {TowLine} from './tow-line.js';
 import {fireFlare} from './flare.js';
 import {Wildlife} from './wildlife.js';
 import {SecondAddress} from './second-address.js';
+import {Extraction} from './extraction.js';
 import {SalvageStreet} from './salvage-street.js';
 import {FieldProps} from './field-props.js';
 import {CreekEncounter} from './creek-encounter.js';
@@ -202,6 +203,7 @@ async function boot(){
     ()=>playToolSound(540,330,.68,.23));
   const address=new SecondAddress(mechanics,pipeline,models,bag,notice);
   const founders=new FoundersNight(mechanics,pipeline,models,bag,notice);
+  const extraction=new Extraction(mechanics,chapters,bag,pipeline,models,notice);
   const wildlife=new Wildlife(mechanics,pipeline,models.cottontail,bag,notice);
   bag.record('flare-pistol','Flare pistol','Cycle weapons with X or the weapon button. Fire a bouncing light that burns for twelve seconds.','Gear');
   bag.record('contact-mic','Contact microphone','M or Mic · aim at machinery or a loose prop and sample its vibration.','Gear');
@@ -353,6 +355,7 @@ async function boot(){
         address.tick(STEP);
         founders.tick(STEP);
         chapters.tick();
+        extraction.tick(STEP);
         wildlife.tick(STEP);
         towLine.tick(STEP);
         if(!mechanics.driving){
@@ -402,7 +405,7 @@ async function boot(){
       water.uniforms.ripple.value.set(player.x,player.z,now*.001);lastWake=now;
     }
     story.animate(now*.001);
-    const objective=(rescue.showPractice?rescue.objective():null)??salvage.objective()??address.objective()??founders.objective()??fieldProps.objective()??fordRescue.objective()??chapters.objective()??finale.objective()??rescue.objective();
+    const objective=(rescue.showPractice?rescue.objective():null)??salvage.objective()??address.objective()??founders.objective()??fieldProps.objective()??fordRescue.objective()??extraction.objective()??chapters.objective()??finale.objective()??rescue.objective();
     $('guide').textContent=objective?.text??story.guide(player);
     const waypoint=objective?objective.target:story.waypoint();
     const arrow=$('bearing');

@@ -1020,3 +1020,77 @@ test('the spillway boom can be aimed at, flooded gates warn of the bank detour, 
   assert.match(use(finale.intake),/dispatch tape/);
   assert.ok(records.has('dispatch-tape'));
 });
+
+test('the Echo extraction opens three plans and recovers a timed-out harness before the return handoff',async t=>{
+  const {Extraction}=await import('../src/extraction.js');
+  const {AssetPipeline}=await import('../src/assets.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker,STEP}=await import('../src/walker.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  t.after(()=>world.free());
+  const town=new T.Scene(),realm=new T.Scene();
+  const walker=new Walker(world,[154,.87,-14.4]);
+  const m=new Mechanics(world,walker,town,realm);
+  m.staticBox([48,.55,51],[140,-.29,-4],0x271e49,1);
+  const pipeline=new AssetPipeline(town,world);
+  const models={};
+  for(const [key,path] of Object.entries({extractionHarness:'echo-extraction-harness',cabin:'ranger-cabin',
+    transferPump:'creek-transfer-pump',receiver:'field-receiver',lantern:'camp-lantern'})){
+    const bytes=await readFile(new URL('../assets/'+path+'.glb',import.meta.url));
+    models[key]=(await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'')).scene;
+  }
+  const records=new Map();
+  const bag={records,record:(id,name,description)=>records.set(id,{name,description})};
+  const chapters={stage:4,story:{area:0,gates:[new T.Vector3()]}};
+  const messages=[];
+  const extraction=new Extraction(m,chapters,bag,pipeline,models,message=>messages.push(message));
+  const useAt=site=>m.fixed.get(site.collider.handle).action();
+  assert.match(useAt(extraction.plans[0]),/witnesses first/);
+  for(const id of ['founders-original-tape','extraction-ranger','extraction-family'])records.set(id,true);
+  extraction.tick(STEP);
+  assert.ok(extraction.house);
+  assert.match(useAt(extraction.plans[0]),/Bring the transfer pump/);
+  records.set('pond-pump',true);records.set('synced-audio',true);
+  assert.match(useAt(extraction.plans[0]),/transfer pump lowers/);
+  assert.match(useAt(extraction.plans[1]),/quiet interval/);
+  assert.match(useAt(extraction.plans[2]),/family marks/);
+  m.changeArea(1);chapters.story.area=1;
+  assert.match(useAt(extraction.aid),/strapped in/);
+  const missed=extraction.load;
+  extraction.tick(46);
+  assert.equal(extraction.load,null);
+  assert.equal(m.items.has(missed.collider.handle),false);
+  assert.match(messages.at(-1),/retry/);
+  assert.match(useAt(extraction.aid),/strapped in/);
+  const camera=new T.PerspectiveCamera();
+  const aim=point=>{
+    camera.position.copy(walker.current).add(new T.Vector3(0,.58,0));
+    camera.lookAt(point);camera.updateMatrixWorld(true);
+  };
+  world.step(m.events);
+  aim(new T.Vector3().copy(extraction.load.body.translation()).add(new T.Vector3(0,.22,0)));
+  assert.match(m.use(camera),/Carrying Occupied extraction harness/);
+  const accept=m.fixed.get(extraction.exit.collider.handle).accept;
+  assert.match(accept(extraction.load),/lit crossing marker first/);
+  function walkTo(point){
+    for(let i=0;i<550;i++){
+      const x=point.x-walker.current.x,z=point.z-walker.current.z;
+      if(Math.hypot(x,z)<.25)return;
+      const yaw=Math.atan2(-x,-z),move={x:0,z:.78};
+      aim(walker.current.clone().add(new T.Vector3(x,.58,z)));
+      m.before(camera,move,{actions:new Set()});
+      walker.step(move,yaw,m.events);
+      m.after();
+      extraction.tick(STEP);
+    }
+    assert.fail('Extraction route blocked at '+walker.current.toArray());
+  }
+  for(let i=0;i<2;i++)walkTo(extraction.crossingMarker());
+  walkTo(extraction.exit.point.clone().add(new T.Vector3(0,0,-1.6)));
+  aim(extraction.exit.point);
+  assert.match(m.use(camera),/ranger catches the harness/);
+  assert.equal(m.carried,null);
+  assert.ok(records.has('extraction-return'));
+  assert.equal(extraction.returned.visible,true);
+});

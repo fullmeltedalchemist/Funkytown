@@ -174,8 +174,12 @@ export class Chapters {
     this.ending=ending;
     this.story.archSealed=ending==='seal';
     this.advance(5);
-    const message=ending==='seal'?'The arch goes quiet. Mom’s recording stays with you.':
-      'You mark a safe crossing and keep the arch open. The missing townspeople now have a way home.';
+    const returned=this.bag.records.has('extraction-return');
+    const message=ending==='seal'?
+      returned?'The arch goes quiet. The man you brought back can finally speak to his family. The second radio falls silent.':
+        'The arch goes quiet. Mom’s recording stays with you.':
+      returned?'The man you brought back marks a route for the next search. Another voice answers the ranger on the open channel.':
+        'You mark a safe crossing and keep the arch open. The missing townspeople now have a way home.';
     this.bag.record('arch-choice','The Way Back',message,'Keepsakes');
     return message;
   }
