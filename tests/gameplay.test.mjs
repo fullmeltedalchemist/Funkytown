@@ -874,6 +874,16 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   assert.match(receipt(),/creek storehouse/);
   assert.match(depot(),/Grapple/);
   assert.match(grappleCage(),/shutter lifts/);
+  const caseBody=mission.case.body;
+  caseBody.setTranslation(mission.caseHome.clone().add(new T.Vector3(0,0,7)),true);
+  caseBody.setAngvel({x:4,y:2,z:1},true);
+  assert.match(depot(),/lost tape case back/);
+  assert.ok(mission.caseHome.distanceTo(caseBody.translation())<.001);
+  assert.equal(new T.Vector3().copy(caseBody.angvel()).length(),0);
+  caseBody.setTranslation({x:100,y:-12,z:0},true);
+  mechanics.after();
+  assert.ok(mission.caseHome.distanceTo(caseBody.translation())<.001);
+
   assert.equal(mission.gate.collider.isEnabled(),false);
   assert.match(pickUpCase(),/Carrying Archive tape case/);
   const nearCase=mission.caseHome.clone().add(new T.Vector3(.9,0,1.3));

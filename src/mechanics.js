@@ -366,6 +366,14 @@ export class Mechanics {
     }
     if(this.anchor&&this.anchor.distanceTo(this.walker.current)<1.2)this.anchor=null;
   }
+  resetProp(item,position){
+    item.body.setTranslation(position,true);
+    item.body.setRotation({x:0,y:0,z:0,w:1},true);
+    item.body.setLinvel({x:0,y:0,z:0},true);
+    item.body.setAngvel({x:0,y:0,z:0},true);
+    item.visual?.position.copy(position);
+    item.visual?.quaternion.identity();
+  }
   after(){
     const broken=new Set(),spent=new Set();
     this.events.drainCollisionEvents((a,b,started)=>{
@@ -384,11 +392,9 @@ export class Mechanics {
       item.life-=STEP;
       const p=item.body.translation();
       if(item===this.car&&(p.y<-10||Math.abs(p.x)>57||Math.abs(p.z)>57)){
-        item.body.setTranslation(new T.Vector3(...this.carHome),true);
-        item.body.setLinvel({x:0,y:0,z:0},true);
-      }else if(item.home&&(p.y<-10||Math.abs(p.x)>58||Math.abs(p.z)>58)){
-        item.body.setTranslation(item.home,true);
-        item.body.setLinvel({x:0,y:0,z:0},true);
+        this.resetProp(item,new T.Vector3(...this.carHome));
+      }else if(item.home&&(p.y<-10||(item.area===0&&(Math.abs(p.x)>58||Math.abs(p.z)>58)))){
+        this.resetProp(item,item.home);
       }else if(item.life<=0||p.y<-18)this.remove(item);
       else if(item.visual){item.visual.position.copy(p);item.visual.quaternion.copy(item.body.rotation());}
     }
