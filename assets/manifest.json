@@ -17,7 +17,8 @@
     "echoSurveyTray": "./assets/echo-survey-tray.glb",
     "cottontail": "./assets/ridge-cottontail.glb",
     "flarePistol": "./assets/field-flare-pistol.glb",
-    "kitchenClock": "./assets/stopped-kitchen-clock.glb"
+    "kitchenClock": "./assets/stopped-kitchen-clock.glb",
+    "archiveTruck": "./assets/archive-truck.glb"
   },
   "placements": [
     {

@@ -237,3 +237,34 @@ box("Stopped hour hand",(-.047,-.089,.0),(.105,.009,.017),steel,.003)
 pin=lathe("Center rivet",[(.018,.092),(.018,.099)],brass,18)
 pin.rotation_euler.x=tau/4
 export("stopped-kitchen-clock.glb")
+
+reset()
+green = material("Archive utility paint", (.24,.36,.25), .34,.52)
+panel = material("Faded ivory sign", (.72,.63,.42), .12,.6)
+dark = material("Window glass", (.053,.13,.14), .35,.25)
+rubber = material("Rubber tyres", (.035,.032,.03), .05,.9)
+steel = material("Wheel steel and bumpers", (.26,.26,.23), .67,.43)
+red = material("Tail lamp", (.51,.036,.025), .15,.3)
+cream = material("Head lamp", (.88,.70,.36), .2,.22)
+box("Chassis",(0,0,.55),(1.45,3.1,.31),steel,.08)
+box("Bonnet",(0,1.04,.83),(1.4,.89,.41),green,.1)
+box("Cab",(0,.34,1.11),(1.45,1.15,1.08),green,.10)
+box("Front windshield",(0,.92,1.35),(1.18,.05,.44),dark,.026)
+for x in (-.724,.724):
+    box("Side window",(x,.43,1.37),(.03,.67,.4),dark,.022)
+    box("Archive enamel plaque",(x,-.79,1.14),(.035,.73,.31),panel,.01)
+box("Covered archive bed",(0,-.75,1.07),(1.49,1.47,1),green,.095)
+box("Rolled edge roof",(0,-.75,1.56),(1.52,1.51,.15),green,.052)
+for y in (-1.52,1.52):
+    box("Bumper",(0,y,.48),(1.54,.15,.18),steel,.042)
+    for x in (-.55,.55):
+        box("Lamp lens",(x,y,.73),(.21,.11,.14),cream if y>0 else red,.026)
+for x in (-.755,.755):
+    for y in (-1.07,1.03):
+        tire=lathe("Tread and tyre",[(.272,-.105),(.302,-.078),(.303,.078),(.272,.105)],rubber,28)
+        tire.rotation_euler.y=tau/4
+        tire.location=(x,y,.31)
+        hub=lathe("Steel hub",[(.153,-.109),(.153,.109)],steel,20)
+        hub.rotation_euler.y=tau/4
+        hub.location=(x,y,.31)
+export("archive-truck.glb")

@@ -665,3 +665,70 @@ test('wildlife reacts to physical shots, meat cooks, flares expire, and straps h
   assert.match(line.select(camera),/stopped/);
   line.clear();
 });
+
+test('Founders’ Night unlocks from the filed case and preserves a receipt fallback',async t=>{
+  const {FoundersNight}=await import('../src/founders-night.js');
+  const {AssetPipeline}=await import('../src/assets.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker,STEP}=await import('../src/walker.js');
+  const {height,trailX,makeTerrain}=await import('../src/terrain.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  t.after(()=>world.free());
+  const scene=new T.Scene(),walker=new Walker(world,[0,1,0]);
+  const mechanics=new Mechanics(world,walker,scene,new T.Scene());
+  makeTerrain(scene,world,{floor:null,normal:null});
+  const pipeline=new AssetPipeline(scene,world);
+  const models={};
+  for(const [key,filename] of Object.entries({archiveTruck:'archive-truck',receiver:'field-receiver'})){
+    const bytes=await readFile(new URL('../assets/'+filename+'.glb',import.meta.url));
+    models[key]=(await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'')).scene;
+  }
+  const records=new Map();
+  const bag={records,record:(id,name,description)=>records.set(id,{name,description})};
+  const mission=new FoundersNight(mechanics,pipeline,models,bag,()=>{});
+  const interact=name=>[...mechanics.fixed.values()].find(item=>item.name===name).action();
+  const dispatch=()=>interact('Read the archive dispatch board');
+  const receipt=()=>interact('Read the backup delivery receipt');
+  const depot=()=>interact('Recover the original evacuation tape');
+
+  assert.match(dispatch(),/Finish comparing/);
+  records.set('second-address-filed',true);
+  assert.match(depot(),/Find the matching dispatch/);
+  assert.match(dispatch(),/Bring the wagon/);
+  const z=30.3,x=trailX(z)+.6;
+  mechanics.makeCar([x,height(x,z)+.66,z]);
+  mechanics.driving=true;
+  walker.body.setEnabled(false);
+  mission.tick(STEP);
+  assert.equal(mission.tail.started,true);
+  // Lose the truck on the first attempt and read the fallback without driving.
+  mechanics.driving=false;
+  mission.tick(10);
+  assert.equal(mission.tail,null);
+  assert.ok(!records.has('founders-depot'));
+  assert.match(receipt(),/creek storehouse/);
+  assert.match(depot(),/Two people answered/);
+  assert.ok(records.has('founders-original-tape'));
+  assert.equal(mission.objective(),null);
+
+  // Replay the alternate path with the normal wagon drive and world collision.
+  records.delete('founders-original-tape');records.delete('founders-depot');
+  dispatch();
+  mechanics.driving=true;
+  const camera=new T.PerspectiveCamera();
+  for(let i=0;i<630&&mission.tail;i++){
+    const car=mechanics.car.body;
+    const position=car.translation();
+    const front=new T.Vector3(0,0,-1).applyQuaternion(new T.Quaternion().copy(car.rotation()));
+    const desiredX=T.MathUtils.clamp((trailX(position.z-2)+.6-position.x)*.35,-.75,.75);
+    const yaw=Math.atan2(-front.x,-front.z),desiredYaw=Math.atan2(-desiredX,1);
+    const error=Math.atan2(Math.sin(desiredYaw-yaw),Math.cos(desiredYaw-yaw));
+    mechanics.before(camera,{z:.55,x:T.MathUtils.clamp(-error*2.3,-1,1)},{actions:new Set()});
+    world.step(mechanics.events);
+    mechanics.after();
+    mission.tick(STEP);
+  }
+  assert.match(records.get('founders-depot')?.description??'',/following the archive truck/,JSON.stringify(mechanics.car.body.translation()));
+  assert.match(depot(),/recover the original tape/);
+});

@@ -31,11 +31,13 @@ The central question is who returned after the reservoir evacuation. People who 
 
 **Hook.** The parade closes Main Street while the original evacuation tapes are moved out of the archive.
 
-- [ ] Build a parade route with a physical float, spectator barriers, archive loading bay and a truck.
+- [x] First playable route from the post office dispatch board to the south-road archive truck and creek storehouse. Track the truck in the wagon or read the backup receipt and retrieve the original tape.
+- [x] Load a Blender-authored archive truck through the GLB pipeline. The first pass uses a scripted truck path.
+- [ ] Build the full parade scene with a physical float, spectator barriers, an archive loading bay and truck collision behavior.
 - [ ] Offer a float-mounted recorder, a backstage bluff and a wagon pursuit. Give each approach a different quality of evidence and witness response.
-- [ ] Make the truck chase recoverable if contact is lost. The player can trace a delivery receipt to the same destination.
+- [x] Make the truck chase recoverable if contact is lost. The delivery receipt reveals the same destination.
 - [ ] Add a fairground ramp, loose barrels, breakable roadside props and wagon cargo shift. Verify handbrake recovery on touch.
-- [ ] Author the float, tape case and archive truck through the GLB pipeline. Validate collisions and prop grounding.
+- [ ] Author the float and tape case through the GLB pipeline. Validate truck ground clearance and route readability on touch.
 
 ## 4. The rescue Mom left unfinished
 

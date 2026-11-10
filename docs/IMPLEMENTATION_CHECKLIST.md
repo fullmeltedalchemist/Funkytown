@@ -105,4 +105,11 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 - [x] Saved the chosen entrance so the unlocked door and its dialogue survive a reload.
 - [x] Moved the experiment interaction onto the receiver stand so the moving ball cannot obstruct the second run.
 - [x] Automated Rapier route uses actual aiming and interaction to inspect the clock, run both tests and file the result. The test stages the approach to the post office separately.
-- [ ] Verify the scripted WebGL touch run and complete an uninterrupted, real-device playthrough.
+- [x] Scripted WebGL touch run passed from a seeded salvaged-ledger save. It verified visible ledger, bluff entry, clock, both ball runs, and the post office handoff with normal Use taps.
+- [ ] Complete an uninterrupted, real-device playthrough. The browser fixture positions the player at the porch, room, and post office.
+
+### Founders’ Night first route in the draft
+
+- [x] Automated Rapier test verifies the Second Address unlock, following the truck with normal wagon physics, the missed-tail receipt fallback, and recovery of the original tape.
+- [ ] Rendered phone and desktop playthrough, including a drive from the normal wagon parking spot to the truck.
+- [ ] Parade, backstage and float routes, truck collision behavior, and the full extraction aftermath.
