@@ -366,7 +366,7 @@ test('wagon drives the actual basin ramp and turns in salvage through normal int
   const m=new Mechanics(world,walker,scene,new T.Scene());
   const pipeline=new AssetPipeline(scene,world);
   const models={};
-  for(const [key,path] of Object.entries({cabin:'ranger-cabin',transferPump:'creek-transfer-pump',waterJug:'pump-water-jug',lantern:'camp-lantern'})){
+  for(const [key,path] of Object.entries({cabin:'ranger-cabin',pairedKitchen:'paired-kitchen',kitchenClock:'stopped-kitchen-clock',transferPump:'creek-transfer-pump',waterJug:'pump-water-jug',lantern:'camp-lantern'})){
     const bytes=await readFile(new URL('../assets/'+path+'.glb',import.meta.url));
     models[key]=(await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'')).scene;
   }
@@ -472,7 +472,7 @@ test('Second Address opens by three approaches and proves the slope with a simul
   makeTerrain(scene,world,{floor:null,normal:null});
   const pipeline=new AssetPipeline(scene,world);
   const models={};
-  for(const [key,filename] of Object.entries({cabin:'ranger-cabin',echoSurveyTray:'echo-survey-tray',receiver:'field-receiver',kitchenClock:'stopped-kitchen-clock'})){
+  for(const [key,filename] of Object.entries({cabin:'ranger-cabin',pairedKitchen:'paired-kitchen',echoSurveyTray:'echo-survey-tray',receiver:'field-receiver',kitchenClock:'stopped-kitchen-clock'})){
     const bytes=await readFile(new URL('../assets/'+filename+'.glb',import.meta.url));
     models[key]=(await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'')).scene;
   }
@@ -845,5 +845,56 @@ test('the ford rescue records each intervention and recovers from a missed wagon
     assert.match(records.get('ford-rescue-call').description,route==='foot'||route==='missed'?/broken/:/intact/);
     const restored=new FordRescue(m,pipeline,models,story,{stage:0},bag,()=>{},()=>{});
     assert.equal(restored.objective(),null);
+  }
+});
+
+test('the rescue markers recognize each approach and the recovered rope stays gone after reload',async t=>{
+  const {Rescue}=await import('../src/rescue.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker}=await import('../src/walker.js');
+  const {height,inCreek,trailX}=await import('../src/terrain.js');
+  await R.init();
+  const previous=globalThis.localStorage;
+  const saved=new Map();
+  globalThis.localStorage={getItem:key=>saved.get(key),setItem:(key,value)=>saved.set(key,value)};
+  t.after(()=>{globalThis.localStorage=previous;});
+  const world=new R.World({x:0,y:-9.81,z:0});
+  t.after(()=>world.free());
+  const walker=new Walker(world,[0,0,0]);
+  const m=new Mechanics(world,walker,new T.Scene(),new T.Scene());
+  const records=new Map();
+  const bag={records,record:(id,name)=>records.set(id,name)};
+  const start=()=>new Rescue(m,{state:4,area:0},bag,()=>{});
+  const use=name=>[...m.fixed.values()].findLast(item=>item.name===name).action();
+  for(const route of ['Wagon','Creek','Grapple']){
+    saved.clear();
+    const rescue=start();
+    use('Speak to the woman');
+    use('Speak to the ranger');
+    assert.match(use('West rescue marker'),/Compare this with the east marker/);
+    assert.match(use('East rescue marker'),/one bell/);
+    assert.match(rescue.objective().text,/west bank/);
+    m.driving=route==='Wagon';
+    m.anchor=route==='Grapple'?{}:null;
+    const carPosition=new T.Vector3(trailX(-1),0,-1);
+    m.car={body:{translation:()=>carPosition,linvel:()=>({z:2})}};
+    for(let i=0;i<7;i++){
+      if(route==='Wagon')carPosition.z+=.22;
+      if(route==='Grapple'){
+        const x=1+i*.46,z=-1;
+        walker.current.set(x,height(x,z)+2,z);
+      }
+      if(route==='Creek'){
+        const x=-7-i*.46,z=-3.3;
+        assert.ok(inCreek(x,z));
+        walker.current.set(x,-.8,z);
+      }
+      rescue.traceApproach();
+    }
+    assert.match(use('West rescue marker'),new RegExp('^'+route+':'));
+    assert.match(rescue.objective().text,/orange rope/);
+    assert.match(use('Recover the cut rescue line'),/Recovered/);
+    assert.equal(records.get('cut-line'),'Cut rescue line');
+    assert.equal(start().line.visible,false);
   }
 });

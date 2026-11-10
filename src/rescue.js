@@ -169,6 +169,7 @@ export class Rescue {
     }
     town.add(stand);
     line.position.copy(this.evidence);town.add(line);this.line=line;
+    line.visible=this.stage<4;
     this.register(this.evidence.clone().add(new T.Vector3(0,-.98,0)),line,'Recover the cut rescue line',()=>{
       if(this.stage<3)return 'The line runs back toward the two-bell marker.';
       if(this.stage===3){

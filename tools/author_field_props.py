@@ -68,7 +68,7 @@ def export(filename):
     # One draw call per material rather than one per handle, badge, or rib.
     groups = {}
     for obj in bpy.context.scene.objects:
-        if obj.type == "MESH":
+        if obj.type == "MESH" and not obj.name.startswith("COL_"):
             groups.setdefault(obj.data.materials[0].name, []).append(obj)
     for name, objects in groups.items():
         if len(objects) < 2:
@@ -303,3 +303,47 @@ for x in (-.106,.106):
     box("Rolled sling",(x,.079,.073),(.11,.17,.12),pad,.031)
     box("Webbing strap",(x,.079,.138),(.041,.176,.018),webbing,.005)
 export("ford-rescue-bracket.glb")
+
+reset()
+oak = material("Warm oak", (.29,.13,.055), roughness=.74)
+edge = material("Dark end grain", (.15,.065,.03), roughness=.82)
+paint = material("Faded cream paint", (.61,.48,.31), roughness=.68)
+iron = material("Dull cast iron", (.085,.09,.082), .48,.52)
+red = material("Red enamel and repair paint", (.49,.06,.034), .17,.46)
+
+# Blender Y becomes negative world Z. The origin sits on the cabin's floor.
+box("Counter cabinet",(-.88,2.23,.43),(.97,.42,.86),paint,.027)
+box("Oak worktop",(-.88,2.23,.89),(1.05,.49,.062),oak,.025)
+for x in (-1.11,-.65):
+    box("Recessed cupboard front",(x,2.01,.36),(.39,.036,.57),oak,.026)
+    box("Cupboard latch",(x,1.982,.51),(.105,.027,.032),iron,.009)
+box("Counter drawer",(-.88,2.005,.75),(.87,.05,.15),paint,.015)
+box("Drawer pull",(-.88,1.97,.76),(.19,.035,.031),iron,.009)
+
+# The chair was cut down for a child. One foot is split and bound with red tape.
+cx, cy = -1.44, .44
+for x in (-.185,.185):
+    for y in (-.18,.18):
+        box("Short oak leg",(cx+x,cy+y,.163),(.047,.047,.326),edge,.008)
+box("Low seat",(cx,cy,.344),(.46,.43,.064),oak,.035)
+for x in (-.185,.185):
+    box("Back upright",(cx+x,cy+.18,.533),(.049,.047,.354),oak,.012)
+for z in (.49,.654):
+    box("Curved-edge back slat",(cx,cy+.18,z),(.394,.047,.087),paint,.022)
+for z in (.034,.054,.074):
+    box("Red repair wrap",(cx+.185,cy-.18,z),(.055,.055,.024),red,.005)
+
+pot = lathe("Enamel kettle body",[(.094,0),(.119,.025),(.116,.12),(.074,.165),(.057,.177)],red,28)
+pot.location=(-1.12,2.23,.922)
+lid = lathe("Kettle lid",[(.066,0),(.066,.014),(.02,.024)],iron,24)
+lid.location=(-1.12,2.23,1.095)
+box("Kettle lid knob",(-1.12,2.23,1.13),(.047,.047,.031),iron,.013)
+bpy.ops.mesh.primitive_torus_add(major_radius=.105,minor_radius=.012,location=(-1.12,2.23,1.056))
+bpy.context.object.rotation_euler.x=tau/4
+finish(bpy.context.object,"Kettle bail",iron)
+
+collision = material("Furniture collision", (.4,.4,.4))
+box("COL_cupboard",(-.88,2.23,.46),(1.05,.49,.92),collision,0)
+box("COL_child_chair",(cx,cy,.19),(.46,.43,.38),collision,0)
+box("COL_chair_back",(cx,cy+.18,.531),(.43,.06,.365),collision,0)
+export("paired-kitchen.glb")

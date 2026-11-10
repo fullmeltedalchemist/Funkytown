@@ -37,8 +37,20 @@ export class SalvageStreet {
     Object.assign(this,{mechanics,pipeline,models,bag,chapters,campLife,notice,bell});
     const scene=mechanics.scenes[0];
     const x=basin.x;
+    const houseScale=.67;
     for(const [dx,z,yaw] of [[-7.3,12.9,Math.PI/2],[7.4,17,-Math.PI/2]]){
-      pipeline.place(models.cabin,{position:[x+dx,height(x+dx,z),z],scale:.67,yaw,collider:'authored'});
+      const y=height(x+dx,z);
+      pipeline.place(models.cabin,{position:[x+dx,y,z],scale:houseScale,yaw,collider:'authored'});
+      if(dx<0){
+        pipeline.place(models.pairedKitchen,{
+          position:[x+dx,y+.3*houseScale,z],scale:houseScale,yaw,collider:'authored'
+        });
+        // Transform the same wall-clock position into the flooded house's layout.
+        scene.add(pipeline.prepare(models.kitchenClock,{
+          position:[x+dx-2.45*houseScale,y+1.83*houseScale,z-.15*houseScale],
+          scale:houseScale,yaw
+        }));
+      }
     }
     // Sloped entry stays on the terrain so the wagon can cross it.
     for(let z=10;z<34;z+=.84)for(const dx of [-2.2,2.2]){

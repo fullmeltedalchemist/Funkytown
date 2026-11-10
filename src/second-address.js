@@ -31,6 +31,7 @@ export class SecondAddress {
       node.material=node.material.clone();
       node.material.color.multiply(new T.Color(0xaec6ad));
     });
+    pipeline.place(models.pairedKitchen,{position:at(0,.3,0).toArray(),collider:'authored'});
     const door=mechanics.staticBox([1.54,2.36,.12],at(0,1.4,2.55).toArray(),0x455d56);
     part(door.visual,[.11,.12,.08],[.54,-.04,.085],0xb8954d,.022);
     this.door=door;
@@ -81,7 +82,7 @@ export class SecondAddress {
       if(!this.route)return 'The clock is inside the house.';
       if(bag.records.has('second-address-clock'))return 'The hands still read 9:00. The owner remembers Mom saying it only stops when it rains.';
       bag.record('second-address-clock','The clock only stops when it rains',
-        'The occupant repeats a private line Mom used about her kitchen clock. This clock has the same cracked bezel and stopped hands, though it hangs at a different address.');
+        'The occupant repeats a private line Mom used about her kitchen clock. The cracked clock and the child’s chair with red tape match the kitchen at the flooded address.');
       return 'From the porch, the resident says, “Your mom always said the kitchen clock only stops when it rains.” You remember her saying that when the two of you were alone.';
     }});
     this.tray=at(0,.93,-.94);

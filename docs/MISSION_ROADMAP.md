@@ -24,7 +24,8 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] Place a brass test ball and a sloped survey tray. Let the player watch the ball roll downhill first, then demonstrate the Echo pulling it uphill.
 - [x] Let players carry the resulting evidence to a post office drop and preserve the chosen route in their bag.
 - [x] Add the resident's private-memory contradiction as a required clue at the Blender-authored kitchen clock. The post office requires both clues.
-- [ ] Finish furnishing the duplicate kitchen. Recreate the flooded home's layout and its distinctive short-legged chair. Add a distinct roof entry or late resident route if playtesting shows the current three ways of opening one door feel too similar.
+- [x] Furnish both kitchens with the same Blender-authored cupboard, enamel kettle, low chair with a red-taped leg, and stopped clock.
+- [ ] Assess whether the three door approaches need a distinct roof entry or late resident route after playtesting.
 - [ ] Build an optional wagon getaway if the cover story is exposed. Preserve a recoverable lead for Founders’ Night if the chase fails.
 - [ ] Play all three approaches and the handoff from a live save with desktop and touch controls.
 
