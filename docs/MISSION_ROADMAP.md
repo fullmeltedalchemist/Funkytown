@@ -37,7 +37,8 @@ The central question is who returned after the reservoir evacuation. People who 
 - [ ] Offer a float-mounted recorder, a backstage bluff and a wagon pursuit. Give each approach a different quality of evidence and witness response.
 - [x] Make the truck chase recoverable if contact is lost. The delivery receipt reveals the same destination.
 - [ ] Add a fairground ramp, loose barrels, breakable roadside props and wagon cargo shift. Verify handbrake recovery on touch.
-- [ ] Author the float and tape case through the GLB pipeline. Validate truck ground clearance and route readability on touch.
+- [x] Authored tape case through the GLB pipeline. Grapple the loading cage open, carry or haul the case, and file it with the clerk. Restore the case if lost.
+- [ ] Author the float through the GLB pipeline. Validate truck ground clearance and route readability on touch.
 
 ## 4. The rescue Mom left unfinished
 

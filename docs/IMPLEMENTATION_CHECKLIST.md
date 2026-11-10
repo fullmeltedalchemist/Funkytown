@@ -111,5 +111,6 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 ### Founders’ Night first route in the draft
 
 - [x] Automated Rapier test verifies the Second Address unlock, following the truck with normal wagon physics, the missed-tail receipt fallback, and recovery of the original tape.
-- [ ] Rendered phone and desktop playthrough, including a drive from the normal wagon parking spot to the truck.
+- [x] The storehouse now requires a grapple release and a physical case handoff. Automated tests aim and grapple the ring, carry the case on foot across town, file it, and recover a lost case.
+- [ ] Hosted touch-browser check of the receipt, grapple and pickup. Real-device playthrough still needs the full drive and handoff.
 - [ ] Parade, backstage and float routes, truck collision behavior, and the full extraction aftermath.

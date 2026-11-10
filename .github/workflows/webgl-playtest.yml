@@ -85,6 +85,17 @@ jobs:
                         yaw=Math.atan2(-aim.x,-aim.z);
                         pitch=Math.atan2(aim.y,Math.hypot(aim.x,aim.z));
                       };
+                      window.__poseFounders=stop=>{
+                        const point=stop==='receipt'?founders.receipt:
+                          stop==='ring'?founders.ringPoint:
+                          new T.Vector3().copy(founders.case.body.translation()).add(new T.Vector3(0,.15,0));
+                        const x=point.x+(stop==='case'?.9:0),z=point.z+(stop==='case'?1.3:1.65);
+                        const y=height(x,z)+.87;
+                        const aim=point.clone().sub(new T.Vector3(x,y+.58,z));
+                        walker.teleport([x,y,z]);
+                        yaw=Math.atan2(-aim.x,-aim.z);
+                        pitch=Math.atan2(aim.y,Math.hypot(aim.x,aim.z));
+                      };
                     `;
                     await route.fulfill({response,body:code.replace(marker,fixture+marker)});
                   });
@@ -132,6 +143,19 @@ jobs:
                   await aimAndUse('post','post','Compare the two addresses');
                   await page.locator('#bag-button').tap();
                   await page.getByText('Two addresses, one evacuee',{exact:true}).waitFor();
+                  await page.locator('#bag-button').tap();
+                  await page.evaluate(()=>window.__poseFounders('receipt'));
+                  await page.locator('#hint').filter({hasText:'Read the backup delivery receipt'}).waitFor();
+                  await page.locator('#use').tap();
+                  await page.locator('#guide').filter({hasText:'Grapple the brass ring'}).waitFor();
+                  await page.evaluate(()=>window.__poseFounders('ring'));
+                  await page.locator('#hint').filter({hasText:'Grapple the archive shutter ring'}).waitFor();
+                  await page.locator('#grapple').tap();
+                  await page.locator('#guide').filter({hasText:'Pick up the archive tape case'}).waitFor();
+                  await page.evaluate(()=>window.__poseFounders('case'));
+                  await page.locator('#hint').filter({hasText:'Archive tape case'}).waitFor();
+                  await page.locator('#use').tap();
+                  await page.locator('#guide').filter({hasText:'Take the tape case to the clerk'}).waitFor();
                 }
                 assert.deepEqual(errors,[]);
               }catch(error){

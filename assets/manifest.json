@@ -18,7 +18,8 @@
     "cottontail": "./assets/ridge-cottontail.glb",
     "flarePistol": "./assets/field-flare-pistol.glb",
     "kitchenClock": "./assets/stopped-kitchen-clock.glb",
-    "archiveTruck": "./assets/archive-truck.glb"
+    "archiveTruck": "./assets/archive-truck.glb",
+    "archiveTapeCase": "./assets/archive-tape-case.glb"
   },
   "placements": [
     {

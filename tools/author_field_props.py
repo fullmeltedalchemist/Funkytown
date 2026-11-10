@@ -268,3 +268,22 @@ for x in (-.755,.755):
         hub.rotation_euler.y=tau/4
         hub.location=(x,y,.31)
 export("archive-truck.glb")
+
+reset()
+shell = material("Olive archive case", (.17,.22,.12), .17,.69)
+edge = material("Steel corner guards", (.26,.29,.26), .62,.4)
+rubber = material("Handle and seal", (.049,.05,.037), .08,.85)
+paper = material("Cream accession label", (.76,.64,.42), 0,.86)
+box("Pressed case body",(0,0,.13),(.56,.38,.23),shell,.038)
+box("Rubber gasket",(0,0,.217),(.567,.385,.022),rubber,.009)
+box("Lid",(0,0,.248),(.56,.38,.072),shell,.022)
+box("Accession label",(-.065,0,.287),(.22,.136,.006),paper,.005)
+for x in (-.159,.159):
+    box("Lid catch",(x,-.191,.203),(.051,.041,.095),edge,.011)
+    box("Handle boss",(x*.62,-.203,.117),(.038,.055,.05),edge,.01)
+    box("Hinge",(x,.191,.214),(.081,.042,.044),edge,.01)
+box("Carry handle",(0,-.235,.117),(.219,.038,.04),rubber,.012)
+for x in (-.241,.241):
+    for y in (-.155,.155):
+        box("Corner foot",(x,y,.025),(.063,.063,.044),edge,.01)
+export("archive-tape-case.glb")

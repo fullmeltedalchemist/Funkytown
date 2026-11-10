@@ -680,7 +680,7 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   makeTerrain(scene,world,{floor:null,normal:null});
   const pipeline=new AssetPipeline(scene,world);
   const models={};
-  for(const [key,filename] of Object.entries({archiveTruck:'archive-truck',receiver:'field-receiver'})){
+  for(const [key,filename] of Object.entries({archiveTruck:'archive-truck',archiveTapeCase:'archive-tape-case'})){
     const bytes=await readFile(new URL('../assets/'+filename+'.glb',import.meta.url));
     models[key]=(await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'')).scene;
   }
@@ -690,11 +690,48 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   const interact=name=>[...mechanics.fixed.values()].find(item=>item.name===name).action();
   const dispatch=()=>interact('Read the archive dispatch board');
   const receipt=()=>interact('Read the backup delivery receipt');
-  const depot=()=>interact('Recover the original evacuation tape');
+  const depot=()=>interact('Inspect the archive loading cage');
+  const camera=new T.PerspectiveCamera();
+  const aim=(position,target)=>{
+    camera.position.copy(position);
+    camera.lookAt(target);camera.updateMatrixWorld(true);
+  };
+  const grappleCage=()=>{
+    aim(mission.ringPoint.clone().add(new T.Vector3(0,-.3,1.75)),mission.ringPoint);
+    world.step(mechanics.events);
+    return mechanics.grapple(camera);
+  };
+  const pickUpCase=()=>{
+    const point=new T.Vector3().copy(mission.case.body.translation()).add(new T.Vector3(0,.15,0));
+    aim(point.clone().add(new T.Vector3(.9,.25,1.3)),point);
+    world.step(mechanics.events);
+    return mechanics.use(camera);
+  };
+  const handOff=()=>{
+    aim(mission.dispatch.clone().add(new T.Vector3(0,.58,1.6)),mission.dispatch);
+    return mechanics.use(camera);
+  };
+  function walkTo(x,z){
+    for(let i=0;i<460;i++){
+      const dx=x-walker.current.x,dz=z-walker.current.z;
+      const distance=Math.hypot(dx,dz);
+      if(distance<.17)return;
+      const movement={x:0,z:Math.min(.7,distance*1.6)};
+      const heading=Math.atan2(-dx,-dz);
+      aim(walker.current.clone().add(new T.Vector3(0,.58,0)),
+        walker.current.clone().add(new T.Vector3(dx,.58,dz)));
+      mechanics.before(camera,movement,{actions:new Set()});
+      walker.step(movement,heading,mechanics.events);
+      mechanics.after();
+      mission.tick(STEP);
+    }
+    assert.fail('Archive case walking route blocked near '+walker.current.toArray()+' toward '+[x,z]);
+  }
 
   assert.match(dispatch(),/Finish comparing/);
   records.set('second-address-filed',true);
   assert.match(depot(),/Find the matching dispatch/);
+  assert.match(grappleCage(),/matching archive dispatch/);
   assert.match(dispatch(),/Bring the wagon/);
   const z=30.3,x=trailX(z)+.6;
   mechanics.makeCar([x,height(x,z)+.66,z]);
@@ -708,15 +745,28 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   assert.equal(mission.tail,null);
   assert.ok(!records.has('founders-depot'));
   assert.match(receipt(),/creek storehouse/);
-  assert.match(depot(),/Two people answered/);
+  assert.match(depot(),/Grapple/);
+  assert.match(grappleCage(),/shutter lifts/);
+  assert.equal(mission.gate.collider.isEnabled(),false);
+  assert.match(pickUpCase(),/Carrying Archive tape case/);
+  const nearCase=mission.caseHome.clone().add(new T.Vector3(.9,0,1.3));
+  walker.body.setEnabled(true);
+  walker.teleport([nearCase.x,height(nearCase.x,nearCase.z)+.9,nearCase.z]);
+  walkTo(8.6,10.6);
+  walkTo(2,15);
+  walkTo(-1.3,19.4);
+  walkTo(mission.dispatch.x,19.4);
+  walkTo(mission.dispatch.x,mission.dispatch.z+1.55);
+  assert.equal(mechanics.carried,mission.case);
+  aim(walker.current.clone().add(new T.Vector3(0,.58,0)),mission.dispatch);
+  assert.match(mechanics.use(camera),/Two people answer/);
   assert.ok(records.has('founders-original-tape'));
   assert.equal(mission.objective(),null);
 
   // Replay the alternate path with the normal wagon drive and world collision.
-  records.delete('founders-original-tape');records.delete('founders-depot');
+  records.delete('founders-original-tape');records.delete('founders-depot');records.delete('founders-latch-open');
   dispatch();
   mechanics.driving=true;
-  const camera=new T.PerspectiveCamera();
   for(let i=0;i<630&&mission.tail;i++){
     const car=mechanics.car.body;
     const position=car.translation();
@@ -730,5 +780,11 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
     mission.tick(STEP);
   }
   assert.match(records.get('founders-depot')?.description??'',/following the archive truck/,JSON.stringify(mechanics.car.body.translation()));
-  assert.match(depot(),/recover the original tape/);
+  mechanics.driving=false;
+  assert.match(grappleCage(),/shutter lifts/);
+  mechanics.remove(mission.case);
+  mission.tick(STEP);
+  assert.ok(mechanics.items.has(mission.case.collider.handle),'a lost case must restock');
+  assert.match(pickUpCase(),/Carrying Archive tape case/);
+  assert.match(handOff(),/Two people answer/);
 });
