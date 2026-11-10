@@ -347,3 +347,47 @@ box("COL_cupboard",(-.88,2.23,.46),(1.05,.49,.92),collision,0)
 box("COL_child_chair",(cx,cy,.19),(.46,.43,.38),collision,0)
 box("COL_chair_back",(cx,cy+.18,.531),(.43,.06,.365),collision,0)
 export("paired-kitchen.glb")
+
+reset()
+pine = material("Painted parade deck", (.19,.32,.28), .1,.67)
+blue = material("Blue pleated bunting", (.04,.16,.35), roughness=.85)
+cream = material("Ivory canvas", (.76,.58,.31), roughness=.8)
+red = material("Oxide red trim", (.49,.065,.038), roughness=.7)
+iron = material("Parade trailer steel", (.12,.14,.13), .67,.56)
+rubber = material("Parade trailer rubber", (.036,.031,.027), roughness=.93)
+box("Steel trailer frame",(0,0,.38),(2.28,4.55,.24),iron,.044)
+box("Timber parade deck",(0,0,.59),(2.48,4.72,.23),pine,.052)
+for side in (-1,1):
+    for y in (-1.35,1.35):
+        tyre = lathe("Trailer tyre",[(.32,-.115),(.36,-.09),(.36,.09),(.32,.115)],rubber,24)
+        tyre.rotation_euler.y=tau/4
+        tyre.location=(1.14*side,y,.36)
+        hub = lathe("Cream wheel hub",[(.185,-.12),(.185,.12)],cream,16)
+        hub.rotation_euler.y=tau/4
+        hub.location=tyre.location
+    for i in range(9):
+        y=-1.98+i*.495
+        box("Pleated pennant",(side*1.24,y,.62),(.036,.475,.35),blue if i%2 else cream,.018)
+    for y in (-1.9,.2,1.9):
+        box("Guard post",(side*1.16,y,1.17),(.077,.077,.93),iron,.014)
+    box("Upper guard rail",(side*1.16,0,1.56),(.077,4,.077),iron,.016)
+
+box("Low display pedestal",(0,.83,.92),(1.55,1.36,.45),red,.04)
+box("Cream display plaque",(0,.14,1.12),(1.15,.042,.24),cream,.018)
+for i in range(5):
+    blade = box("Oversize wooden waterwheel spoke",(0,.87,1.91),(1.69,.105,.14),pine,.023)
+    blade.rotation_euler.y=i*tau/10
+bpy.ops.mesh.primitive_torus_add(major_radius=.84,minor_radius=.065,major_segments=40,location=(0,.87,1.91))
+wheel=finish(bpy.context.object,"Decorative waterwheel rim",red)
+wheel.rotation_euler.x=tau/4
+# Loading steps and walkable collision use the same rise and run.
+for i in range(3):
+    y=-2.53-i*.3
+    h=.53-i*.17
+    box("Rear boarding step",(0,y,h/2),(1.05,.31,h),pine,.015)
+    box("COL_step_"+str(i),(0,y,h/2),(1.05,.31,h),iron,0)
+box("COL_deck",(0,0,.36),(2.48,4.72,.69),iron,0)
+box("COL_display",(0,.85,1.38),(1.55,1.36,1.38),iron,0)
+for side in (-1,1):
+    box("COL_rail_"+str(side),(side*1.16,0,1.22),(.09,4,.75),iron,0)
+export("founders-parade-float.glb")

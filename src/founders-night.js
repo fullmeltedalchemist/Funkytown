@@ -1,4 +1,6 @@
 import * as T from 'three';
+import R from 'rapier';
+import {person} from './rescue.js';
 import {groundPoint,station} from './field-stations.js';
 import {height,plots,trailX} from './terrain.js';
 import {part,vec} from './mechanics.js';
@@ -22,6 +24,9 @@ export class FoundersNight {
       this.truck.position.copy(routePoint(startZ));
       this.truck.rotation.y=0;
       this.truck.visible=true;
+      this.truckBody.setTranslation(this.truck.position,true);
+      this.truckBody.setRotation(this.truck.quaternion,true);
+      this.truckBody.setEnabled(true);
       return 'The truck waits on the south road. Bring the wagon close and follow it through town.';
     },{color:0x526959});
     this.dispatch=dispatch.point;
@@ -39,6 +44,10 @@ export class FoundersNight {
     this.truck.traverse(node=>{if(node.isMesh)node.castShadow=node.receiveShadow=true;});
     this.truck.visible=false;
     mechanics.scenes[0].add(this.truck);
+    this.truckBody=mechanics.world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased());
+    mechanics.world.createCollider(R.ColliderDesc.cuboid(.76,.65,1.55).setTranslation(0,.88,0),this.truckBody);
+    this.truckBody.setEnabled(false);
+    if(this.unlocked())this.installParade();
     const location=groundPoint(7.8,7.7);
     const depot=station(mechanics,0,location,'Inspect the archive loading cage',()=>{
       if(bag.records.has(tapeKey))return 'The archive tape has already been recovered.';
@@ -71,6 +80,56 @@ export class FoundersNight {
     if(bag.records.has(latchKey)&&!bag.records.has(tapeKey))this.stockCase();
   }
 
+  installParade(){
+    const m=this.mechanics;
+    const site=groundPoint(-.4,18);
+    this.float=this.pipeline.place(this.models.paradeFloat,{position:site.toArray(),collider:'authored'});
+    for(const z of [site.z-1.4,site.z+.8]){
+      const base=groundPoint(site.x-1.95,z);
+      m.staticBox([.11,.12,1.63],[base.x,base.y+.66,base.z],0xb99762);
+      for(const offset of [-.74,.74]){
+        const foot=groundPoint(base.x,z+offset);
+        part(m.scenes[0],[.13,Math.max(.15,base.y+.68-foot.y),.14],
+          [foot.x,(base.y+.68+foot.y)/2,foot.z],0x526351,.012);
+      }
+    }
+    for(const [z,coat] of [[site.z-1.45,0x7c5350],[site.z-.05,0x57566d]]){
+      const spectator=person(coat).root;
+      spectator.position.copy(groundPoint(site.x-2.55,z));
+      spectator.rotation.y=Math.PI/2;
+      m.scenes[0].add(spectator);
+    }
+    const recorder=site.clone().add(new T.Vector3(0,1.08,1.52));
+    const radio=this.pipeline.prepare(this.models.receiver,{position:recorder.toArray(),scale:.48});
+    radio.position.y+=site.y+.71-new T.Box3().setFromObject(radio).min.y;
+    m.scenes[0].add(radio);
+    this.recorder=recorder.setY(radio.position.y+.15);
+    const target=m.world.createCollider(R.ColliderDesc.ball(.25)
+      .setTranslation(...this.recorder.toArray())
+      .setSensor(true).setCollisionGroups((128<<16)|2));
+    m.tag(target,{name:'Listen to the recorder aboard the parade float',action:()=>{
+      if(this.bag.records.has('founders-float-audio'))return 'The recorder has already captured the dispatcher’s order.';
+      this.bag.record('founders-float-audio','Parade dispatch recording',
+        'A dispatcher orders the unedited roll-call tape moved to the creek storehouse before the last float clears Main Street.');
+      this.revealDepot('parade dispatch recording');
+      return 'The recorder catches an order to move the unedited roll-call tape to the creek storehouse. You keep the recording.';
+    }});
+    const worker=person(0x594946);
+    const base=groundPoint(-2.8,19.6);
+    worker.root.position.copy(base);
+    m.scenes[0].add(worker.root);
+    const crew=m.world.createCollider(R.ColliderDesc.capsule(.32,.36)
+      .setTranslation(base.x,base.y+1,base.z)
+      .setSensor(true).setCollisionGroups((128<<16)|2));
+    m.tag(crew,{name:'Ask the stagehand where the archive load goes',action:()=>{
+      if(this.bag.records.has('founders-stagehand'))return '“I already told you where they’re taking it. Don’t use my name.”';
+      this.bag.record('founders-stagehand','Stagehand’s delivery tip',
+        'You say you are clearing the parade route. A stagehand names the creek storehouse but asks you to keep the conversation private.');
+      this.revealDepot('backstage bluff');
+      return '“Route crew? Tell the truck to use the creek storehouse.” The stagehand lowers her voice. “And don’t say you got that from me.”';
+    }});
+  }
+
   raiseShutter(){
     this.gate.collider.setEnabled(false);
     this.gate.visual.position.y=this.ringPoint.y+.33;
@@ -99,7 +158,10 @@ export class FoundersNight {
     this.case=null;
     this.bag.record(tapeKey,'Original evacuation tape',
       'The official roll call ends early. On the original tape, two people answer to the same name from opposite banks. Mom asks the ranger to keep the crossing open.');
-    return 'The clerk plays the tape. Two people answer to the same name. Then you hear Mom ask the ranger to keep the crossing open.';
+    const witness=this.bag.records.has('founders-float-audio')?
+      ' The clerk recognizes the dispatcher’s voice from the parade recording.' :
+      this.bag.records.has('founders-stagehand')?' The clerk agrees to keep the stagehand out of the report.':'';
+    return 'The clerk plays the tape. Two people answer to the same name. Then you hear Mom ask the ranger to keep the crossing open.'+witness;
   }
 
   unlocked(){return this.bag.records.has('second-address-filed');}
@@ -111,12 +173,14 @@ export class FoundersNight {
     }
     this.tail=null;
     this.truck.visible=false;
+    this.truckBody.setEnabled(false);
     return 'The load went to the creek storehouse. Find the matching crate by the water.';
   }
 
   tick(dt){
     const m=this.mechanics;
     if(m.area!==0)return;
+    if(!this.float&&this.unlocked())this.installParade();
     if(this.bag.records.has(latchKey)&&!this.bag.records.has(tapeKey)&&
       (!this.case||!m.items.has(this.case.collider.handle)))this.stockCase();
     if(!this.tail)return;
@@ -135,10 +199,13 @@ export class FoundersNight {
     const delta=next.clone().sub(truck.position);
     if(delta.lengthSq()>0)truck.rotation.y=Math.atan2(-delta.x,-delta.z);
     truck.position.copy(next);
+    this.truckBody.setNextKinematicTranslation(next);
+    this.truckBody.setNextKinematicRotation(truck.quaternion);
     if(tail.z>finishZ)return;
     if(tail.contact>=3.2){this.notice(this.revealDepot('following the archive truck'));return;}
     this.tail=null;
     truck.visible=false;
+    this.truckBody.setEnabled(false);
     this.notice('The truck got away. The backup receipt at the post office still has its destination.');
   }
 
@@ -155,6 +222,6 @@ export class FoundersNight {
       this.tail.inRange?'Founders’ Night · Tracking the truck · '+Math.min(100,Math.floor(this.tail.contact/3.2*100))+'%':
         'Founders’ Night · Close the gap or use the backup receipt':
       'Founders’ Night · Bring the wagon to the south road',target:this.truck.position};
-    return {text:'Founders’ Night · Check the archive dispatch board or backup receipt',target:this.dispatch};
+    return {text:'Founders’ Night · Check the dispatch board, parade float, stagehand, or receipt',target:this.dispatch};
   }
 }

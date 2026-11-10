@@ -95,6 +95,7 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 - [x] Release `e85c8cb` published to the existing Funkytown site. All 16 changed production files matched the release. Thirteen automated checks passed, including production file checks.
 - [x] The salvaged ledger unlocks the dry address. Entry by bluff, grapple latch or following the resident. The post office requires the stopped-clock observation and both runs of the brass-ball experiment.
 - [x] Published the powered wagon winch, tow line, cargo straps, flare pistol, contact mic and cottontails. The clock, tray, flare pistol and cottontail use authored GLB models.
+- [ ] Drive the optional Second Address getaway on desktop and touch. Check the archive tip on success and post office receipt fallback after a timeout. Automated coverage verifies checkpoint order, vehicle requirement and clue preservation.
 - [ ] Complete all three rendered Second Address routes and the post office handoff on desktop and touch. Check hints, aim targets, clue-order flexibility and save/reload before and after filing.
 - [ ] Playtest flare aiming, tow-line rigging, winching, straps, mic and hunting on real iPhone and iPad.
 - [ ] Complete the world-wide pass for floating props, collision, grounded furniture and authored replacements. Include porch steps, interiors, the new ranch house, creek racks and Submerged Street.
@@ -114,7 +115,7 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 - [x] Automated Rapier test verifies the Second Address unlock, following the truck with normal wagon physics, the missed-tail receipt fallback, and recovery of the original tape.
 - [x] The storehouse now requires a grapple release and a physical case handoff. Automated tests aim and grapple the ring, carry the case on foot across town, file it, and recover a lost case.
 - [ ] Hosted touch-browser check of the receipt, grapple and pickup. Real-device playthrough still needs the full drive and handoff.
-- [ ] Parade, backstage and float routes, truck collision behavior, and the full extraction aftermath.
+- [ ] Play the parade recorder, backstage bluff, and wagon pursuit in the rendered game. Verify truck impacts and the full extraction aftermath. Gameplay tests cover boarding the float, collecting its recording, the stagehand lead, the pursuit, and the receipt fallback.
 
 - [x] Interaction sensors no longer block walking. The Founders’ Night return test carries the case past the receipt stand on the direct approach.
 

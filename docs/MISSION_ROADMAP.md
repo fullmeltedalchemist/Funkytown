@@ -26,7 +26,7 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] Add the resident's private-memory contradiction as a required clue at the Blender-authored kitchen clock. The post office requires both clues.
 - [x] Furnish both kitchens with the same Blender-authored cupboard, enamel kettle, low chair with a red-taped leg, and stopped clock.
 - [ ] Assess whether the three door approaches need a distinct roof entry or late resident route after playtesting.
-- [ ] Build an optional wagon getaway if the cover story is exposed. Preserve a recoverable lead for Founders’ Night if the chase fails.
+- [x] Offer an optional timed wagon getaway when the utility bluff is exposed. Reaching the road earns an early archive tip. Losing the getaway leaves both clues and the post office receipt route available.
 - [ ] Play all three approaches and the handoff from a live save with desktop and touch controls.
 
 ## 3. Founders' Night
@@ -35,12 +35,14 @@ The central question is who returned after the reservoir evacuation. People who 
 
 - [x] First playable route from the post office dispatch board to the south-road archive truck and creek storehouse. Track the truck in the wagon or read the backup receipt and retrieve the original tape.
 - [x] Load a Blender-authored archive truck through the GLB pipeline. The first pass uses a scripted truck path.
-- [ ] Build the full parade scene with a physical float, spectator barriers, an archive loading bay and truck collision behavior.
-- [ ] Offer a float-mounted recorder, a backstage bluff and a wagon pursuit. Give each approach a different quality of evidence and witness response.
+- [x] Stage a walkable parade float, spectator barriers and spectators. Give the moving archive truck physical collision.
+- [ ] Expand the parade beyond the staged float and build out the archive loading bay.
+- [x] Offer a float-mounted recorder, a backstage bluff and a wagon pursuit. The recorder preserves the order in the Field Bag. The stagehand gives an off-the-record tip. A successful tail confirms the destination by observation.
 - [x] Make the truck chase recoverable if contact is lost. The delivery receipt reveals the same destination.
 - [ ] Add a fairground ramp, loose barrels, breakable roadside props and wagon cargo shift. Verify handbrake recovery on touch.
 - [x] Authored tape case through the GLB pipeline. Grapple the loading cage open, carry or haul the case, and file it with the clerk. Restore the case if lost.
-- [ ] Author the float through the GLB pipeline. Validate truck ground clearance and route readability on touch.
+- [x] Author the float through the GLB pipeline with a walkable deck, side rails and rear steps.
+- [ ] Validate the truck’s ground clearance and the parade route’s readability on touch.
 
 ## 4. The rescue Mom left unfinished
 

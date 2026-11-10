@@ -538,6 +538,38 @@ test('Second Address opens by three approaches and proves the slope with a simul
   assert.equal(reloaded.door.collider.isEnabled(),false);
   assert.equal(reloaded.objective(),null);
   assert.ok(records.has('second-address-filed'));
+
+  records.delete('second-address-filed');
+  reloaded.route='utility bluff';
+  const resident=[...mechanics.fixed.values()].findLast(item=>item.name==='Talk to the resident at the mailbox');
+  const finish=[...mechanics.fixed.values()].findLast(item=>item.name==='Compare the two addresses at the post office');
+  assert.match(resident.action(),/Nobody sent a crew/);
+  assert.match(reloaded.objective().text,/orchard turnout/);
+  const wagonPosition=reloaded.escapeRoute[0].point.clone();
+  mechanics.car={body:{translation:()=>wagonPosition}};
+  reloaded.tick(STEP);
+  assert.equal(reloaded.getaway.checkpoint,0,'walking through a checkpoint must not count');
+  mechanics.driving=true;
+  for(const stop of reloaded.escapeRoute){
+    wagonPosition.copy(stop.point);
+    reloaded.tick(STEP);
+  }
+  assert.equal(reloaded.getaway,null);
+  assert.ok(records.has('founders-depot'));
+  assert.equal(reloaded.inspector.root.visible,false);
+  assert.match(finish.action(),/Two signatures/);
+  assert.ok(records.has('second-address-filed'));
+
+  for(const key of ['second-address-filed','second-address-getaway','founders-depot'])records.delete(key);
+  mechanics.driving=false;
+  assert.match(resident.action(),/Nobody sent a crew/);
+  reloaded.tick(46);
+  assert.equal(reloaded.getaway,null);
+  assert.equal(records.get('second-address-getaway').name,'Utility cover exposed');
+  assert.equal(records.has('founders-depot'),false);
+  assert.match(finish.action(),/Two signatures/);
+  assert.ok(records.has('second-address-filed'),'failed getaway must preserve the post office handoff');
+
 });
 
 test('wildlife reacts to physical shots, meat cooks, flares expire, and straps hold cargo',async t=>{
@@ -680,7 +712,7 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   makeTerrain(scene,world,{floor:null,normal:null});
   const pipeline=new AssetPipeline(scene,world);
   const models={};
-  for(const [key,filename] of Object.entries({archiveTruck:'archive-truck',archiveTapeCase:'archive-tape-case'})){
+  for(const [key,filename] of Object.entries({archiveTruck:'archive-truck',archiveTapeCase:'archive-tape-case',paradeFloat:'founders-parade-float',receiver:'field-receiver'})){
     const bytes=await readFile(new URL('../assets/'+filename+'.glb',import.meta.url));
     models[key]=(await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'')).scene;
   }
@@ -739,10 +771,12 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   walker.body.setEnabled(false);
   mission.tick(STEP);
   assert.equal(mission.tail.started,true);
+  assert.equal(mission.truckBody.isEnabled(),true);
   // Lose the truck on the first attempt and read the fallback without driving.
   mechanics.driving=false;
   mission.tick(10);
   assert.equal(mission.tail,null);
+  assert.equal(mission.truckBody.isEnabled(),false);
   assert.ok(!records.has('founders-depot'));
   assert.match(receipt(),/creek storehouse/);
   assert.match(depot(),/Grapple/);
@@ -753,7 +787,8 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   walker.body.setEnabled(true);
   walker.teleport([nearCase.x,height(nearCase.x,nearCase.z)+.9,nearCase.z]);
   walkTo(8.6,10.6);
-  walkTo(2,15);
+  walkTo(2,14.4);
+  walkTo(-3.6,14.4);
   walkTo(mission.dispatch.x,mission.dispatch.z+1.55);
   assert.equal(mechanics.carried,mission.case);
   aim(walker.current.clone().add(new T.Vector3(0,.58,0)),mission.dispatch);
@@ -785,6 +820,17 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   assert.ok(mechanics.items.has(mission.case.collider.handle),'a lost case must restock');
   assert.match(pickUpCase(),/Carrying Archive tape case/);
   assert.match(handOff(),/Two people answer/);
+
+  const {x:floatX,y,z:floatZ}=mission.float.position;
+  walker.teleport([floatX,height(floatX,floatZ+3.9)+.9,floatZ+3.9]);
+  walkTo(floatX,floatZ+1.98);
+  assert.ok(walker.current.y>y+1.45,'boarding steps should reach the deck');
+  aim(walker.current.clone().add(new T.Vector3(0,.58,0)),mission.recorder);
+  assert.match(mechanics.use(camera),/catches an order/);
+  assert.ok(records.has('founders-float-audio'));
+  records.delete('founders-depot');
+  assert.match(interact('Ask the stagehand where the archive load goes'),/Route crew/);
+  assert.match(records.get('founders-depot').description,/backstage bluff/);
 });
 
 test('the ford rescue records each intervention and recovers from a missed wagon',async t=>{
