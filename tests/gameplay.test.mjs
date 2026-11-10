@@ -1272,3 +1272,40 @@ test('field weapons send quiet pebbles and long rifle shots through normal colli
   assert.ok(records.has('range-counterweight'));
   assert.ok([...m.items.values()].some(item=>item.name==='Iron range counterweight'));
 });
+
+test('the fairground ramp carries a driven wagon and the loose barrels respond to impacts',async t=>{
+  const {installFairground}=await import('../src/fairground.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker,STEP}=await import('../src/walker.js');
+  const {height,makeTerrain}=await import('../src/terrain.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  t.after(()=>world.free());
+  const scene=new T.Scene(),walker=new Walker(world,[0,0,0]);
+  const m=new Mechanics(world,walker,scene,new T.Scene());
+  makeTerrain(scene,world,{floor:null,normal:null});
+  const {center,start,length}=installFairground(m);
+  m.makeCar([center,height(center,start+1)+.74,start+1]);
+  const camera=new T.PerspectiveCamera();
+  const frame=move=>{
+    m.before(camera,move,{actions:new Set()});
+    world.step(m.events);
+    m.after();
+  };
+  m.driving=true;walker.body.setEnabled(false);
+  let clearance=0;
+  for(let i=0;i<240;i++){
+    frame({x:0,z:.54});
+    const {x,y,z}=m.car.body.translation();
+    if(z<start-.5&&z>start-length)clearance=Math.max(clearance,y-height(x,z));
+    if(z<start-length-.35)break;
+  }
+  assert.ok(m.car.body.translation().z<start-length-.35);
+  assert.ok(clearance>.82,'wagon must climb above the ordinary terrain clearance');
+  m.driving=false;
+  const barrel=[...m.items.values()].find(item=>item.name==='Loose fairground barrel');
+  const before=new T.Vector3().copy(barrel.body.translation());
+  barrel.body.applyImpulse({x:barrel.body.mass()*3.2,y:barrel.body.mass()*1.9,z:0},true);
+  for(let i=0;i<Math.round(.6/STEP);i++)frame({});
+  assert.ok(before.distanceTo(barrel.body.translation())>.18);
+});

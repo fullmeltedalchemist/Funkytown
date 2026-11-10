@@ -111,6 +111,7 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 - [ ] Complete an uninterrupted, real-device playthrough. The browser fixture positions the player at the porch, room, and post office.
 
 ### Published Founders’ Night routes
+
 - [ ] Verify the new creek loading bay in the rendered game. The existing gameplay test loads its authored colliders and exercises the shutter and physical tape handoff.
 
 - [x] Automated Rapier test verifies the Second Address unlock, following the truck with normal wagon physics, the missed-tail receipt fallback, and recovery of the original tape.
@@ -125,7 +126,9 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 
 - [ ] Play all three extraction routes, the timeout and retry, the harness handoff and both post-rescue arch endings in the rendered game. Physics tests carry the harness through all three routes and verify each handoff and timeout recovery. The address interactions have automated checks for both endings.
 
-### Field kit and the looping road
+### Fairground, field kit and the looping road
+
+- [ ] Drive the fairground ramp in the rendered game with both strapped and loose cargo. Verify touch braking and landing. Automated gameplay drives the ramp and checks barrel movement.
 
 - [ ] Verify the slingshot, lever rifle, practice targets and pebble distractions in the rendered game. Automated collision tests cover both weapons, a breakable crate, the long-range bell and the dropped counterweight.
 - [ ] Verify the Field Kit Speaker, contact recording and playback, and the flooded-house witness lead on desktop and touch.

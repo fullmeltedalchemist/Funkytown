@@ -1,3 +1,4 @@
+import {installFairground,nearFairground} from './fairground.js';
 import {installFieldRange} from './field-range.js';
 import {LoopRoad} from './loop-road.js';
 import {FieldRecorder} from './field-recorder.js';
@@ -62,7 +63,9 @@ function forest(pipeline,models){
   function place(type,x,z,scale,sink=0){
     if(basinInfluence(x,z)>.07||Math.hypot(x-secondAddress.x,z-secondAddress.z)<7.5)return;
     if(insideRescueCorridor(x,z,type==='rocks'?scale*.48:1.2))return;
-    grove[type].push({x,y:height(x,z)-sink,z,scale,yaw:rnd()*Math.PI*2});
+    const yaw=rnd()*Math.PI*2;
+    if(nearFairground(x,z,type==='rocks'?scale*.48:.8))return;
+    grove[type].push({x,y:height(x,z)-sink,z,scale,yaw});
   }
   for(let i=0;i<490;i++){
     const x=(rnd()-.5)*106,z=(rnd()-.5)*106;
@@ -210,6 +213,7 @@ async function boot(){
   const salvage=new SalvageStreet(mechanics,pipeline,models,bag,chapters,campLife,notice,
     ()=>playToolSound(540,330,.68,.23));
   const address=new SecondAddress(mechanics,pipeline,models,bag,notice,chapters);
+  installFairground(mechanics);
   const founders=new FoundersNight(mechanics,pipeline,models,bag,notice);
   const extraction=new Extraction(mechanics,chapters,bag,pipeline,models,notice);
   const wildlife=new Wildlife(mechanics,pipeline,models.cottontail,bag,notice);

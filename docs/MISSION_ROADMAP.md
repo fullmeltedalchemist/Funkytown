@@ -40,7 +40,8 @@ The central question is who returned after the reservoir evacuation. People who 
 - [ ] Expand the parade beyond the staged float.
 - [x] Offer a float-mounted recorder, a backstage bluff and a wagon pursuit. The recorder preserves the order in the Field Bag. The stagehand gives an off-the-record tip. A successful tail confirms the destination by observation.
 - [x] Make the truck chase recoverable if contact is lost. The delivery receipt reveals the same destination.
-- [ ] Add a fairground ramp, loose barrels, breakable roadside props and wagon cargo shift. Verify handbrake recovery on touch.
+- [x] Add a driveable fairground ramp, loose barrels and breakable roadside crates. The wagon retains cargo shift and strap behavior.
+- [ ] Verify fairground landing, loose cargo and handbrake recovery on touch.
 - [x] Authored tape case through the GLB pipeline. Grapple the loading cage open, carry or haul the case, and file it with the clerk. Restore the case if lost.
 - [x] Author the float through the GLB pipeline with a walkable deck, side rails and rear steps.
 - [ ] Validate the truck’s ground clearance and the parade route’s readability on touch.
