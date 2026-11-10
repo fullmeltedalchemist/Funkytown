@@ -756,7 +756,7 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   makeTerrain(scene,world,{floor:null,normal:null});
   const pipeline=new AssetPipeline(scene,world);
   const models={};
-  for(const [key,filename] of Object.entries({archiveTruck:'archive-truck',archiveTapeCase:'archive-tape-case',paradeFloat:'founders-parade-float',receiver:'field-receiver'})){
+  for(const [key,filename] of Object.entries({archiveTruck:'archive-truck',archiveLoadingBay:'archive-loading-bay',archiveTapeCase:'archive-tape-case',paradeFloat:'founders-parade-float',receiver:'field-receiver'})){
     const bytes=await readFile(new URL('../assets/'+filename+'.glb',import.meta.url));
     models[key]=(await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'')).scene;
   }

@@ -111,6 +111,7 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 - [ ] Complete an uninterrupted, real-device playthrough. The browser fixture positions the player at the porch, room, and post office.
 
 ### Published Founders’ Night routes
+- [ ] Verify the new creek loading bay in the rendered game. The existing gameplay test loads its authored colliders and exercises the shutter and physical tape handoff.
 
 - [x] Automated Rapier test verifies the Second Address unlock, following the truck with normal wagon physics, the missed-tail receipt fallback, and recovery of the original tape.
 - [x] The storehouse now requires a grapple release and a physical case handoff. Automated tests aim and grapple the ring, carry the case on foot across town, file it, and recover a lost case.

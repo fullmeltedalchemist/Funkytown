@@ -36,7 +36,8 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] First playable route from the post office dispatch board to the south-road archive truck and creek storehouse. Track the truck in the wagon or read the backup receipt and retrieve the original tape.
 - [x] Load a Blender-authored archive truck through the GLB pipeline. The first pass uses a scripted truck path.
 - [x] Stage a walkable parade float, spectator barriers and spectators. Give the moving archive truck physical collision.
-- [ ] Expand the parade beyond the staged float and build out the archive loading bay.
+- [x] Build an open-front, collidable archive loading bay around the grapple shutter and tape case.
+- [ ] Expand the parade beyond the staged float.
 - [x] Offer a float-mounted recorder, a backstage bluff and a wagon pursuit. The recorder preserves the order in the Field Bag. The stagehand gives an off-the-record tip. A successful tail confirms the destination by observation.
 - [x] Make the truck chase recoverable if contact is lost. The delivery receipt reveals the same destination.
 - [ ] Add a fairground ramp, loose barrels, breakable roadside props and wagon cargo shift. Verify handbrake recovery on touch.

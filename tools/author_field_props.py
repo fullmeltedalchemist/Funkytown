@@ -457,3 +457,29 @@ box("Porch canopy",(0,-2.49,2.43),(3.04,1.04,.14),slate,.025)
 box("Porch light housing",(.98,-2.07,2.05),(.2,.17,.34),beam,.027)
 box("Porch light lens",(.98,-2.17,2.05),(.145,.05,.23),warm,.018)
 export("echo-reflected-shelter.glb")
+
+reset()
+steel = material("Archive bay painted steel", (.13,.24,.24), .55,.45)
+zinc = material("Weathered zinc roofing", (.32,.38,.38), .66,.58)
+concrete = material("Archive bay concrete footings", (.28,.25,.21), roughness=.96)
+warning = material("Faded yellow loading stripes", (.74,.47,.075), roughness=.75)
+collision = material("Archive bay collision", (.4,.4,.4))
+# Open front at negative Blender Y, toward the existing grapple approach.
+for x in (-1.28,1.28):
+    for y in (-.89,.92):
+        box("Steel upright",(x,y,1.07),(.13,.13,3.46),steel,.015)
+        box("Concrete footing",(x,y,-.29),(.28,.27,.77),concrete,.029)
+        box("COL_upright",(x,y,1.02),(.23,.23,3.58),collision,0)
+    box("Side weather panel",(x,.48,1.21),(.085,.96,2.62),zinc,.013)
+    box("COL_side",(x,.48,1.21),(.085,.96,2.62),collision,0)
+    for z in (.43,.61,.79):
+        box("Loading hazard stripe",(x,-.964,z),(.123,.018,.072),warning,.004)
+box("Back weather panel",(0,.94,1.27),(2.57,.095,2.75),zinc,.014)
+box("COL_back",(0,.94,1.27),(2.57,.095,2.75),collision,0)
+box("Open-front header",(0,-.91,2.62),(2.73,.19,.24),steel,.025)
+box("Canopy deck",(0,.02,2.81),(3.05,2.34,.11),zinc,.017)
+box("COL_canopy",(0,.02,2.81),(3.05,2.34,.11),collision,0)
+for i in range(13):
+    box("Canopy raised seam",(-1.4+i*.233,.02,2.887),(.025,2.36,.035),zinc,.005)
+box("Archive enamel sign",(0,-1.015,2.61),(.94,.035,.17),warning,.018)
+export("archive-loading-bay.glb")

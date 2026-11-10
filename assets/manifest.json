@@ -24,6 +24,7 @@
     "extractionHarness": "./assets/echo-extraction-harness.glb",
     "paradeFloat": "./assets/founders-parade-float.glb",
     "archiveTruck": "./assets/archive-truck.glb",
+    "archiveLoadingBay": "./assets/archive-loading-bay.glb",
     "archiveTapeCase": "./assets/archive-tape-case.glb",
     "fordRescueBracket": "./assets/ford-rescue-bracket.glb"
   },
