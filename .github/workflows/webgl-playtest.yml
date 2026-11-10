@@ -135,6 +135,12 @@ jobs:
                   await page.getByText('Signal lantern recalled.',{exact:false}).waitFor();
                   await tapTool('#weapon-button');
                   await page.getByText('Flare equipped.',{exact:true}).waitFor();
+                  await tapTool('#weapon-button');
+                  await page.getByText('Slingshot equipped.',{exact:true}).waitFor();
+                  await tapTool('#weapon-button');
+                  await page.getByText('Lever rifle equipped.',{exact:true}).waitFor();
+                  await tapTool('#speaker-button');
+                  await page.getByText('Record a contact sample with Mic first.',{exact:true}).waitFor();
                   await tapTool('#drink-button');
                   await page.getByText('Canteen empty.',{exact:false}).waitFor();
                   await page.locator('#bag-button').tap();
