@@ -115,7 +115,7 @@ export class FoundersNight {
       return 'The recorder catches an order to move the unedited roll-call tape to the creek storehouse. You keep the recording.';
     }});
     const worker=person(0x594946);
-    const base=groundPoint(-2.8,19.6);
+    const base=groundPoint(-4.7,19.6);
     worker.root.position.copy(base);
     m.scenes[0].add(worker.root);
     const crew=m.world.createCollider(R.ColliderDesc.capsule(.32,.36)
