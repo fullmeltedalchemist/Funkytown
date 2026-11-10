@@ -51,7 +51,7 @@ export class Walker {
       const distance=delta.length();
       if(distance>1) this.velocity.lerp(delta.setLength(Math.min(14,distance*3)),.19);
     }
-    this.control.computeColliderMovement(this.collider,this.velocity.clone().multiplyScalar(STEP));
+    this.control.computeColliderMovement(this.collider,this.velocity.clone().multiplyScalar(STEP),R.QueryFilterFlags.EXCLUDE_SENSORS);
     const movement=this.control.computedMovement();
     if(this.velocity.y>0&&movement.y<this.velocity.y*STEP*.5)this.velocity.y=0;
     this.body.setNextKinematicTranslation(this.current.clone().add(movement));

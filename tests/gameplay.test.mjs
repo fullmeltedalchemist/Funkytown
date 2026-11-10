@@ -754,8 +754,6 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   walker.teleport([nearCase.x,height(nearCase.x,nearCase.z)+.9,nearCase.z]);
   walkTo(8.6,10.6);
   walkTo(2,15);
-  walkTo(-1.3,19.4);
-  walkTo(mission.dispatch.x,19.4);
   walkTo(mission.dispatch.x,mission.dispatch.z+1.55);
   assert.equal(mechanics.carried,mission.case);
   aim(walker.current.clone().add(new T.Vector3(0,.58,0)),mission.dispatch);

@@ -114,3 +114,5 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 - [x] The storehouse now requires a grapple release and a physical case handoff. Automated tests aim and grapple the ring, carry the case on foot across town, file it, and recover a lost case.
 - [ ] Hosted touch-browser check of the receipt, grapple and pickup. Real-device playthrough still needs the full drive and handoff.
 - [ ] Parade, backstage and float routes, truck collision behavior, and the full extraction aftermath.
+
+- [x] Interaction sensors no longer block walking. The Founders’ Night return test carries the case past the receipt stand on the direct approach.
