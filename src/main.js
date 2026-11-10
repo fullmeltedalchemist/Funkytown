@@ -1,3 +1,4 @@
+import {FordRescue} from './ford-rescue.js';
 import {FoundersNight} from './founders-night.js';
 import {TowLine} from './tow-line.js';
 import {fireFlare} from './flare.js';
@@ -190,6 +191,8 @@ async function boot(){
     tone.onended=()=>{tone.disconnect();gain.disconnect();pan?.disconnect();};
     tone.start(time);tone.stop(time+duration);
   };
+  const fordRescue=new FordRescue(mechanics,pipeline,models,story,rescue,bag,notice,
+    point=>playToolSound(480,140,.44,.21,point));
   const fieldProps=new FieldProps(mechanics,pipeline,models,rescue,bag,notice,(event,position)=>{
     if(event==='glass')playToolSound(1750,460,.22,.16);
     if(event==='blast')playToolSound(110,28,.37,.30);
@@ -338,6 +341,7 @@ async function boot(){
         mechanics.after();
         story.missions.tick(STEP);
         rescue.tick(now*.001);
+        fordRescue.tick(STEP);
         finale.tick(STEP);
         mail.tick(now*.001);
         campLife.tick(STEP);
@@ -395,7 +399,7 @@ async function boot(){
       water.uniforms.ripple.value.set(player.x,player.z,now*.001);lastWake=now;
     }
     story.animate(now*.001);
-    const objective=(rescue.showPractice?rescue.objective():null)??salvage.objective()??address.objective()??founders.objective()??fieldProps.objective()??chapters.objective()??finale.objective()??rescue.objective();
+    const objective=(rescue.showPractice?rescue.objective():null)??salvage.objective()??address.objective()??founders.objective()??fieldProps.objective()??fordRescue.objective()??chapters.objective()??finale.objective()??rescue.objective();
     $('guide').textContent=objective?.text??story.guide(player);
     const waypoint=objective?objective.target:story.waypoint();
     const arrow=$('bearing');

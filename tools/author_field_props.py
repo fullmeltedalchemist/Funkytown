@@ -287,3 +287,19 @@ for x in (-.241,.241):
     for y in (-.155,.155):
         box("Corner foot",(x,y,.025),(.063,.063,.044),edge,.01)
 export("archive-tape-case.glb")
+
+reset()
+iron = material("Bent galvanised steel", (.28,.33,.31), .66,.43)
+webbing = material("Ochre rescue webbing", (.57,.28,.073), 0,.87)
+pad = material("Canvas sling pads", (.41,.29,.16), 0,.9)
+box("Tow bracket plate",(0,0,.025),(.30,.15,.049),iron,.016)
+for x in (-.113,.113):
+    rivet=lathe("Bracket rivet",[(.022,.048),(.022,.06)],iron,12)
+    rivet.location=(x,0,0)
+for x in (-.068,.068):
+    box("Bent bracket cheek",(x,-.044,.092),(.044,.098,.134),iron,.011).rotation_euler.x=-.31
+box("Bracket cross pin",(0,-.068,.146),(.177,.031,.037),iron,.009)
+for x in (-.106,.106):
+    box("Rolled sling",(x,.079,.073),(.11,.17,.12),pad,.031)
+    box("Webbing strap",(x,.079,.138),(.041,.176,.018),webbing,.005)
+export("ford-rescue-bracket.glb")

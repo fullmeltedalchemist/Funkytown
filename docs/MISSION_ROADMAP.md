@@ -8,11 +8,12 @@ The central question is who returned after the reservoir evacuation. People who 
 
 **Hook.** A wagon slides toward the ford. A woman shouts to cut the tow rope. Her voice on the radio insists you pull harder and predicts your next move.
 
-- [ ] Stage the wagon and a breakable rescue load at the ford.
-- [ ] Add three approaches: grapple the wagon to a fixed anchor, reach the woman on foot, or retrieve the tow line from the high bank.
-- [ ] Make load damage affect the rescue aftermath. Every route still yields the conflicting radio call.
-- [ ] Give the woman a follow-up scene at camp and add the radio recording to Evidence.
-- [ ] Author a bent tow bracket, rescue sling, and field radio through the GLB pipeline. Check rope tension, breakage, and touch aiming.
+- [x] Stage the wagon and a breakable rescue load at the ford.
+- [x] Add three approaches: grapple the wagon to a fixed anchor, reach the woman on foot, or retrieve the tow line from the high bank.
+- [x] Make load damage affect the rescue aftermath. Every route still yields the conflicting radio call.
+- [x] Give the woman a follow-up scene at camp and add the radio recording to Evidence.
+- [x] Author a bent tow bracket and rolled rescue sling in Blender. Use the authored field receiver for the radio.
+- [ ] Verify rope tension, approach timing, breakage, radio audibility and aim in uninterrupted rendered play on desktop and touch.
 
 ## 2. The Second Address
 

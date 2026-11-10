@@ -41,7 +41,10 @@ jobs:
               try{
                 if(name==='desktop'){
                   // Set up a post-Chapter-3 save at the high bank. The drain still uses the normal Use button.
-                  await page.addInitScript(()=>localStorage.setItem('bellwether-chapters-v1','{"stage":4}'));
+                  await page.addInitScript(()=>{
+                    localStorage.setItem('bellwether-chapters-v1','{"stage":4}');
+                    localStorage.setItem('bellwether-story-v1','4');
+                  });
                   await page.route('**/src/main.js',async route=>{
                     const response=await route.fetch();
                     const code=await response.text();
@@ -53,7 +56,17 @@ jobs:
                       walker.teleport([testX,height(testX,testZ)+.9,testZ]);
                       let yaw=Math.atan2(testX-drain.x,testZ-drain.z),
                         pitch=Math.atan2(drain.y-walker.current.y-.58,Math.hypot(drain.x-testX,drain.z-testZ)),last=`;
-                    await route.fulfill({response,body:code.replace(marker,fixture)});
+                    const pose=`
+                      window.__poseFord=stop=>{
+                        const point=stop==='radio'?fordRescue.radio:fordRescue.high;
+                        const x=point.x,z=point.z+1.55,y=height(x,z)+.89;
+                        walker.teleport([x,y,z]);
+                        yaw=0;
+                        pitch=Math.atan2(point.y-y-.58,1.55);
+                      };
+                    `;
+                    await route.fulfill({response,body:code.replace(marker,fixture)
+                      .replace('renderer.setAnimationLoop(now=>{',pose+'renderer.setAnimationLoop(now=>{')});
                   });
                 }
                 if(name==='touch'){
@@ -124,6 +137,14 @@ jobs:
                   await page.locator('#hint').filter({hasText:'Drain the submerged street'}).waitFor();
                   await page.locator('#use').click();
                   await page.locator('#guide').filter({hasText:'Choose one load and get uphill'}).waitFor();
+                  await page.evaluate(()=>window.__poseFord('radio'));
+                  await page.locator('#hint').filter({hasText:'ford emergency radio'}).waitFor();
+                  await page.locator('#use').click();
+                  await page.evaluate(()=>window.__poseFord('line'));
+                  await page.locator('#hint').filter({hasText:'Pull the high-bank tow line'}).waitFor();
+                  await page.locator('#use').click();
+                  await page.locator('#bag-button').click();
+                  await page.getByText('Conflicting ford dispatch',{exact:true}).waitFor();
                 }
                 if(name==='touch'){
                   await page.getByText('Missing-person ledger',{exact:true}).waitFor();

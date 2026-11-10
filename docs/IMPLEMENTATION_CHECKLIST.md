@@ -6,7 +6,8 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 
 - [x] Prologue, woman on the bank, and first ranger conversation.
 - [x] Rescue reconstruction: compare both stations, use a wagon, creek, or grapple approach, then recover the cut line. Verified in production source.
-- [ ] Playtest all three approaches and their prompts from start to finish.
+- [ ] Playtest all three existing marker-reconstruction approaches and their prompts from start to finish.
+- [ ] Deploy and complete a rendered playthrough of the new ford emergency before the woman/ranger conversation. Automated gameplay tests drive the radio trigger, grapple, high-bank and on-foot interventions and the missed-wagon recovery.
 - [x] Spillway: grapple the boom into its catch, balance the gates, and recover from a flooded ford by correcting the gate settings. Verified in production source.
 - [ ] Playtest boom aiming, flooded ford, bank detour, and recovery end to end.
 - [x] Search the intake and recover Cal’s jacket and dispatch cassette.

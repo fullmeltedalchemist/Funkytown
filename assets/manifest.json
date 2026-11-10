@@ -19,7 +19,8 @@
     "flarePistol": "./assets/field-flare-pistol.glb",
     "kitchenClock": "./assets/stopped-kitchen-clock.glb",
     "archiveTruck": "./assets/archive-truck.glb",
-    "archiveTapeCase": "./assets/archive-tape-case.glb"
+    "archiveTapeCase": "./assets/archive-tape-case.glb",
+    "fordRescueBracket": "./assets/ford-rescue-bracket.glb"
   },
   "placements": [
     {
