@@ -201,7 +201,7 @@ async function boot(){
   });
   const salvage=new SalvageStreet(mechanics,pipeline,models,bag,chapters,campLife,notice,
     ()=>playToolSound(540,330,.68,.23));
-  const address=new SecondAddress(mechanics,pipeline,models,bag,notice);
+  const address=new SecondAddress(mechanics,pipeline,models,bag,notice,chapters);
   const founders=new FoundersNight(mechanics,pipeline,models,bag,notice);
   const extraction=new Extraction(mechanics,chapters,bag,pipeline,models,notice);
   const wildlife=new Wildlife(mechanics,pipeline,models.cottontail,bag,notice);

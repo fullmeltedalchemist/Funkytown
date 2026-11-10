@@ -51,7 +51,8 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] After filing the archive tape, hear the ranger’s eyewitness account and Cal’s family disagree before deciding the arch’s fate.
 - [x] Unlock three extraction plans through the salvaged pump, the aligned rescue recording or guidance from Cal’s family. Each gives a different route and crossing window.
 - [x] Carry Cal in a physical harness through the marked Echo crossing. Losing the harness or running out of time returns him to the shelter for another attempt.
-- [ ] Connect the existing seal/open ending to who returned, who answers the radio and what changes at the diner and both addresses.
+- [x] After the extraction, reflect the arch choice in the returned man’s dialogue, the radio and both addresses.
+- [ ] Build the diner and show how the extraction and arch decision changed it.
 - [x] Author the extraction harness as a Blender GLB and place a colliding cabin as the reflected shelter.
 - [x] Author a lantern-like crossing marker and a grey-sided alternate-side shelter with a walkable porch through the Blender GLB pipeline.
 

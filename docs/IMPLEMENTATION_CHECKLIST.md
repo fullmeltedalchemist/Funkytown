@@ -122,7 +122,7 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 
 ### Echo extraction
 
-- [ ] Play all three extraction routes, the timeout and retry, the harness handoff and both post-rescue arch endings in the rendered game. Physics tests carry the harness through the guide route and verify the three unlocks and timeout recovery.
+- [ ] Play all three extraction routes, the timeout and retry, the harness handoff and both post-rescue arch endings in the rendered game. Physics tests carry the harness through all three routes and verify each handoff and timeout recovery. The address interactions have automated checks for both endings.
 
 ### Touch HUD and gadget controls
 

@@ -1,5 +1,6 @@
 import {documentProp} from './props.js';
 import * as T from 'three';
+import R from 'rapier';
 import {part,vec} from './mechanics.js';
 import {basin,height} from './terrain.js';
 import {groundPoint,station} from './field-stations.js';
@@ -45,11 +46,19 @@ export class SalvageStreet {
         pipeline.place(models.pairedKitchen,{
           position:[x+dx,y+.3*houseScale,z],scale:houseScale,yaw,collider:'authored'
         });
-        // Transform the same wall-clock position into the flooded house's layout.
-        scene.add(pipeline.prepare(models.kitchenClock,{
-          position:[x+dx-2.45*houseScale,y+1.83*houseScale,z-.15*houseScale],
-          scale:houseScale,yaw
-        }));
+        const clock=[x+dx-2.45*houseScale,y+1.83*houseScale,z-.15*houseScale];
+        scene.add(pipeline.prepare(models.kitchenClock,{position:clock,scale:houseScale,yaw}));
+        const sensor=mechanics.world.createCollider(R.ColliderDesc.ball(.21)
+          .setTranslation(clock[0]+.12,clock[1],clock[2]).setSensor(true).setCollisionGroups((128<<16)|2));
+        mechanics.tag(sensor,{name:'Listen by the flooded kitchen clock',action:()=>{
+          if(!this.clock.running)return 'Wait for the street to drain before listening inside.';
+          if(!bag.records.has('extraction-return')||!chapters.ending){
+            return 'Water has stopped the hands at nine. A faint knock seems to come from behind the wall.';
+          }
+          return chapters.ending==='seal'?
+            'Behind the clock there is only the sound of draining water. The knocks have stopped.' :
+            'Three knocks come from behind the clock. A voice names the dry address, then asks you to keep the porch light on.';
+        }});
       }
     }
     // Sloped entry stays on the terrain so the wagon can cross it.

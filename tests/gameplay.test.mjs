@@ -389,7 +389,8 @@ test('wagon drives the actual basin ramp and turns in salvage through normal int
   m.makeCar([x,height(x,33)+.74,33]);
   const records=new Map();
   const bag={records,record:(id,name,result)=>records.set(id,{name,result})};
-  const mission=new SalvageStreet(m,pipeline,models,bag,{stage:4},{refill(){}},()=>{},()=>{});
+  const chapters={stage:4};
+  const mission=new SalvageStreet(m,pipeline,models,bag,chapters,{refill(){}},()=>{},()=>{});
   const camera=new T.PerspectiveCamera(),input={actions:new Set()};
   function frame(move={},yaw=0){
     const movement={x:0,z:0,...move};
@@ -463,6 +464,13 @@ test('wagon drives the actual basin ramp and turns in salvage through normal int
   walkTo(mission.control.x,mission.control.z+1.3);
   assert.match(use(mission.control),/Drain open/);
   assert.equal(mission.clock.remaining,115);
+  const clock=[...m.fixed.values()].find(target=>target.name==='Listen by the flooded kitchen clock');
+  assert.match(clock.action(),/faint knock/);
+  records.set('extraction-return',true);
+  chapters.ending='seal';
+  assert.match(clock.action(),/knocks have stopped/);
+  chapters.ending='hold';
+  assert.match(clock.action(),/porch light/);
   const highPark=vec(m.car.body.translation());
   walkTo(highPark.x+1.7,highPark.z-.3);
   const hitBefore=use(highPark);
@@ -549,7 +557,8 @@ test('Second Address opens by three approaches and proves the slope with a simul
   world.step(mechanics.events);
   assert.match(useFromPlayer(post),/signatures/);
   assert.equal(address.objective(),null);
-  const reloaded=new SecondAddress(mechanics,pipeline,models,bag,()=>{});
+  const chapters={ending:''};
+  const reloaded=new SecondAddress(mechanics,pipeline,models,bag,()=>{},chapters);
   assert.equal(reloaded.route,'followed resident');
   assert.equal(reloaded.door.collider.isEnabled(),false);
   assert.equal(reloaded.objective(),null);
@@ -599,6 +608,11 @@ test('Second Address opens by three approaches and proves the slope with a simul
   assert.equal(records.has('founders-depot'),false);
   assert.match(finish.action(),/Two signatures/);
   assert.ok(records.has('second-address-filed'),'failed getaway must preserve the post office handoff');
+  records.set('extraction-return',true);
+  chapters.ending='seal';
+  assert.match(resident.action(),/knocking stopped/);
+  chapters.ending='hold';
+  assert.match(resident.action(),/three beats/);
 
 });
 
@@ -1060,24 +1074,11 @@ test('the Echo extraction opens three plans and recovers a timed-out harness bef
   assert.match(useAt(extraction.plans[0]),/transfer pump lowers/);
   assert.match(useAt(extraction.plans[1]),/quiet interval/);
   assert.match(useAt(extraction.plans[2]),/family marks/);
-  m.changeArea(1);chapters.story.area=1;
-  assert.match(useAt(extraction.aid),/strapped in/);
-  const missed=extraction.load;
-  extraction.tick(46);
-  assert.equal(extraction.load,null);
-  assert.equal(m.items.has(missed.collider.handle),false);
-  assert.match(messages.at(-1),/retry/);
-  assert.match(useAt(extraction.aid),/strapped in/);
   const camera=new T.PerspectiveCamera();
   const aim=point=>{
     camera.position.copy(walker.current).add(new T.Vector3(0,.58,0));
     camera.lookAt(point);camera.updateMatrixWorld(true);
   };
-  world.step(m.events);
-  aim(new T.Vector3().copy(extraction.load.body.translation()).add(new T.Vector3(0,.22,0)));
-  assert.match(m.use(camera),/Carrying Occupied extraction harness/);
-  const accept=m.fixed.get(extraction.exit.collider.handle).accept;
-  assert.match(accept(extraction.load),/lit crossing marker first/);
   function walkTo(point){
     for(let i=0;i<550;i++){
       const x=point.x-walker.current.x,z=point.z-walker.current.z;
@@ -1091,11 +1092,33 @@ test('the Echo extraction opens three plans and recovers a timed-out harness bef
     }
     assert.fail('Extraction route blocked at '+walker.current.toArray());
   }
-  for(let i=0;i<2;i++)walkTo(extraction.crossingMarker());
-  walkTo(extraction.exit.point.clone().add(new T.Vector3(0,0,-1.6)));
-  aim(extraction.exit.point);
-  assert.match(m.use(camera),/ranger catches the harness/);
-  assert.equal(m.carried,null);
-  assert.ok(records.has('extraction-return'));
-  assert.equal(extraction.returned.visible,true);
+  const accept=m.fixed.get(extraction.exit.collider.handle).accept;
+  for(const [index,plan] of ['pump','signal','guide'].entries()){
+    m.changeArea(0);chapters.story.area=0;
+    records.delete('extraction-return');
+    extraction.tick(STEP);
+    useAt(extraction.plans[index]);
+    m.changeArea(1);chapters.story.area=1;
+    walker.teleport([154,.87,-14.4]);
+    assert.match(useAt(extraction.aid),/strapped in/);
+    if(index===2){
+      const missed=extraction.load;
+      extraction.tick(46);
+      assert.equal(extraction.load,null);
+      assert.equal(m.items.has(missed.collider.handle),false);
+      assert.match(messages.at(-1),/retry/);
+      assert.match(useAt(extraction.aid),/strapped in/);
+    }
+    world.step(m.events);
+    aim(new T.Vector3().copy(extraction.load.body.translation()).add(new T.Vector3(0,.22,0)));
+    assert.match(m.use(camera),/Carrying Occupied extraction harness/);
+    assert.match(accept(extraction.load),/lit crossing marker first/);
+    for(let i=0;i<2;i++)walkTo(extraction.crossingMarker());
+    walkTo(extraction.exit.point.clone().add(new T.Vector3(0,0,-1.6)));
+    aim(extraction.exit.point);
+    assert.match(m.use(camera),/ranger catches the harness/);
+    assert.equal(m.carried,null);
+    assert.match(records.get('extraction-return').description,new RegExp(plan+' approach'));
+    assert.equal(extraction.returned.visible,true);
+  }
 });

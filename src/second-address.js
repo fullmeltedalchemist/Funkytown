@@ -24,7 +24,7 @@ const leadKey='founders-depot';
 
 export class SecondAddress {
   trial=new SurveyTrial();
-  constructor(mechanics,pipeline,models,bag,notice){
+  constructor(mechanics,pipeline,models,bag,notice,chapters){
     Object.assign(this,{mechanics,bag,notice});
     const scene=mechanics.scenes[0];
     const at=(x,y,z)=>new T.Vector3(lot.x+x,lot.y+y,lot.z+z);
@@ -78,6 +78,11 @@ export class SecondAddress {
     this.personSensor=personSensor;
     mechanics.tag(personSensor,{name:'Talk to the resident at the mailbox',action:()=>{
       if(!this.unlocked())return '“Can I help you? The utility office is across town.”';
+      if(bag.records.has('extraction-return')&&chapters?.ending){
+        return chapters.ending==='seal'?
+          '“The knocking stopped the night you closed the arch. The man you brought home recognized the chair before I said a word.”':
+          '“He recognized the chair. Then someone on the other side knocked the same three beats. I’m leaving the porch light on.”';
+      }
       if(this.route==='grapple latch')return '“Something just tripped the porch latch. If you’re here about the clock, go ahead. I’ve tried everything.”';
       if(this.route==='utility bluff'){
         if(this.getaway)return '“Take the wagon around the orchard. I’ll keep him at the house.”';
