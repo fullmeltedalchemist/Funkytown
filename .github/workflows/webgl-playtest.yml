@@ -86,7 +86,7 @@ jobs:
                         const positions={
                           porch:[x,y+1.14,z+4],
                           room:[x,y+1.14,z+.34],
-                          mailbox:[address.mailbox.x,address.mailbox.y+.9,address.mailbox.z+1.55],
+                          mailbox:[address.mailbox.x,height(address.mailbox.x,address.mailbox.z+1.55)+.85,address.mailbox.z+1.55],
                           post:[address.drop.x,height(address.drop.x,address.drop.z+1.6)+.9,address.drop.z+1.6]
                         };
                         const points={
@@ -104,8 +104,8 @@ jobs:
                         const point=stop==='float'?founders.recorder:stop==='receipt'?founders.receipt:
                           stop==='ring'?founders.ringPoint:
                           new T.Vector3().copy(founders.case.body.translation()).add(new T.Vector3(0,.15,0));
-                        const x=point.x+(stop==='case'?.9:0),z=point.z+(stop==='case'?1.3:1.65);
-                        const y=stop==='float'?founders.float.position.y+1.56:height(x,z)+.87;
+                        const x=point.x+(stop==='case'?.9:0),z=point.z+(stop==='float'?.46:stop==='case'?1.3:1.65);
+                        const y=stop==='float'?founders.float.position.y+1.53:height(x,z)+.87;
                         const aim=point.clone().sub(new T.Vector3(x,y+.58,z));
                         walker.teleport([x,y,z]);
                         yaw=Math.atan2(-aim.x,-aim.z);

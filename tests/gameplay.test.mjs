@@ -549,12 +549,26 @@ test('Second Address opens by three approaches and proves the slope with a simul
   mechanics.car={body:{translation:()=>wagonPosition}};
   reloaded.tick(STEP);
   assert.equal(reloaded.getaway.checkpoint,0,'walking through a checkpoint must not count');
+  const getawayStart={x:25,z:29.5};
+  mechanics.makeCar([getawayStart.x,height(getawayStart.x,getawayStart.z)+.75,getawayStart.z]);
+  const getawayCar=mechanics.car.body;
+  getawayCar.setRotation(new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),Math.PI*.53),true);
   mechanics.driving=true;
-  for(const stop of reloaded.escapeRoute){
-    wagonPosition.copy(stop.point);
+  walker.body.setEnabled(false);
+  for(let i=0;i<1000&&reloaded.getaway;i++){
+    const current=getawayCar.translation();
+    const target=reloaded.escapeRoute[reloaded.getaway.checkpoint].point;
+    const forward=new T.Vector3(0,0,-1).applyQuaternion(getawayCar.rotation());
+    const yaw=Math.atan2(-forward.x,-forward.z);
+    const desired=Math.atan2(current.x-target.x,current.z-target.z);
+    const difference=Math.atan2(Math.sin(desired-yaw),Math.cos(desired-yaw));
+    mechanics.drive({x:T.MathUtils.clamp(-difference*2.8,-1,1),z:.44});
+    world.step(mechanics.events);
+    mechanics.after();
     reloaded.tick(STEP);
   }
-  assert.equal(reloaded.getaway,null);
+  walker.body.setEnabled(true);
+  assert.equal(reloaded.getaway,null,JSON.stringify(getawayCar.translation()));
   assert.ok(records.has('founders-depot'));
   assert.equal(reloaded.inspector.root.visible,false);
   assert.match(finish.action(),/Two signatures/);
