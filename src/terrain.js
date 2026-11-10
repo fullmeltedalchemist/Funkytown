@@ -44,7 +44,7 @@ export function height(x,z){
   }
   const road=1-smoothstep(Math.abs(x-trailX(z)),1.45,3.35);
   // Blend the road's cross-section toward its centerline without erasing the ford.
-  result=lerp(result,rawHeight(trailX(z),z),road*.92);
+  result=lerp(result,rawHeight(trailX(z),z),road*.92*smoothstep(Math.abs(z),9,15));
   const weight=basinInfluence(x,z);
   const ramp=smoothstep(z,22,37);
   return lerp(result,lerp(basin.floor,2.7,ramp),weight);
