@@ -1,9 +1,15 @@
+import {watchAudioFocus} from './audio-focus.js';
+import {installFairground,nearFairground} from './fairground.js';
+import {installFieldRange} from './field-range.js';
+import {LoopRoad} from './loop-road.js';
+import {FieldRecorder} from './field-recorder.js';
 import {FordRescue} from './ford-rescue.js';
 import {FoundersNight} from './founders-night.js';
 import {TowLine} from './tow-line.js';
-import {fireFlare} from './flare.js';
+import {checkLookoutSignal,fireFlare} from './flare.js';
 import {Wildlife} from './wildlife.js';
 import {SecondAddress} from './second-address.js';
+import {Extraction} from './extraction.js';
 import {SalvageStreet} from './salvage-street.js';
 import {FieldProps} from './field-props.js';
 import {CreekEncounter} from './creek-encounter.js';
@@ -58,7 +64,9 @@ function forest(pipeline,models){
   function place(type,x,z,scale,sink=0){
     if(basinInfluence(x,z)>.07||Math.hypot(x-secondAddress.x,z-secondAddress.z)<7.5)return;
     if(insideRescueCorridor(x,z,type==='rocks'?scale*.48:1.2))return;
-    grove[type].push({x,y:height(x,z)-sink,z,scale,yaw:rnd()*Math.PI*2});
+    const yaw=rnd()*Math.PI*2;
+    if(nearFairground(x,z,type==='rocks'?scale*.48:.8))return;
+    grove[type].push({x,y:height(x,z)-sink,z,scale,yaw});
   }
   for(let i=0;i<490;i++){
     const x=(rnd()-.5)*106,z=(rnd()-.5)*106;
@@ -138,7 +146,10 @@ async function boot(){
   scene.add(camera);
   const pistol=fieldPistol(),scattergun=fieldPistol(true);
   const flarePistol=pipeline.prepare(models.flarePistol,{yaw:Math.PI,scale:1.12});
-  const weapons=[pistol,scattergun,flarePistol];
+  const slingshot=pipeline.prepare(models.slingshot,{scale:1.1});
+  const rifle=pipeline.prepare(models.leverRifle,{scale:.91});
+  const weapons=[pistol,scattergun,flarePistol,slingshot,rifle];
+  const weaponNames=['Pistol','Scattergun','Flare','Slingshot','Lever rifle'];
   let weapon=0;
   camera.add(...weapons);
   world.step();
@@ -146,13 +157,27 @@ async function boot(){
   const notice=(message)=>{
     if(message){$('notice').textContent=message;noticeUntil=performance.now()+6400;}
   };
-  let audio=null,ambient=null;
+  let audio=null,ambient=null,master=null,engine=null,foreground=true;
+  let audioWanted=false,footstepTime=0;
+  const effects=new Set();
+  const syncAudio=()=>{
+    if(!audio)return;
+    const enabled=foreground&&audioWanted;
+    master.gain.setValueAtTime(Number(enabled),audio.currentTime);
+    if(enabled){audio.resume().catch(()=>{});return;}
+    for(const tone of effects){try{tone.stop();}catch{}}
+    audio.suspend().catch(()=>{});
+  };
+  watchAudioFocus(visible=>{foreground=visible;syncAudio();});
   const unlockAudio=()=>{
     const Audio=window.AudioContext||window.webkitAudioContext;
-    if(!Audio)return;
+    if(!Audio||!foreground)return;
     try{
       if(!audio){
         audio=new Audio();
+        master=audio.createGain();
+        master.gain.value=0;
+        master.connect(audio.destination);
         const duration=audio.sampleRate*3,buffer=audio.createBuffer(1,duration,audio.sampleRate);
         const samples=buffer.getChannelData(0);
         let wind=0;
@@ -163,14 +188,26 @@ async function boot(){
         const source=audio.createBufferSource();
         source.buffer=buffer;source.loop=true;
         ambient=audio.createGain();ambient.gain.value=0;
-        source.connect(ambient).connect(audio.destination);source.start();
+        source.connect(ambient).connect(master);source.start();
+        const motor=audio.createOscillator(),gain=audio.createGain();
+        motor.type='triangle';
+        gain.gain.value=0;
+        motor.connect(gain).connect(master);
+        motor.start();
+        engine={motor,gain};
       }
-      audio.resume().catch(()=>{});
-    }catch(error){console.warn('Ambient audio unavailable',error);}
+      audioWanted=true;
+      syncAudio();
+    }catch(error){
+      audio?.close().catch(()=>{});
+      audio=ambient=master=engine=null;
+      audioWanted=false;
+      console.warn('Game audio unavailable',error);
+    }
   };
   for(const id of ['start','touch-mode'])$(id).addEventListener('click',unlockAudio);
   const playToolSound=(from,to,duration,volume,position)=>{
-    if(audio?.state!=='running')return;
+    if(!foreground||!audioWanted||audio?.state!=='running')return;
     const time=audio.currentTime;
     const tone=audio.createOscillator(),gain=audio.createGain();
     tone.type='triangle';
@@ -187,10 +224,13 @@ async function boot(){
       pan.pan.value=T.MathUtils.clamp(offset.normalize().dot(right),-1,1);
       gain.gain.setValueAtTime(volume*Math.max(.26,1-distance*.022),time);
       gain.connect(pan).connect(audio.destination);
-    }else gain.connect(audio.destination);
-    tone.onended=()=>{tone.disconnect();gain.disconnect();pan?.disconnect();};
+    }else gain.connect(master);
+    effects.add(tone);
+    tone.onended=()=>{effects.delete(tone);tone.disconnect();gain.disconnect();pan?.disconnect();};
     tone.start(time);tone.stop(time+duration);
   };
+  installFieldRange(mechanics,bag,notice,playToolSound);
+  mechanics.onPebble=point=>playToolSound(560,190,.16,.12,point);
   const fordRescue=new FordRescue(mechanics,pipeline,models,story,rescue,bag,notice,
     point=>playToolSound(480,140,.44,.21,point));
   const fieldProps=new FieldProps(mechanics,pipeline,models,rescue,bag,notice,(event,position)=>{
@@ -200,33 +240,34 @@ async function boot(){
   });
   const salvage=new SalvageStreet(mechanics,pipeline,models,bag,chapters,campLife,notice,
     ()=>playToolSound(540,330,.68,.23));
-  const address=new SecondAddress(mechanics,pipeline,models,bag,notice);
+  const address=new SecondAddress(mechanics,pipeline,models,bag,notice,chapters);
+  installFairground(mechanics);
   const founders=new FoundersNight(mechanics,pipeline,models,bag,notice);
+  const extraction=new Extraction(mechanics,chapters,bag,pipeline,models,notice);
   const wildlife=new Wildlife(mechanics,pipeline,models.cottontail,bag,notice);
+  bag.record('field-slingshot','Slingshot','Quiet pebbles arc and scatter nearby wildlife at the point of impact. Use it to break fragile props.','Gear');
+  bag.record('field-rifle','Lever-action rifle','A faster, flatter shot for distant targets. Cycle with X or the weapon control.','Gear');
   bag.record('flare-pistol','Flare pistol','Cycle weapons with X or the weapon button. Fire a bouncing light that burns for twelve seconds.','Gear');
-  bag.record('contact-mic','Contact microphone','M or Mic · aim at machinery or a loose prop and sample its vibration.','Gear');
+  bag.record('contact-mic','Contact microphone','M or Mic · aim at a surface and record its vibration. J or Speaker plays the recording from a placeable speaker.','Gear');
+  const loopRoad=new LoopRoad(mechanics,story,bag,notice);
+  const recorder=new FieldRecorder(mechanics,pipeline,models.receiver,bag,playToolSound);
   function sampleContact(){
     if(mechanics.driving||rescue.zipline.active)return;
     const target=mechanics.target(camera);
     if(!target)return notice('Aim the contact microphone at a surface you can reach.');
-    const sample=target.contact?.()??{
-      strength:target.body?Math.min(1,vec(target.body.linvel()).length()*.24):0,
-      message:'Contact sample taken.'
-    };
-    if(sample.strength)playToolSound(90+sample.strength*155,61,.34,.18*sample.strength);
-    notice(sample.message+' Contact signal '+Math.round(sample.strength*100)+'%.');
+    notice(recorder.record(target));
   }
   const towLine=new TowLine(mechanics);
   bag.record('tow-line','Two-hook tow line','V or Rig · rig two anchors on foot. If attached to the wagon, use Rig from the driver seat to reel in.','Gear');
   let cableAudio;
   function soundCable(speed){
-    if(audio?.state!=='running')return;
+    if(!foreground||!audioWanted||audio?.state!=='running')return;
     const now=audio.currentTime;
     if(!cableAudio&&speed){
       const tone=audio.createOscillator(),gain=audio.createGain();
       tone.type='triangle';
       gain.gain.value=0;
-      tone.connect(gain).connect(audio.destination);
+      tone.connect(gain).connect(master);
       tone.start();
       cableAudio={tone,gain};
     }
@@ -250,14 +291,15 @@ async function boot(){
     if(rescue.zipline.active)return;
     weapon=(weapon+1)%weapons.length;
     if(weapon===1&&!bag.records.has('scattergun'))weapon=2;
-    const name=['Pistol','Scattergun','Flare'][weapon];
+    const name=weaponNames[weapon];
     const button=$('weapon-button');
     button.querySelector('span').textContent=name;
     button.setAttribute('aria-label','Switch weapon. Equipped: '+name);
     notice(name+' equipped.');
   },()=>{if(!rescue.zipline.active)gear.deployLantern(mechanics,camera);},
     ()=>{if(!rescue.zipline.active)notice(campLife.drink());},
-    ()=>{if(!rescue.zipline.active)notice(mechanics.toggleStrap());},sampleContact,()=>{if(!rescue.zipline.active)notice(towLine.select(camera));});
+    ()=>{if(!rescue.zipline.active)notice(mechanics.toggleStrap());},sampleContact,()=>{if(!rescue.zipline.active)notice(towLine.select(camera));},
+    ()=>{if(!rescue.zipline.active)notice(recorder.deploy(camera));});
   $('start').disabled=false;
   $('start').textContent='Walk the ridge';
   $('touch-mode').disabled=false;
@@ -295,7 +337,13 @@ async function boot(){
   renderer.shadowMap.needsUpdate=true;
   renderer.setAnimationLoop(now=>{
     const dt=Math.min(.1,(now-last)/1000);last=now;
-    if(ambient)ambient.gain.setTargetAtTime(input.active?(story.area?.09:.28):0,audio.currentTime,.18);
+    if(ambient&&foreground){
+      ambient.gain.setTargetAtTime(input.active?(story.area?.14:.34):0,audio.currentTime,.18);
+      const driving=input.active&&mechanics.driving;
+      const speed=driving?vec(mechanics.car.body.linvel()).length():0;
+      engine.motor.frequency.setTargetAtTime(31+speed*3.7,audio.currentTime,.12);
+      engine.gain.gain.setTargetAtTime(driving?.027+Math.min(.058,speed*.004):0,audio.currentTime,.13);
+    }
     if(input.active&&!input.toolsOpen&&!document.querySelector('dialog[open]')){
       const sensitivity=input.touch?.0048:.00235;
       if(!mechanics.driving){
@@ -322,8 +370,11 @@ async function boot(){
           if(weapon===2){
             if(fireFlare(mechanics,camera))playToolSound(430,73,.25,.23);
           }else{
-            mechanics.fire(camera,weapon===1);
-            if(mechanics.cooldown>before)playToolSound(weapon===1?94:168,41,weapon===1?.23:.13,.28);
+            mechanics.fire(camera,weapon===1,weapon===3?'slingshot':weapon===4?'rifle':'pistol');
+            if(mechanics.cooldown>before){
+              if(weapon===3)playToolSound(320,130,.08,.065);
+              else playToolSound(weapon===1?94:weapon===4?115:168,41,weapon===1||weapon===4?.23:.13,.28);
+            }
           }
         }
         if(input.actions.has('grapple')){
@@ -339,6 +390,15 @@ async function boot(){
           if(input.touch&&campLife.energy>0&&Math.hypot(...input.stick)>.96)move.sprint=true;
           if(mechanics.carried?.size){move.x*=.75;move.z*=.75;move.sprint=false;}
           walker.step({...move,pull:mechanics.anchor,sprintBoost:campLife.energy>0,jumpBoost:campLife.hydrated>0},yaw,mechanics.events);
+          const pace=Math.hypot(walker.velocity.x,walker.velocity.z);
+          if(walker.control.computedGrounded()&&pace>1.1&&Math.hypot(move.x,move.z)>.12){
+            footstepTime-=STEP;
+            if(footstepTime<=0){
+              const wet=story.area===0&&inCreek(walker.current.x,walker.current.z)&&walker.current.y<-.62;
+              playToolSound(wet?275:113,wet?95:49,wet?.16:.095,wet?.14:.09);
+              footstepTime=Math.max(.26,.59-pace*.043);
+            }
+          }else footstepTime=Math.min(.11,footstepTime);
         }
         mechanics.after();
         story.missions.tick(STEP);
@@ -353,7 +413,12 @@ async function boot(){
         address.tick(STEP);
         founders.tick(STEP);
         chapters.tick();
-        wildlife.tick(STEP);
+        extraction.tick(STEP);
+        loopRoad.tick(STEP);
+        recorder.tick(STEP);
+        const pebble=mechanics.pebbleNoise;
+        wildlife.tick(STEP,pebble?.area===0?pebble.position:recorder.area===0?recorder.source:null);
+        checkLookoutSignal(mechanics,finale.lookout,bag,notice,point=>playToolSound(620,860,.42,.2,point));
         towLine.tick(STEP);
         if(!mechanics.driving){
           const transition=story.transition(walker.current,STEP);
@@ -390,7 +455,7 @@ async function boot(){
     for(const model of weapons)model.visible=false;
     tool.visible=!mechanics.driving&&!mechanics.carried&&!rescue.zipline.active;
     const stride=mechanics.driving?0:Math.min(1,Math.hypot(walker.velocity.x,walker.velocity.z)/5);
-    const recoil=Math.min(.15,Math.max(0,mechanics.cooldown-(weapon===1?.45:weapon===2?.67:.065)));
+    const recoil=Math.min(.15,Math.max(0,mechanics.cooldown-([.065,.45,.67,.33,.67][weapon])));
     tool.position.set(.173+Math.sin(now*.008)*.009*stride,-.19+Math.cos(now*.016)*.006*stride,-.49+recoil*.58);
     tool.rotation.x=recoil*.9;
     mechanics.drawWater(now*.001);
@@ -402,7 +467,7 @@ async function boot(){
       water.uniforms.ripple.value.set(player.x,player.z,now*.001);lastWake=now;
     }
     story.animate(now*.001);
-    const objective=(rescue.showPractice?rescue.objective():null)??salvage.objective()??address.objective()??founders.objective()??fieldProps.objective()??fordRescue.objective()??chapters.objective()??finale.objective()??rescue.objective();
+    const objective=loopRoad.objective()??(rescue.showPractice?rescue.objective():null)??salvage.objective()??address.objective()??founders.objective()??fieldProps.objective()??fordRescue.objective()??extraction.objective()??chapters.objective()??finale.objective()??rescue.objective();
     $('guide').textContent=objective?.text??story.guide(player);
     const waypoint=objective?objective.target:story.waypoint();
     const arrow=$('bearing');
@@ -441,7 +506,7 @@ async function boot(){
     reticle.hidden=mechanics.driving||!input.active||input.toolsOpen;
     reticle.classList.toggle('on-target',Boolean(target?.name));
     renderer.render(activeScene,camera);
-    gear.capture(renderer.domElement,story.area,player);
+    if(gear.capture(renderer.domElement,story.area,player))notice(wildlife.photograph(camera));
   });
 }
 boot().catch(error=>{$('status').textContent=error.message;console.error(error);});

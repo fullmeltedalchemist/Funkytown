@@ -36,10 +36,12 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] First playable route from the post office dispatch board to the south-road archive truck and creek storehouse. Track the truck in the wagon or read the backup receipt and retrieve the original tape.
 - [x] Load a Blender-authored archive truck through the GLB pipeline. The first pass uses a scripted truck path.
 - [x] Stage a walkable parade float, spectator barriers and spectators. Give the moving archive truck physical collision.
-- [ ] Expand the parade beyond the staged float and build out the archive loading bay.
+- [x] Build an open-front, collidable archive loading bay around the grapple shutter and tape case.
+- [ ] Expand the parade beyond the staged float.
 - [x] Offer a float-mounted recorder, a backstage bluff and a wagon pursuit. The recorder preserves the order in the Field Bag. The stagehand gives an off-the-record tip. A successful tail confirms the destination by observation.
 - [x] Make the truck chase recoverable if contact is lost. The delivery receipt reveals the same destination.
-- [ ] Add a fairground ramp, loose barrels, breakable roadside props and wagon cargo shift. Verify handbrake recovery on touch.
+- [x] Add a driveable fairground ramp, loose barrels and breakable roadside crates. The wagon retains cargo shift and strap behavior.
+- [ ] Verify fairground landing, loose cargo and handbrake recovery on touch.
 - [x] Authored tape case through the GLB pipeline. Grapple the loading cage open, carry or haul the case, and file it with the clerk. Restore the case if lost.
 - [x] Author the float through the GLB pipeline with a walkable deck, side rails and rear steps.
 - [ ] Validate the truck’s ground clearance and the parade route’s readability on touch.
@@ -49,23 +51,27 @@ The central question is who returned after the reservoir evacuation. People who 
 **Hook.** The original records establish who may still be alive beyond the arch. The ranger witnessed a copy taking somebody's place.
 
 - [x] After filing the archive tape, hear the ranger’s eyewitness account and Cal’s family disagree before deciding the arch’s fate.
-- [ ] Unlock rescue approaches through the pump, the sound experiment or help earned from townspeople.
-- [ ] Build an actual extraction route with physical equipment and a recoverable failure state.
-- [ ] Connect the existing seal/open ending to who returned, who answers the radio and what changes at the diner and both addresses.
-- [ ] Author the crossing markers, extraction harness and the alternate-side house through the asset pipeline.
+- [x] Unlock three extraction plans through the salvaged pump, the aligned rescue recording or guidance from Cal’s family. Each gives a different route and crossing window.
+- [x] Carry Cal in a physical harness through the marked Echo crossing. Losing the harness or running out of time returns him to the shelter for another attempt.
+- [x] After the extraction, reflect the arch choice in the returned man’s dialogue, the radio and both addresses.
+- [ ] Build the diner and show how the extraction and arch decision changed it.
+- [x] Author the extraction harness as a Blender GLB and place a colliding cabin as the reflected shelter.
+- [x] Author a lantern-like crossing marker and a grey-sided alternate-side shelter with a walkable porch through the Blender GLB pipeline.
 
 ## Systems that serve these missions
 
 - [x] First flare pistol, contact microphone and wagon ratchet straps. A flare is a physical projectile with a temporary light. The mic can contrast an operating pump with the silent Echo relay. Loose cargo can shift in turns and leave the rack in a hard impact.
 - [x] Two-hook tow line. A real rope joint connects a movable prop or wagon to a second object or an anchor on a solid surface.
 - [x] Powered wagon winch. When a tow line is attached to the wagon, Rig toggles reeling from the driver's seat.
-- [ ] Magnetic crawler, slingshot and lever-action rifle. Add a recorder and playback function to the contact microphone.
+- [x] Add the slingshot, lever rifle and contact sample recording and playback.
+- [ ] Build the magnetic crawler.
 - [x] Baseline physical props: carryable glass water jugs, splash and shards, explosive fuel cans with nearby reactions, and cargo that can shift or be strapped down.
-- [ ] Extend weight, balance, friction, break thresholds and buoyancy across common objects. An empty jug should float higher than a full one. Boards, tires and lanterns should float or roll, lodge against gates, and react to the current.
+- [x] Give full and empty jugs different mass, flotation and break effects. Both drift in the current.
+- [ ] Extend buoyancy, balance, friction and break thresholds across boards, tires and lanterns. Verify lodging against gates.
 - [ ] Build everyday physics scenes: a diner tablecloth that drags tableware and draws the owner's attention, a workbench and inspection pit with dropped tools, movable furniture, and flour or chalk that records physical footprints and marks.
 - [ ] Make the magnetic pickup recover dropped tools, keys, license plates and lures. Let the camera crawler scout under doors, traverse suitable steel surfaces, pull a latch, and thread a line through a pipe.
-- [ ] Give the flare world uses beyond lighting: a lookout signal, a drifting marker on water, and a way to reveal Echo tracks or silhouettes.
-- [ ] Give the slingshot quiet pebble distractions and breakable-fixture shots. Give the rifle long-range counterweights, bells and hunting targets. Preserve the scattergun's close-range role.
+- [x] Give flares a lookout acknowledgement, a drifting light on water and the ability to reveal Echo tracks.
+- [x] Add quiet pebble distractions and breakable targets. The lever rifle can ring the distant bell, drop a counterweight and hit existing hunting targets. Preserve the scattergun’s close-range spread.
 - [ ] Add a climbing harness so the player can stop mid-grapple and work on a latch or attach a line. Add bolt cutters for chained routes and a portable stove, kettle and water filter for camp away from Foxglove.
 - [ ] Test two-hook and winch scenarios beyond pulling a crate: jammed gates, wreck recovery, mill wheels, lowering a load through a window and catching a runaway cooler.
 - [ ] Add mission-specific wagon packing, padding for fragile evidence and multi-item choices. Tune gravel drift, body lean, ditch bounce, prop impacts and forgiving recovery. Preserve optional foot routes where appropriate.
@@ -73,10 +79,13 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] Authored cottontails that flee, can be shot and yield meat for the existing skillet and sharing loop.
 - [ ] Creek birds that flush in a group, a boar that can charge and knock over light props, and ordinary animals with trackable signs. Add meat bait, recipe variety, and sharing outcomes.
 - [x] First Echo cottontail. Observe it or shoot it to learn what it does. It yields a clue and no meat.
-- [ ] Echo photography, track-following and more species, including the deer whose tracks stop while the sound keeps going. Preserve distinct outcomes for observing, photographing, following and shooting.
+- [x] Add separate evidence for photographing the Echo cottontail and flare-lit tracks.
+- [ ] Expand track-following and Echo species, including the deer whose tracks stop while its sound continues.
 - [ ] Add standalone activities: a midnight cook-off with two skillets and an unreliable stove, a runaway bait cooler, and a distress call that changes location when answered.
-- [ ] Build The Road That Loops around a wagon route that resets at the same mile marker. Compare physical road signs and chalk marks to escape.
-- [ ] Make a flooded-house knock investigable by contact mic, a thrown marker or roof access. The evidence should change the search route or the witness the player trusts.
-- [ ] Add a directional recorder with playback and a placeable speaker for distractions. Check spatial audio and accessible visual cues on phone.
+- [x] Build The Road That Loops. The wagon returns to the chalked mile marker until you compare the mark and find the eastern verge.
+- [x] Record the flooded-house knock by contact mic and unlock the dry-house resident’s account.
+- [ ] Add thrown-marker and roof approaches to the flooded-house knock.
+- [x] Add aim-based contact recording and a placeable speaker with spatial playback, a light cue and wildlife response.
+- [ ] Check spatial audio and visual cues on a phone.
 - [ ] Expand the playable Chapters 2–4 route beyond the current first pass. Connect the late rescue choice to relationships, original evacuation evidence, and different outcomes at the diner, houses and radio.
 - [ ] Prove desktop and touch controls, clean-save progression, failure recovery and alternate routes before marking any mission as release-verified.

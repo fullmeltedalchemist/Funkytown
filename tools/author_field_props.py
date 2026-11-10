@@ -391,3 +391,131 @@ box("COL_display",(0,.85,1.38),(1.55,1.36,1.38),iron,0)
 for side in (-1,1):
     box("COL_rail_"+str(side),(side*1.16,0,1.22),(.09,4,.75),iron,0)
 export("founders-parade-float.glb")
+
+reset()
+canvas = material("Waxed orange rescue canvas", (.62,.25,.055), roughness=.82)
+tape = material("Woven harness straps", (.12,.20,.17), roughness=.95)
+alloy = material("Rescue stretcher tubing", (.44,.49,.46), .66,.42)
+box("Molded stretcher bed",(0,0,.13),(.67,1.83,.16),canvas,.075)
+box("Head pad",(0,.66,.26),(.42,.34,.09),tape,.034)
+for x in (-.345,.345):
+    box("Carrying rail",(x,0,.21),(.065,2.12,.064),alloy,.027)
+    for y in (-.88,.88):
+        box("Bent handle",(x*.82,y,.17),(.12,.17,.065),alloy,.023)
+for y in (-.46,.04,.39):
+    box("Occupant restraint",(0,y,.365),(.72,.11,.025),tape,.012)
+    box("Restraint buckle",(.18,y,.38),(.085,.105,.031),alloy,.011)
+export("echo-extraction-harness.glb")
+
+reset()
+brass = material("Weathered crossing brass", (.42,.28,.1), .62,.43)
+glass = material("Green survey glass", (.12,.67,.37), .28,.26)
+base = material("Dark iron footing", (.075,.11,.105), .53,.65)
+lathe("Weighted footing",[(.21,0),(.22,.027),(.205,.071),(.14,.095)],base,24)
+lathe("Tapered stake",[(.075,.07),(.069,.29),(.038,.73),(.038,.9)],brass,20)
+box("Number plate",(.0,-.03,.52),(.19,.026,.105),base,.009)
+for x in (-.095,.095):
+    box("Lamp cage upright",(x,0,.93),(.029,.046,.31),brass,.01)
+box("Lamp cage cap",(0,0,1.088),(.25,.16,.046),brass,.019)
+lathe("Green signal lens",[(.08,.82),(.104,.88),(.104,1.01),(.071,1.055)],glass,24)
+export("echo-crossing-marker.glb")
+
+reset()
+slate = material("Weathered slate roof", (.18,.24,.28), .26,.65)
+pine = material("Grey washed siding", (.28,.25,.22), roughness=.91)
+beam = material("Dark pine framing", (.125,.092,.076), roughness=.88)
+glass = material("Clouded kitchen glass", (.22,.33,.41), .23,.27)
+warm = material("Weak amber porch lamp", (.78,.39,.12), .08,.38)
+collision = material("Shelter collision", (.4,.4,.4))
+box("Floor boards",(0,0,.14),(5.25,4.03,.28),beam,.035)
+box("COL_floor",(0,0,.14),(5.25,4.03,.28),collision,0)
+for z in (.42,.7,.98,1.26,1.54,1.82,2.10,2.38):
+    box("Rear overlapping plank",(0,1.96,z),(5.23,.115,.29),pine,.017)
+    for side in (-1,1):
+        box("Side overlapping plank",(side*2.57,0,z),(.115,3.91,.29),pine,.017)
+        box("Front overlapping plank",(side*1.66,-1.96,z),(1.83,.115,.29),pine,.017)
+for name,x,y,w,d in (("back",0,1.96,5.23,.16),("left",-2.57,0,.16,3.91),
+    ("right",2.57,0,.16,3.91),("frontL",-1.66,-1.96,1.83,.16),("frontR",1.66,-1.96,1.83,.16)):
+    box("COL_"+name,(x,y,1.39),(w,d,2.25),collision,0)
+for x in (-2.57,2.57):
+    for y in (-1.97,1.97):
+        box("Corner trim",(x,y,1.41),(.15,.15,2.3),beam,.015)
+for x in (-.7,.7):
+    box("Open doorway jamb",(x,-2.04,1.34),(.11,.16,2.13),beam,.014)
+box("Door lintel",(0,-2.05,2.39),(1.56,.19,.18),beam,.018)
+box("Rear window frame",(1.19,2.032,1.58),(1.02,.09,.86),beam,.017)
+box("Rear window glass",(1.19,2.087,1.58),(.82,.035,.66),glass,.013)
+for x in (-1,1):
+    panel=box("Pitched slate roof",(x*1.36,0,2.88),(2.95,4.64,.17),slate,.03)
+    panel.rotation_euler.y=x*.29
+box("Roof ridge flashing",(0,0,3.32),(.2,4.69,.12),beam,.035)
+box("Porch landing",(0,-2.43,.11),(2.9,.91,.22),pine,.025)
+box("COL_landing",(0,-2.43,.11),(2.9,.91,.22),collision,0)
+for x in (-1.29,1.29):
+    box("Porch post",(x,-2.72,1.25),(.115,.115,2.21),beam,.013)
+box("Porch canopy",(0,-2.49,2.43),(3.04,1.04,.14),slate,.025)
+box("Porch light housing",(.98,-2.07,2.05),(.2,.17,.34),beam,.027)
+box("Porch light lens",(.98,-2.17,2.05),(.145,.05,.23),warm,.018)
+export("echo-reflected-shelter.glb")
+
+reset()
+steel = material("Archive bay painted steel", (.13,.24,.24), .55,.45)
+zinc = material("Weathered zinc roofing", (.32,.38,.38), .66,.58)
+concrete = material("Archive bay concrete footings", (.28,.25,.21), roughness=.96)
+warning = material("Faded yellow loading stripes", (.74,.47,.075), roughness=.75)
+collision = material("Archive bay collision", (.4,.4,.4))
+# Open front at negative Blender Y, toward the existing grapple approach.
+for x in (-1.28,1.28):
+    for y in (-.89,.92):
+        box("Steel upright",(x,y,1.07),(.13,.13,3.46),steel,.015)
+        box("Concrete footing",(x,y,-.29),(.28,.27,.77),concrete,.029)
+        box("COL_upright",(x,y,1.02),(.23,.23,3.58),collision,0)
+    box("Side weather panel",(x,.48,1.21),(.085,.96,2.62),zinc,.013)
+    box("COL_side",(x,.48,1.21),(.085,.96,2.62),collision,0)
+    for z in (.43,.61,.79):
+        box("Loading hazard stripe",(x,-.964,z),(.123,.018,.072),warning,.004)
+box("Back weather panel",(0,.94,1.27),(2.57,.095,2.75),zinc,.014)
+box("COL_back",(0,.94,1.27),(2.57,.095,2.75),collision,0)
+box("Open-front header",(0,-.91,2.62),(2.73,.19,.24),steel,.025)
+box("Canopy deck",(0,.02,2.81),(3.05,2.34,.11),zinc,.017)
+box("COL_canopy",(0,.02,2.81),(3.05,2.34,.11),collision,0)
+for i in range(13):
+    box("Canopy raised seam",(-1.4+i*.233,.02,2.887),(.025,2.36,.035),zinc,.005)
+box("Archive enamel sign",(0,-1.015,2.61),(.94,.035,.17),warning,.018)
+export("archive-loading-bay.glb")
+
+reset()
+walnut = material("Polished walnut rifle furniture", (.25,.12,.063), roughness=.56)
+steel = material("Blued rifle steel", (.08,.105,.12), .75,.37)
+brass = material("Tarnished cartridge brass", (.49,.31,.098), .67,.46)
+box("Walnut buttstock",(0,-.21,-.045),(.092,.34,.145),walnut,.046)
+box("Steel butt plate",(0,-.38,-.044),(.097,.033,.149),steel,.018)
+box("Lever action receiver",(0,.025,.013),(.10,.225,.127),steel,.023)
+box("Walnut forearm",(0,.245,-.014),(.089,.24,.09),walnut,.032)
+for z,r,length in ((.052,.025,.48),(-.025,.018,.37)):
+    tube=lathe("Barrel or magazine tube",[(r,-length/2),(r,length/2)],steel,20)
+    tube.rotation_euler.x=tau/4
+    tube.location=(0,.38,z)
+box("Front sight",(0,.575,.087),(.018,.039,.029),steel,.008)
+box("Brass sight bead",(0,.579,.105),(.011,.012,.01),brass,.003)
+box("Rear sight",(0,.097,.094),(.059,.038,.028),steel,.005)
+bpy.ops.mesh.primitive_torus_add(major_radius=.075,minor_radius=.01,location=(0,-.062,-.086))
+lever=bpy.context.object
+lever.rotation_euler.y=tau/4
+lever.scale.x=.72
+finish(lever,"Loop lever",steel)
+export("field-lever-rifle.glb")
+
+reset()
+wood = material("Slingshot ash", (.35,.21,.095), roughness=.74)
+elastic = material("Amber elastic bands", (.69,.38,.106), roughness=.85)
+pouch = material("Dark leather pouch", (.12,.058,.034), roughness=.95)
+box("Palm grip",(0,0,-.034),(.065,.051,.205),wood,.023)
+for side in (-1,1):
+    arm=box("Forked ash arm",(side*.044,0,.083),(.052,.053,.128),wood,.02)
+    arm.rotation_euler.y=side*.54
+    box("Band keeper",(side*.076,0,.132),(.035,.065,.026),elastic,.008)
+    band=box("Flat elastic band",(side*.039,-.045,.125),(.016,.119,.015),elastic,.005)
+    band.rotation_euler.z=side*.63
+box("Leather pouch",(0,-.093,.125),(.057,.033,.024),pouch,.01)
+export("field-slingshot.glb")

@@ -214,23 +214,38 @@ export class Mechanics {
     item.collider.setCollisionGroups(groups(bits.prop,item.mask));
     if(velocity)item.body.setLinvel(velocity,true);
   }
-  fire(camera,scatter=false){
+  fire(camera,scatter=false,variant='pistol'){
     if(this.cooldown||this.carried||this.driving)return;
+    const profile=scatter?{speed:36,life:.43,gravity:.16,radius:.065,density:24,cooldown:.62}:
+      variant==='rifle'?{speed:85,life:1.75,gravity:.07,radius:.046,density:32,cooldown:.82}:
+      variant==='slingshot'?{speed:23,life:1.7,gravity:1,radius:.058,density:8,cooldown:.39}:
+      {speed:47,life:1.65,gravity:.16,radius:.065,density:24,cooldown:.15};
     const forward=camera.getWorldDirection(new T.Vector3());
     const orientation=camera.getWorldQuaternion(new T.Quaternion());
     for(let i=0;i<(scatter?5:1);i++){
       const angle=i*Math.PI*.5;
       const dir=i===0?forward.clone():new T.Vector3(Math.cos(angle)*.045,Math.sin(angle)*.045,-1)
         .normalize().applyQuaternion(orientation);
-      const round=this.dynamic({position:camera.position.toArray(),kind:'round',life:scatter?.43:1.65,
-        visual:new T.Mesh(roundGeometry,roundMaterial),shape:R.ColliderDesc.ball(.065).setDensity(24)});
+      const round=this.dynamic({position:camera.position.toArray(),kind:'round',life:profile.life,
+        visual:new T.Mesh(roundGeometry,roundMaterial),
+        shape:R.ColliderDesc.ball(profile.radius).setDensity(profile.density)});
+      round.variant=variant;
       round.visual.quaternion.setFromUnitVectors(new T.Vector3(0,0,1),dir);
       round.body.setRotation(round.visual.quaternion,true);
       round.body.lockRotations(true,true);
-      round.body.setGravityScale(.16,true);
-      round.body.setLinvel(dir.multiplyScalar(scatter?36:47),true);
+      round.body.setGravityScale(profile.gravity,true);
+      round.body.setLinvel(dir.multiplyScalar(profile.speed),true);
     }
-    this.cooldown=scatter?.62:.15;
+    this.cooldown=profile.cooldown;
+  }
+  roundImpact(round,target,spent){
+    spent.add(round);
+    this.onImpact.get(target)?.(round);
+    if(round.variant==='slingshot'){
+      const position=vec(round.body.translation());
+      this.pebbleNoise={position,area:round.area,remaining:1.2};
+      this.onPebble?.(position);
+    }
   }
   grapple(camera){
     if(this.driving)return '';
@@ -323,16 +338,18 @@ export class Mechanics {
   }
   before(camera,movement,input){
     this.cooldown=Math.max(0,this.cooldown-STEP);
+    if(this.pebbleNoise&&(this.pebbleNoise.remaining-=STEP)<=0)this.pebbleNoise=null;
     for(const item of this.items.values())if(item.size)item.speed=vec(item.body.linvel()).length();
     for(const item of this.items.values()){
       if(item===this.cargo||item.area!==0||item.kind!=='prop'||item===this.carried)continue;
       const p=item.body.translation();
-      if(p.y>-1.49||!inCreek(p.x,p.z))continue;
+      const surface=item.floatSurface??-1.49;
+      if(p.y>surface||!inCreek(p.x,p.z))continue;
       const velocity=item.body.linvel();
-      const submerged=T.MathUtils.clamp((-1.49-p.y)/.48,0,1);
+      const submerged=T.MathUtils.clamp((surface-p.y)/.48,0,1);
       const scale=STEP*item.body.mass();
       item.body.applyImpulse({x:(this.creekFlow-velocity.x)*submerged*scale*3.1,
-        y:(submerged*15-velocity.y*3.6*submerged)*scale,
+        y:(submerged*(item.floatLift??15)-velocity.y*3.6*submerged)*scale,
         z:-velocity.z*submerged*scale*3.1},true);
     }
     if(this.driving)this.drive(movement);
@@ -355,8 +372,8 @@ export class Mechanics {
       if(!started)return;
       const one=this.items.get(a),two=this.items.get(b);
       const solid=!(this.world.getCollider(a)?.isSensor()||this.world.getCollider(b)?.isSensor());
-      if(one?.kind==='round'&&!spent.has(one)){spent.add(one);this.onImpact.get(b)?.();}
-      if(two?.kind==='round'&&!spent.has(two)){spent.add(two);this.onImpact.get(a)?.();}
+      if(one?.kind==='round'&&!spent.has(one))this.roundImpact(one,b,spent);
+      if(two?.kind==='round'&&!spent.has(two))this.roundImpact(two,a,spent);
       if(solid&&one?.size&&one!==this.cargo&&one!==this.carried&&(one.speed>one.impactLimit||two?.kind==='round'))broken.add(one);
       if(solid&&two?.size&&two!==this.cargo&&two!==this.carried&&(two.speed>two.impactLimit||one?.kind==='round'))broken.add(two);
     });

@@ -62,6 +62,7 @@ export class Gear {
     this.bag.record('field-photo-'+area,'Field photo · '+location,
       'Latest frame logged at '+Math.round(position.x)+', '+Math.round(position.z)+'.');
     this.notice('Photo captured. Location logged in Evidence.');
+    return true;
   }
   toggle(){
     const on=this.light.intensity===0;

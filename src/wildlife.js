@@ -33,6 +33,38 @@ export class Wildlife {
       mechanics.tag(collider,{name:echo?'Observe the Echo cottontail':'Observe the cottontail',action:()=>this.use(animal)});
       return animal;
     });
+    const home=this.animals.at(-1).home;
+    this.tracks=new T.Group();
+    const print=new T.MeshBasicMaterial({color:0x75ffd2,transparent:true,opacity:.73,depthWrite:false});
+    for(let i=0;i<6;i++){
+      const x=home.x-1.2-i*.36,z=home.z+.6+(i%2)*.23;
+      const mark=new T.Mesh(new T.CircleGeometry(.087,10),print);
+      mark.scale.y=1.65;
+      mark.rotation.x=-Math.PI/2;
+      mark.position.set(x,height(x,z)+.045,z);
+      this.tracks.add(mark);
+    }
+    this.tracks.visible=false;
+    mechanics.scenes[0].add(this.tracks);
+  }
+  photograph(camera){
+    const m=this.mechanics;
+    const echo=this.animals.at(-1);
+    if(m.area!==0)return '';
+    const hit=m.aim(camera,16);
+    if(echo.state==='alive'&&hit?.collider.handle===echo.collider.handle){
+      this.bag.record('echo-cottontail-photo','Photo of the Echo cottontail',
+        'The field camera caught a pale cottontail before its outline dissolved.');
+      return 'Echo cottontail photographed. Evidence saved.';
+    }
+    const direction=camera.getWorldDirection(new T.Vector3());
+    if(!this.tracks.visible||!this.tracks.children.some(mark=>{
+      const offset=mark.position.clone().sub(camera.position);
+      return offset.length()<10&&offset.normalize().dot(direction)>.975;
+    }))return '';
+    this.bag.record('echo-cottontail-tracks','Tracks lit by a flare',
+      'Six prints stopped short of the creek. No return prints followed them.');
+    return 'Flare-lit tracks photographed. Evidence saved.';
   }
   hit(animal){
     if(animal.state!=='alive')return;
@@ -63,9 +95,15 @@ export class Wildlife {
     animal.collider.setEnabled(false);
     return 'Meat packed. Cook it at the camp skillet.';
   }
-  tick(dt){
+  tick(dt,noise){
     const m=this.mechanics;
     if(m.area!==0)return;
+    const echo=this.animals.at(-1);
+    this.tracks.visible=[...m.items.values()].some(item=>{
+      if(!item.signalFlare||item.area!==0)return false;
+      const p=item.body.translation();
+      return Math.hypot(p.x-echo.home.x,p.z-echo.home.z)<7&&Math.abs(p.y-echo.home.y)<5;
+    });
     const player=m.driving?vec(m.car.body.translation()):m.walker.current;
     for(const animal of this.animals){
       const {visual,home,body,collider}=animal;
@@ -81,7 +119,8 @@ export class Wildlife {
       if(animal.state!=='alive')continue;
       animal.phase+=dt;
       const position=visual.position;
-      const toPlayer=player.clone().sub(position);toPlayer.y=0;
+      const threat=noise&&noise.distanceToSquared(position)<35?noise:player;
+      const toPlayer=threat.clone().sub(position);toPlayer.y=0;
       const toHome=home.clone().sub(position);toHome.y=0;
       const fleeing=toPlayer.lengthSq()<23&&toHome.lengthSq()<72;
       const direction=fleeing?toPlayer.normalize().negate():

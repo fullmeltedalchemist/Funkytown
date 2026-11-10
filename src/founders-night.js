@@ -49,6 +49,7 @@ export class FoundersNight {
     this.truckBody.setEnabled(false);
     if(this.unlocked())this.installParade();
     const location=groundPoint(7.8,7.7);
+    pipeline.place(models.archiveLoadingBay,{position:location.toArray(),collider:'authored'});
     const depot=station(mechanics,0,location,'Inspect the archive loading cage',()=>{
       if(bag.records.has(tapeKey))return 'The archive tape has already been recovered.';
       if(!bag.records.has(leadKey))return 'The cage is tagged with an archive delivery number. Find the matching dispatch first.';

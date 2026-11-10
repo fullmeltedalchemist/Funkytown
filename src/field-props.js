@@ -6,6 +6,7 @@ import {groundPoint,station} from './field-stations.js';
 
 const props={
   water:{model:'waterJug',name:'Glass water jug',size:[.56,.72,.56],minY:-.34,impactLimit:4.2},
+  empty:{model:'waterJug',name:'Empty glass jug',size:[.56,.72,.56],minY:-.34,impactLimit:3.6},
   fuel:{model:'fuelCan',name:'Red fuel can',size:[.49,.36,.7],minY:-.34,impactLimit:Infinity}
 };
 
@@ -21,6 +22,7 @@ export class FieldProps {
     this.rack(supply.x-4.9,supply.z-1.2,'fuel');
     this.rack(supply.x-4.9,supply.z-2.7,'fuel');
     this.rack(cabinX+6.7,cabinZ-1.8,'fuel');
+    this.rack(-3.1,10.2,'empty');
 
     const ranger=mechanics.fixed.get(rescue.rangerSensor.handle);
     ranger.acceptName='Give the ranger the water jug';
@@ -90,13 +92,24 @@ export class FieldProps {
     const {type,position}=slot;
     const {model,name,size,impactLimit}=props[type];
     const m=this.mechanics;
-    const item=m.dynamic({...this.pipeline.loose(this.models[model],1),position,name,size,area:0,impactLimit,
-      breakEffect:(origin,velocity)=>type==='water'?this.shatter(origin,velocity):this.blast(origin)});
+    const asset=this.pipeline.loose(this.models[model],1);
+    if(type==='empty'){
+      asset.shape.setDensity(.34);
+      asset.visual.traverse(node=>{
+        if(node.isMesh&&node.material.name==='Creek water behind glass')node.visible=false;
+      });
+    }
+    const item=m.dynamic({...asset,position,name,size,area:0,impactLimit,
+      breakEffect:(origin,velocity)=>type==='fuel'?this.blast(origin):this.shatter(origin,velocity,type==='water')});
+    if(type!=='fuel'){
+      item.floatSurface=-1.38;
+      item.floatLift=type==='empty'?54:21;
+    }
     item.fieldProp=type;
     slot.item=item;
   }
 
-  shatter(origin,velocity){
+  shatter(origin,velocity,filled){
     const m=this.mechanics;
     this.playSound('glass');
     for(let i=0;i<9;i++){
@@ -109,7 +122,7 @@ export class FieldProps {
         name:'Bottle glass shard',area:0,visual:shard,life:7,shape:R.ColliderDesc.ball(.043)});
       piece.body.setLinvel(direction.multiplyScalar(3.2).addScaledVector(velocity,.23),true);
     }
-    for(let i=0;i<22&&m.drops.length<96;i++){
+    for(let i=0;filled&&i<22&&m.drops.length<96;i++){
       const a=i*2.399;
       const direction=new T.Vector3(Math.cos(a),.35+(i%4)*.19,Math.sin(a));
       const drop=m.dynamic({position:origin.clone().addScaledVector(direction,.13).toArray(),kind:'water',area:0,
