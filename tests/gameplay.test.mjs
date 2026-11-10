@@ -786,3 +786,64 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   assert.match(pickUpCase(),/Carrying Archive tape case/);
   assert.match(handOff(),/Two people answer/);
 });
+
+test('the ford rescue records each intervention and recovers from a missed wagon',async t=>{
+  const {FordRescue}=await import('../src/ford-rescue.js');
+  const {AssetPipeline}=await import('../src/assets.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker,STEP}=await import('../src/walker.js');
+  const {height,makeTerrain}=await import('../src/terrain.js');
+  await R.init();
+  for(const route of ['grapple','high','foot','missed']){
+    const world=new R.World({x:0,y:-9.81,z:0});
+    t.after(()=>world.free());
+    const scene=new T.Scene(),walker=new Walker(world,[0,1,0]);
+    const m=new Mechanics(world,walker,scene,new T.Scene());
+    makeTerrain(scene,world,{floor:null,normal:null});
+    m.makeCar([12,height(12,29)+.7,29]);
+    const pipeline=new AssetPipeline(scene,world);
+    const models={};
+    for(const [id,name] of Object.entries({receiver:'field-receiver',fordRescueBracket:'ford-rescue-bracket'})){
+      const bytes=await readFile(new URL('../assets/'+name+'.glb',import.meta.url));
+      models[id]=(await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'')).scene;
+    }
+    const records=new Map();
+    const bag={records,record:(id,name,description)=>records.set(id,{name,description})};
+    const story={area:0,state:3};
+    const encounter=new FordRescue(m,pipeline,models,story,{stage:0},bag,()=>{},()=>{});
+    const camera=new T.PerspectiveCamera();
+    const aim=(point,offset)=>{
+      camera.position.copy(point).add(offset);
+      camera.lookAt(point);camera.updateMatrixWorld(true);
+      world.step(m.events);m.after();
+    };
+    assert.equal(encounter.objective(),null);
+    story.state=4;
+    aim(encounter.radio,new T.Vector3(0,.45,1.65));
+    assert.match(m.use(camera),/Cut the rope/);
+    for(let i=0;i<18;i++){
+      world.step(m.events);m.after();encounter.tick(STEP);
+    }
+    assert.ok(encounter.cart.body.linvel().z<0);
+    if(route==='grapple'){
+      const hook=new T.Vector3().copy(encounter.cart.body.translation()).add(new T.Vector3(0,.64,1.65));
+      aim(hook,new T.Vector3(0,1.55,1.5));
+      assert.match(m.grapple(camera),/load intact/);
+    }
+    if(route==='high'){
+      aim(encounter.high,new T.Vector3(0,.45,1.5));
+      assert.match(m.use(camera),/load intact/);
+    }
+    if(route==='foot'){
+      const person=encounter.womanSite.clone().add(new T.Vector3(0,.99,0));
+      aim(person,new T.Vector3(0,.45,1.5));
+      assert.match(m.use(camera),/load breaks/);
+    }
+    if(route==='missed')encounter.tick(12);
+    assert.equal(encounter.state,'finished');
+    assert.equal(encounter.objective(),null);
+    assert.match(records.get('ford-rescue-call').description,route==='foot'||route==='missed'?/broken/:/intact/);
+    const restored=new FordRescue(m,pipeline,models,story,{stage:0},bag,()=>{},()=>{});
+    assert.equal(restored.objective(),null);
+  }
+});

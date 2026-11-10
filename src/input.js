@@ -7,19 +7,33 @@ export class Input {
   actions=new Set();
   touch=matchMedia('(pointer:coarse)').matches;
   dragMode=false;
+  toolsOpen=false;
   constructor(canvas,onUse,onBag,onGear,onPhoto,onWeapon,onLantern,onDrink,onStrap,onMic,onRig){
     this.canvas=canvas;
     const menu=document.querySelector('#menu'),pad=document.querySelector('#pad');
+    const kit=document.querySelector('#tool-panel'),tools=document.querySelector('#tools-button');
+    const bag=document.querySelector('#bag-panel');
     let drag=null,pointer=null;
     const clear=()=>{
       drag=null;pointer=null;
       this.held.clear();this.actions.clear();this.stick=[0,0];this.look=[0,0];this.jump=false;
       pad.firstElementChild.style.transform='';
     };
+    const showTools=open=>{
+      this.toolsOpen=open;
+      kit.hidden=!open;
+      tools.setAttribute('aria-expanded',String(open));
+      if(open){
+        if(!bag.hidden)onBag();
+        clear();
+      }
+    };
+    tools.onclick=()=>showTools(!this.toolsOpen);
+    document.querySelector('#tools-close').onclick=()=>showTools(false);
     this.toggle=(active)=>{
       this.active=active;menu.hidden=active;
       document.querySelector('#touch').hidden=!active||!this.touch;
-      if(!active)clear();
+      if(!active){showTools(false);clear();}
     };
     const start=document.querySelector('#start');
     start.onclick=async()=>{
@@ -36,6 +50,10 @@ export class Input {
     document.addEventListener('pointerlockerror',()=>{this.dragMode=true;this.toggle(true);});
     document.addEventListener('keydown',e=>{
       if(!this.active||document.querySelector('dialog[open]'))return;
+      if(this.toolsOpen){
+        if(e.code==='Escape')showTools(false);
+        return;
+      }
       if(e.code==='Escape'&&(this.touch||this.dragMode))return this.toggle(false);
       if(['KeyW','KeyA','KeyS','KeyD','Space','ShiftLeft','KeyE','KeyQ','KeyF','KeyG'].includes(e.code))e.preventDefault();
       this.held.add(e.code);
@@ -72,15 +90,15 @@ export class Input {
     });
     for(const action of ['fire','grapple','throw']){
       document.querySelector('#'+action).addEventListener('pointerdown',e=>{
-        e.preventDefault();this.actions.add(action);
+        e.preventDefault();if(!this.toolsOpen)this.actions.add(action);
       });
     }
     canvas.addEventListener('pointerdown',e=>{
-      if(!this.active||(!this.touch&&!this.dragMode)||drag)return;
+      if(!this.active||this.toolsOpen||(!this.touch&&!this.dragMode)||drag)return;
       canvas.setPointerCapture(e.pointerId);drag={id:e.pointerId,x:e.clientX,y:e.clientY};
     });
     canvas.addEventListener('pointermove',e=>{
-      if(!this.active||drag?.id!==e.pointerId)return;
+      if(!this.active||this.toolsOpen||drag?.id!==e.pointerId)return;
       this.look[0]+=e.clientX-drag.x;this.look[1]+=e.clientY-drag.y;
       drag.x=e.clientX;drag.y=e.clientY;
     });
@@ -94,7 +112,7 @@ export class Input {
       pad.firstElementChild.style.transform=`translate(${this.stick[0]*34}px,${-this.stick[1]*34}px)`;
     };
     pad.addEventListener('pointerdown',e=>{
-      if(pointer!==null)return;
+      if(this.toolsOpen||pointer!==null)return;
       pointer=e.pointerId;pad.setPointerCapture(pointer);move(e);
     });
     pad.addEventListener('pointermove',e=>{if(this.active&&e.pointerId===pointer)move(e);});
@@ -104,19 +122,23 @@ export class Input {
     });
     const jumpButton=document.querySelector('#jump');
     jumpButton.addEventListener('pointerdown',e=>{
-      e.preventDefault();jumpButton.setPointerCapture(e.pointerId);this.jump=true;this.held.add('Space');
+      e.preventDefault();if(this.toolsOpen)return;
+      jumpButton.setPointerCapture(e.pointerId);this.jump=true;this.held.add('Space');
     });
     jumpButton.addEventListener('lostpointercapture',()=>this.held.delete('Space'));
-    document.querySelector('#use').onclick=onUse;
-    document.querySelector('#bag-button').onclick=onBag;
-    document.querySelector('#gear-button').onclick=onGear;
-    document.querySelector('#photo-button').onclick=onPhoto;
-    document.querySelector('#weapon-button').onclick=onWeapon;
-    document.querySelector('#lantern-button').onclick=onLantern;
-    document.querySelector('#drink-button').onclick=onDrink;
-    document.querySelector('#strap-button').onclick=onStrap;
-    document.querySelector('#mic-button').onclick=onMic;
-    document.querySelector('#rig-button').onclick=onRig;
+    document.querySelector('#use').onclick=()=>{if(!this.toolsOpen)onUse();};
+    document.querySelector('#bag-button').onclick=()=>{showTools(false);onBag();};
+    const kitActions={
+      'gear-button':onGear,'photo-button':onPhoto,'weapon-button':onWeapon,
+      'lantern-button':onLantern,'drink-button':onDrink,'strap-button':onStrap,
+      'mic-button':onMic,'rig-button':onRig
+    };
+    for(const [id,action] of Object.entries(kitActions)){
+      document.getElementById(id).onclick=()=>{
+        showTools(false);
+        action();
+      };
+    }
     document.querySelector('#pause').onclick=()=>this.toggle(false);
   }
   movement(){

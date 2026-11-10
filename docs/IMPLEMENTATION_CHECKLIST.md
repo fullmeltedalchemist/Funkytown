@@ -6,7 +6,8 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 
 - [x] Prologue, woman on the bank, and first ranger conversation.
 - [x] Rescue reconstruction: compare both stations, use a wagon, creek, or grapple approach, then recover the cut line. Verified in production source.
-- [ ] Playtest all three approaches and their prompts from start to finish.
+- [ ] Playtest all three existing marker-reconstruction approaches and their prompts from start to finish.
+- [ ] Deploy and complete a rendered playthrough of the new ford emergency before the woman/ranger conversation. Automated gameplay tests drive the radio trigger, grapple, high-bank and on-foot interventions and the missed-wagon recovery.
 - [x] Spillway: grapple the boom into its catch, balance the gates, and recover from a flooded ford by correcting the gate settings. Verified in production source.
 - [ ] Playtest boom aiming, flooded ford, bank detour, and recovery end to end.
 - [x] Search the intake and recover Cal’s jacket and dispatch cassette.
@@ -116,3 +117,10 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 - [ ] Parade, backstage and float routes, truck collision behavior, and the full extraction aftermath.
 
 - [x] Interaction sensors no longer block walking. The Founders’ Night return test carries the case past the receipt stand on the direct approach.
+
+### Touch HUD and gadget controls
+
+- [x] Draft implementation groups utilities into a field kit. Primary actions use accessible icons, with Fire/Throw switching by carry state and the prompt placed at the reticle.
+- [x] Tool selection closes the panel, suppresses movement/look while open and preserves keyboard shortcuts. Field Bag is scrollable on touch.
+- [ ] Confirm the hosted touch check and review the layout on real iPhone and iPad in portrait and landscape.
+- [ ] Continue in-world prop, animation and interaction polish. This pass covers HUD and inputs.

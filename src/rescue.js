@@ -95,7 +95,9 @@ export class Rescue {
     this.register(this.bank,mother.root,'Speak to the woman',()=>{
       if(this.stage!==0)return 'She looks toward the spillway. “Ask him why they sent him east.”';
       this.save(1);
-      return 'She calls you Cal. Then she whispers, “Your mother knew which bank I was on.”';
+      const ford=bag.records.get('ford-rescue-call');
+      return ford?'At camp, she takes a breath. “I told you to cut it. That other voice knew what you were about to do. Ask the ranger who sent him east.”':
+        'She calls you Cal. Then she whispers, “Your mother knew which bank I was on.”';
     });
     this.register(this.route[0],ranger.root,'Speak to the ranger',()=>{
       if(this.stage>=4&&bag?.records.has('cals-letter')&&bag.records.has('dispatch-tape')){
