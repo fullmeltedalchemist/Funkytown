@@ -1,5 +1,6 @@
 {
   "models": {
+    "villager": "./assets/villager-fieldworker.glb",
     "cabin": "./assets/ranger-cabin.glb",
     "oak": "./assets/tree1.glb",
     "birch": "./assets/tree2.glb",

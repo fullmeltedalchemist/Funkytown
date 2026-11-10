@@ -26,13 +26,24 @@ export class AssetPipeline {
     this.cache.set(key,{url,model});
     try{return await model;}catch(error){this.cache.delete(key);throw error;}
   }
-  prepare(source,{scale=1,yaw=0,position=[0,0,0]}={}){
+  prepare(source,{scale=1,yaw=0,position=[0,0,0],groundY}={}){
     const root=new T.Group();
     root.add(clone(source));
     root.scale.setScalar(scale);
     root.rotation.y=yaw;
     root.position.set(...position);
     root.updateMatrixWorld(true);
+    if(Number.isFinite(groundY)){
+      const bounds=new T.Box3();
+      root.traverse(node=>{
+        if(node.isMesh&&!collisionNode(node)){
+          node.geometry.computeBoundingBox();
+          bounds.union(node.geometry.boundingBox.clone().applyMatrix4(node.matrixWorld));
+        }
+      });
+      if(!bounds.isEmpty())root.position.y+=groundY-bounds.min.y;
+      root.updateMatrixWorld(true);
+    }
     return root;
   }
   place(source,options){

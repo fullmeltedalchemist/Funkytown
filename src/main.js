@@ -22,7 +22,7 @@ import {Chapters} from './chapters.js';
 import {insideRescueCorridor} from './rigging.js';
 import {Gear} from './gear.js';
 import {Finale,MailRoute} from './finale.js';
-import {Rescue} from './rescue.js';
+import {configureVillagerModel,Rescue} from './rescue.js';
 import {Bag} from './bag.js';
 import {fieldPistol} from './effects.js';
 import * as T from 'three';
@@ -124,6 +124,7 @@ async function boot(){
   const [terrainTextures,entries]=await Promise.all([textures(),Promise.all(Object.entries(manifest.models)
     .map(async ([key,url])=>[key,await pipeline.load(key,url)]))]);
   const models=Object.fromEntries(entries);
+  configureVillagerModel(models.villager);
   const water=makeTerrain(scene,world,terrainTextures);
   const anchors={rangerCabin:[cabinX,cabinY,cabinZ]};
   for(const placement of manifest.placements){
@@ -335,7 +336,7 @@ async function boot(){
       if(bounds.isEmpty()||!Number.isFinite(longest)||longest<.00001)throw Error('No usable mesh geometry.');
       const scale=1.7/longest,center=bounds.getCenter(new T.Vector3());
       const z=31-imports*3,x=trailX(z)+3.8;
-      const position=[x-center.x*scale,height(x,z)-bounds.min.y*scale+.12,z-center.z*scale];
+      const position=[x-center.x*scale,height(x,z)-bounds.min.y*scale+.015,z-center.z*scale];
       mechanics.dynamic({...pipeline.loose(model,scale),position,name:file.name.replace(/\.glb$/i,''),area:0});
       imports++;
       world.step();

@@ -136,6 +136,6 @@ export class Workshop {
 
   view(camera){
     camera.position.copy(this.robot.position).add(new T.Vector3(0,.161,-.174));
-    camera.rotation.set(.09,0,0);
+    camera.rotation.set(-.09,0,0);
   }
 }

@@ -312,6 +312,7 @@ export class Mechanics {
     this.car=this.dynamic({position,kind:'car',name:'Camp wagon',visual,
       shape:R.ColliderDesc.cuboid(.84,.49,1.48).setDensity(7).setFriction(.18).setFrictionCombineRule(R.CoefficientCombineRule.Min)});
     this.car.body.setEnabledRotations(false,true,false,true);
+    this.car.body.setLinearDamping(.18);
     this.carHome=position;
   }
   drive(movement){
@@ -322,7 +323,7 @@ export class Mechanics {
     const current=vec(body.linvel()),along=current.dot(front),side=current.dot(right);
     const target=movement.z*(movement.z<0?6:15);
     const accel=T.MathUtils.clamp((target-along)*(movement.z<0?4.8:3),-18,13);
-    const grip=movement.drift?1.1:8.5;
+    const grip=movement.drift?1.55:15;
     const impulse=front.multiplyScalar(accel).addScaledVector(right,-side*grip).multiplyScalar(STEP*body.mass());
     body.applyImpulse(impulse,true);
     body.setAngvel({x:0,y:-movement.x*Math.min(1,Math.abs(along)*.45)*(along<0?-1:1)*(movement.drift?2.1:1.55),z:0},true);
@@ -347,6 +348,18 @@ export class Mechanics {
       return 'Exited wagon.';
     }
     return 'The doors are blocked.';
+  }
+  holdParkedCar(){
+    if(this.driving||!this.car)return;
+    const body=this.car.body;
+    const speed=body.linvel();
+    const position=body.translation();
+    const ground=this.ray({x:position.x,y:position.y,z:position.z},
+      {x:0,y:-1,z:0},.76,this.car);
+    if(!ground||Math.abs(speed.y)>.7||Math.hypot(speed.x,speed.z)>1.4)return;
+    body.setLinvel({x:0,y:speed.y,z:0},true);
+    body.setAngvel({x:0,y:0,z:0},true);
+    body.sleep();
   }
   before(camera,movement,input){
     this.cooldown=Math.max(0,this.cooldown-STEP);
@@ -410,6 +423,7 @@ export class Mechanics {
       }else if(item.life<=0||p.y<-18)this.remove(item);
       else if(item.visual){item.visual.position.copy(p);item.visual.quaternion.copy(item.body.rotation());}
     }
+    this.holdParkedCar();
     this.shiftCargo();
     this.drops=this.drops.filter(drop=>this.items.has(drop.collider.handle));
     const spray=this.drops.filter(drop=>drop.life<1.72&&drop.life>.3&&vec(drop.body.linvel()).lengthSq()>1.25);

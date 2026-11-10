@@ -1483,3 +1483,62 @@ test('a locked harness permits the raised latch and earned cutters open the gate
     assert.equal(new ServiceGate(m,bag).gate.collider.isEnabled(),false);
   }
 });
+
+test('road crossfall is graded and a parked wagon holds on a slope',async t=>{
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker}=await import('../src/walker.js');
+  const {height,trailX}=await import('../src/terrain.js');
+  for(const z of [-34,-18,16,32]){
+    const x=trailX(z),a=height(x-.9,z),b=height(x+.9,z);
+    assert.ok(Math.abs(a-b)<.23,'road crossfall at '+z);
+  }
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  t.after(()=>world.free());
+  const scene=new T.Scene(),walker=new Walker(world,[4,3,0]);
+  const m=new Mechanics(world,walker,scene,new T.Scene());
+  const ground=R.ColliderDesc.cuboid(12,.15,12).setRotation(new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),.16)).setFriction(.85);
+  world.createCollider(ground);
+  m.makeCar([0,1,0]);
+  const camera=new T.PerspectiveCamera();
+  for(let i=0;i<120;i++){
+    m.before(camera,{},{actions:new Set()});world.step(m.events);m.after();
+  }
+  const stopped=new T.Vector3().copy(m.car.body.translation());
+  for(let i=0;i<600;i++){
+    m.before(camera,{},{actions:new Set()});world.step(m.events);m.after();
+  }
+  assert.ok(stopped.distanceTo(m.car.body.translation())<.025);
+});
+
+test('the villager asset preserves animation pivots and imports an embedded fabric texture',async t=>{
+  const {AssetPipeline}=await import('../src/assets.js');
+  const {configureVillagerModel,person}=await import('../src/rescue.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  t.after(()=>world.free());
+  const pipeline=new AssetPipeline(new T.Scene(),world);
+  const bytes=await readFile(new URL('../assets/villager-fieldworker.glb',import.meta.url));
+  // The loader's image decode needs the browser. Inspect the GLB texture table here.
+  const size=bytes.readUInt32LE(12);
+  const json=JSON.parse(bytes.subarray(20,20+size).toString());
+  assert.ok(json.images.every(image=>Number.isInteger(image.bufferView)));
+  assert.ok(json.materials.some(mat=>mat.pbrMetallicRoughness?.baseColorTexture));
+  const copy=JSON.parse(JSON.stringify(json));
+  for(const material of copy.materials)delete material.pbrMetallicRoughness.baseColorTexture;
+  const text=Buffer.from(JSON.stringify(copy));
+  const padded=Buffer.concat([text,Buffer.alloc((4-text.length%4)%4,32)]);
+  const binary=bytes.subarray(20+size);
+  const glb=Buffer.alloc(20+padded.length+binary.length);
+  glb.writeUInt32LE(0x46546c67,0);glb.writeUInt32LE(2,4);glb.writeUInt32LE(glb.length,8);
+  glb.writeUInt32LE(padded.length,12);glb.writeUInt32LE(0x4e4f534a,16);
+  padded.copy(glb,20);binary.copy(glb,20+padded.length);
+  const model=(await pipeline.loader.parseAsync(glb.buffer.slice(glb.byteOffset,glb.byteOffset+glb.byteLength),'')).scene;
+  configureVillagerModel(model);
+  const npc=person(0x476253),other=person(0x884433);
+  assert.equal(npc.arms.length,2);assert.equal(npc.legs.length,2);
+  npc.arms[0].rotation.x=.7;
+  assert.ok(Math.abs(other.arms[0].rotation.x)<.00001);
+  const grounded=pipeline.prepare(model,{position:[0,8,0],groundY:2});
+  assert.ok(Math.abs(new T.Box3().setFromObject(grounded).min.y-2)<.001);
+});

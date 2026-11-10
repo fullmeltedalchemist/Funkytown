@@ -53,7 +53,8 @@ export class PortableCamp {
     const site=m.walker.current.clone().addScaledVector(direction,1.65);
     const ground=height(site.x,site.z);
     if(ground<-1.64||Math.abs(height(site.x+.52,site.z)-ground)>.25||
-      Math.abs(height(site.x-.52,site.z)-ground)>.25)return 'Find a level spot above the water to set up camp.';
+      Math.abs(height(site.x-.52,site.z)-ground)>.25||
+      Math.abs(height(site.x,site.z+.4)-ground)>.25||Math.abs(height(site.x,site.z-.4)-ground)>.25)return 'Find a level spot above the water to set up camp.';
     this.kit.position.set(site.x,ground+.035,site.z);
     this.kit.visible=true;
     for(const {x,collider} of this.targets){
