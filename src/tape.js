@@ -1,3 +1,5 @@
+import {watchAudioFocus} from './audio-focus.js';
+
 const tracks=[
   {label:'Echo recording',cues:[[1.2,'Siren'],[3.4,'Winch'],[6.4,'Voice']]},
   {label:'Dispatch tape',cues:[[3.2,'Siren'],[5.4,'Winch'],[8.4,'Voice']]}
@@ -10,10 +12,16 @@ export function openTape(onAligned){
   const readout=panel.querySelector('output');
   const cueList=panel.querySelector('ul');
   const status=panel.querySelector('[role=status]');
-  let audio=null;
+  let audio=null,foreground=true;
   function stop(){
     if(audio){audio.close().catch(()=>{});audio=null;}
   }
+  const unwatch=watchAudioFocus(visible=>{
+    foreground=visible;
+    if(visible||!audio)return;
+    stop();
+    status.textContent='Playback stopped. Tap Play to start both tracks again.';
+  });
   function render(){
     const offset=Number(slider.value);
     readout.value=(offset>=0?'+':'')+offset.toFixed(1)+' seconds';
@@ -25,6 +33,7 @@ export function openTape(onAligned){
     }
   }
   function play(){
+    if(!foreground)return;
     stop();
     const Audio=window.AudioContext||window.webkitAudioContext;
     if(!Audio){status.textContent='Audio is unavailable. Use the cue timestamps to align the tapes.';return;}
@@ -53,7 +62,7 @@ export function openTape(onAligned){
     panel.close();onAligned();
   };
   panel.querySelector('[data-close]').onclick=()=>panel.close();
-  panel.onclose=stop;
+  panel.onclose=()=>{stop();unwatch();};
   render();
   if(document.pointerLockElement)document.exitPointerLock();
   panel.showModal();

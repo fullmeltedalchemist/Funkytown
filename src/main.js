@@ -1,3 +1,4 @@
+import {watchAudioFocus} from './audio-focus.js';
 import {installFairground,nearFairground} from './fairground.js';
 import {installFieldRange} from './field-range.js';
 import {LoopRoad} from './loop-road.js';
@@ -156,13 +157,27 @@ async function boot(){
   const notice=(message)=>{
     if(message){$('notice').textContent=message;noticeUntil=performance.now()+6400;}
   };
-  let audio=null,ambient=null;
+  let audio=null,ambient=null,master=null,engine=null,foreground=true;
+  let audioWanted=false,footstepTime=0;
+  const effects=new Set();
+  const syncAudio=()=>{
+    if(!audio)return;
+    const enabled=foreground&&audioWanted;
+    master.gain.setValueAtTime(Number(enabled),audio.currentTime);
+    if(enabled){audio.resume().catch(()=>{});return;}
+    for(const tone of effects){try{tone.stop();}catch{}}
+    audio.suspend().catch(()=>{});
+  };
+  watchAudioFocus(visible=>{foreground=visible;syncAudio();});
   const unlockAudio=()=>{
     const Audio=window.AudioContext||window.webkitAudioContext;
-    if(!Audio)return;
+    if(!Audio||!foreground)return;
     try{
       if(!audio){
         audio=new Audio();
+        master=audio.createGain();
+        master.gain.value=0;
+        master.connect(audio.destination);
         const duration=audio.sampleRate*3,buffer=audio.createBuffer(1,duration,audio.sampleRate);
         const samples=buffer.getChannelData(0);
         let wind=0;
@@ -173,14 +188,26 @@ async function boot(){
         const source=audio.createBufferSource();
         source.buffer=buffer;source.loop=true;
         ambient=audio.createGain();ambient.gain.value=0;
-        source.connect(ambient).connect(audio.destination);source.start();
+        source.connect(ambient).connect(master);source.start();
+        const motor=audio.createOscillator(),gain=audio.createGain();
+        motor.type='triangle';
+        gain.gain.value=0;
+        motor.connect(gain).connect(master);
+        motor.start();
+        engine={motor,gain};
       }
-      audio.resume().catch(()=>{});
-    }catch(error){console.warn('Ambient audio unavailable',error);}
+      audioWanted=true;
+      syncAudio();
+    }catch(error){
+      audio?.close().catch(()=>{});
+      audio=ambient=master=engine=null;
+      audioWanted=false;
+      console.warn('Game audio unavailable',error);
+    }
   };
   for(const id of ['start','touch-mode'])$(id).addEventListener('click',unlockAudio);
   const playToolSound=(from,to,duration,volume,position)=>{
-    if(audio?.state!=='running')return;
+    if(!foreground||!audioWanted||audio?.state!=='running')return;
     const time=audio.currentTime;
     const tone=audio.createOscillator(),gain=audio.createGain();
     tone.type='triangle';
@@ -197,8 +224,9 @@ async function boot(){
       pan.pan.value=T.MathUtils.clamp(offset.normalize().dot(right),-1,1);
       gain.gain.setValueAtTime(volume*Math.max(.26,1-distance*.022),time);
       gain.connect(pan).connect(audio.destination);
-    }else gain.connect(audio.destination);
-    tone.onended=()=>{tone.disconnect();gain.disconnect();pan?.disconnect();};
+    }else gain.connect(master);
+    effects.add(tone);
+    tone.onended=()=>{effects.delete(tone);tone.disconnect();gain.disconnect();pan?.disconnect();};
     tone.start(time);tone.stop(time+duration);
   };
   installFieldRange(mechanics,bag,notice,playToolSound);
@@ -233,13 +261,13 @@ async function boot(){
   bag.record('tow-line','Two-hook tow line','V or Rig · rig two anchors on foot. If attached to the wagon, use Rig from the driver seat to reel in.','Gear');
   let cableAudio;
   function soundCable(speed){
-    if(audio?.state!=='running')return;
+    if(!foreground||!audioWanted||audio?.state!=='running')return;
     const now=audio.currentTime;
     if(!cableAudio&&speed){
       const tone=audio.createOscillator(),gain=audio.createGain();
       tone.type='triangle';
       gain.gain.value=0;
-      tone.connect(gain).connect(audio.destination);
+      tone.connect(gain).connect(master);
       tone.start();
       cableAudio={tone,gain};
     }
@@ -309,7 +337,13 @@ async function boot(){
   renderer.shadowMap.needsUpdate=true;
   renderer.setAnimationLoop(now=>{
     const dt=Math.min(.1,(now-last)/1000);last=now;
-    if(ambient)ambient.gain.setTargetAtTime(input.active?(story.area?.09:.28):0,audio.currentTime,.18);
+    if(ambient&&foreground){
+      ambient.gain.setTargetAtTime(input.active?(story.area?.14:.34):0,audio.currentTime,.18);
+      const driving=input.active&&mechanics.driving;
+      const speed=driving?vec(mechanics.car.body.linvel()).length():0;
+      engine.motor.frequency.setTargetAtTime(31+speed*3.7,audio.currentTime,.12);
+      engine.gain.gain.setTargetAtTime(driving?.027+Math.min(.058,speed*.004):0,audio.currentTime,.13);
+    }
     if(input.active&&!input.toolsOpen&&!document.querySelector('dialog[open]')){
       const sensitivity=input.touch?.0048:.00235;
       if(!mechanics.driving){
@@ -356,6 +390,15 @@ async function boot(){
           if(input.touch&&campLife.energy>0&&Math.hypot(...input.stick)>.96)move.sprint=true;
           if(mechanics.carried?.size){move.x*=.75;move.z*=.75;move.sprint=false;}
           walker.step({...move,pull:mechanics.anchor,sprintBoost:campLife.energy>0,jumpBoost:campLife.hydrated>0},yaw,mechanics.events);
+          const pace=Math.hypot(walker.velocity.x,walker.velocity.z);
+          if(walker.control.computedGrounded()&&pace>1.1&&Math.hypot(move.x,move.z)>.12){
+            footstepTime-=STEP;
+            if(footstepTime<=0){
+              const wet=story.area===0&&inCreek(walker.current.x,walker.current.z)&&walker.current.y<-.62;
+              playToolSound(wet?275:113,wet?95:49,wet?.16:.095,wet?.14:.09);
+              footstepTime=Math.max(.26,.59-pace*.043);
+            }
+          }else footstepTime=Math.min(.11,footstepTime);
         }
         mechanics.after();
         story.missions.tick(STEP);

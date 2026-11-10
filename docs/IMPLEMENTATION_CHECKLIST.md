@@ -142,3 +142,7 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 - [x] The hosted touch check passed the Field Kit, lantern, weapon selection and canteen controls.
 - [ ] Review the layout on real iPhone and iPad in portrait and landscape.
 - [ ] Continue in-world prop, animation and interaction polish. This pass covers HUD and inputs.
+
+### Game audio lifecycle
+
+- [ ] Verify footsteps, water steps, wagon motor and tape playback on desktop and touch. Check that phone lock, app switching and leaving the page silence all game audio. Automated checks cover visibility, page lifecycle and focus events.

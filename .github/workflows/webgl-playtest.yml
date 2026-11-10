@@ -71,6 +71,10 @@ jobs:
                 }
                 if(name==='touch'){
                   await page.addInitScript(()=>{
+                    const NativeAudioContext=window.AudioContext;
+                    window.AudioContext=class extends NativeAudioContext {
+                      constructor(){super();window.__gameAudio=this;}
+                    };
                     localStorage.setItem('bellwether-bag-v1-records',JSON.stringify([
                       ['pond-records',{name:'Missing-person ledger',description:'Seeded salvage reward',category:'Keepsakes'}]
                     ]));
@@ -121,6 +125,21 @@ jobs:
                 if(name==='touch'){
                   await page.locator('#touch-mode').tap();
                   await page.locator('#touch').waitFor({state:'visible'});
+                  await page.waitForFunction(()=>window.__gameAudio?.state==='running');
+                  await page.evaluate(()=>{
+                    Object.defineProperty(document,'hidden',{configurable:true,value:true});
+                    document.dispatchEvent(new Event('visibilitychange'));
+                  });
+                  await page.waitForFunction(()=>window.__gameAudio.state==='suspended');
+                  await page.evaluate(()=>{
+                    delete document.hidden;
+                    document.dispatchEvent(new Event('visibilitychange'));
+                  });
+                  await page.waitForFunction(()=>window.__gameAudio.state==='running');
+                  await page.evaluate(()=>window.dispatchEvent(new Event('pagehide')));
+                  await page.waitForFunction(()=>window.__gameAudio.state==='suspended');
+                  await page.evaluate(()=>window.dispatchEvent(new Event('pageshow')));
+                  await page.waitForFunction(()=>window.__gameAudio.state==='running');
                   const kit=page.locator('#tool-panel');
                   await kit.waitFor({state:'hidden'});
                   const tapTool=async selector=>{

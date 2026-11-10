@@ -1309,3 +1309,28 @@ test('the fairground ramp carries a driven wagon and the loose barrels respond t
   for(let i=0;i<Math.round(.6/STEP);i++)frame({});
   assert.ok(before.distanceTo(barrel.body.translation())>.18);
 });
+
+test('game audio focus handles lock, navigation, freeze and overlapping background events',async()=>{
+  const {watchAudioFocus}=await import('../src/audio-focus.js');
+  const page=Object.assign(new EventTarget(),{hidden:false}),host=new EventTarget();
+  const states=[];
+  const unwatch=watchAudioFocus(state=>states.push(state),page,host);
+  const emit=(target,name)=>target.dispatchEvent(new Event(name));
+  page.hidden=true;
+  emit(page,'visibilitychange');
+  emit(host,'blur');
+  emit(host,'pagehide');
+  emit(host,'focus');
+  page.hidden=false;
+  emit(page,'visibilitychange');
+  assert.deepEqual(states,[true,false],'a hidden page must stay muted until it is restored');
+  emit(host,'pageshow');
+  emit(page,'freeze');
+  emit(page,'resume');
+  emit(host,'blur');
+  emit(host,'focus');
+  assert.deepEqual(states,[true,false,true,false,true,false,true]);
+  unwatch();
+  emit(host,'pagehide');
+  assert.equal(states.at(-1),true);
+});
