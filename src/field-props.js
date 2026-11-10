@@ -42,18 +42,27 @@ export class FieldProps {
       this.playSound('pump',pump.point);
       return 'The stand shakes as the motor starts. Wait for the noise to die down.';
     },{color:0x56685e});
-    this.echoPoint=station(mechanics,0,groundPoint(-3.7,6.9),'Inspect the silent relay by the ford',()=>{
+    const relay=station(mechanics,0,groundPoint(-3.7,6.9),'Inspect the silent relay by the ford',()=>{
       if(bag.records.has('creek-pump-echo'))return 'No vibration. No moving parts. Only the copied sound.';
       if(!this.heardEcho)return 'The relay is cold. Its cable has been cut.';
       bag.record('creek-pump-echo','The second start',
         'The pump shook its stand on startup. The cut relay across the bank repeated the sound without moving. The Echo copies sounds without their physical effects.');
       this.heardEcho=false;
       return 'The relay’s cable is cut and its casing is still. Something copied the sound of the pump without starting it.';
-    },{color:0x4f6869}).point;
+    },{color:0x4f6869});
+    this.echoPoint=relay.point;
+    mechanics.fixed.get(relay.collider.handle).contact=()=>({
+      strength:0,
+      message:this.heardEcho?'The microphone reads zero vibration. The sound came through the air.':
+        'The microphone reads zero vibration. The relay casing is still.'
+    });
     const pumpModel=pipeline.prepare(models.transferPump,{position:[0,.944,0]});
     pumpModel.traverse(node=>{if(node.isMesh)node.castShadow=node.receiveShadow=true;});
     pump.body.add(pumpModel);
     const refill=mechanics.fixed.get(pump.collider.handle);
+    refill.contact=()=>this.echoDelay>0?{
+      strength:.82,message:'Strong contact signal. You can feel the motor shake its mount.'
+    }:{strength:0,message:'The pump is stationary. Try sampling it right after startup.'};
     refill.acceptName='Fuel the creek pump';
     refill.accept=item=>{
       if(item.fieldProp!=='fuel')return 'This connection takes a red fuel can.';
