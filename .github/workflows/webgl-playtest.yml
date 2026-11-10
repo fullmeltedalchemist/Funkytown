@@ -119,11 +119,21 @@ jobs:
                 if(name==='touch'){
                   await page.locator('#touch-mode').tap();
                   await page.locator('#touch').waitFor({state:'visible'});
-                  await page.locator('#lantern-button').tap();
+                  const kit=page.locator('#tool-panel');
+                  await kit.waitFor({state:'hidden'});
+                  const tapTool=async selector=>{
+                    await page.getByRole('button',{name:'Tools',exact:true}).tap();
+                    await kit.waitFor({state:'visible'});
+                    await page.locator(selector).tap();
+                    await kit.waitFor({state:'hidden'});
+                  };
+                  await tapTool('#lantern-button');
                   await page.getByText('Signal lantern deployed.',{exact:false}).waitFor();
-                  await page.locator('#lantern-button').tap();
+                  await tapTool('#lantern-button');
                   await page.getByText('Signal lantern recalled.',{exact:false}).waitFor();
-                  await page.locator('#drink-button').tap();
+                  await tapTool('#weapon-button');
+                  await page.getByText('Flare equipped.',{exact:true}).waitFor();
+                  await tapTool('#drink-button');
                   await page.getByText('Canteen empty.',{exact:false}).waitFor();
                   await page.locator('#bag-button').tap();
                 }else{

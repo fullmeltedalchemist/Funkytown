@@ -27,7 +27,7 @@ export class FordRescue {
     if(Number.isFinite(radioBase))radioModel.position.y+=.945-radioBase;
     radio.body.add(radioModel);
     this.radio=radio.point;
-    this.anchorPost=groundPoint(x+3.25,6.65);
+    this.anchorPost=groundPoint(x+4.65,6.65);
     this.high=station(mechanics,0,this.anchorPost,'Pull the high-bank tow line',
       ()=>this.resolve('high'),{color:0x9a723e}).point;
 

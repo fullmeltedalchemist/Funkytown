@@ -117,3 +117,10 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 - [ ] Parade, backstage and float routes, truck collision behavior, and the full extraction aftermath.
 
 - [x] Interaction sensors no longer block walking. The Founders’ Night return test carries the case past the receipt stand on the direct approach.
+
+### Touch HUD and gadget controls
+
+- [x] Draft implementation groups utilities into a field kit. Primary actions use accessible icons, with Fire/Throw switching by carry state and the prompt placed at the reticle.
+- [x] Tool selection closes the panel, suppresses movement/look while open and preserves keyboard shortcuts. Field Bag is scrollable on touch.
+- [ ] Confirm the hosted touch check and review the layout on real iPhone and iPad in portrait and landscape.
+- [ ] Continue in-world prop, animation and interaction polish. This pass covers HUD and inputs.

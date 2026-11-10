@@ -251,7 +251,9 @@ async function boot(){
     weapon=(weapon+1)%weapons.length;
     if(weapon===1&&!bag.records.has('scattergun'))weapon=2;
     const name=['Pistol','Scattergun','Flare'][weapon];
-    $('weapon-button').textContent=name;
+    const button=$('weapon-button');
+    button.querySelector('span').textContent=name;
+    button.setAttribute('aria-label','Switch weapon. Equipped: '+name);
     notice(name+' equipped.');
   },()=>{if(!rescue.zipline.active)gear.deployLantern(mechanics,camera);},
     ()=>{if(!rescue.zipline.active)notice(campLife.drink());},
@@ -294,7 +296,7 @@ async function boot(){
   renderer.setAnimationLoop(now=>{
     const dt=Math.min(.1,(now-last)/1000);last=now;
     if(ambient)ambient.gain.setTargetAtTime(input.active?(story.area?.09:.28):0,audio.currentTime,.18);
-    if(input.active&&!document.querySelector('dialog[open]')){
+    if(input.active&&!input.toolsOpen&&!document.querySelector('dialog[open]')){
       const sensitivity=input.touch?.0048:.00235;
       if(!mechanics.driving){
         yaw-=input.look[0]*sensitivity;
@@ -411,14 +413,32 @@ async function boot(){
     }
     $('hud').querySelector('strong').textContent=story.area?'THE ECHO GRID':'FOXGLOVE RIDGE';
     if(now>noticeUntil)$('notice').textContent='';
-    const target=input.active&&!mechanics.driving?mechanics.target(camera):null;
+    const target=input.active&&!input.toolsOpen&&!mechanics.driving?mechanics.target(camera):null;
     const use=input.touch?'Use':'E';
-    $('hint').textContent=rescue.zipline.active?rescue.zipline.readout(input.touch):mechanics.driving?use+' · Exit wagon':mechanics.carried?(target?.acceptName?use+' · '+target.acceptName:target===mechanics.car&&mechanics.carried.size?use+' · Secure cargo to wagon':
-        use+' · Set down / '+(input.touch?'Throw':'Q')+' · Throw'):
-      target===mechanics.car&&mechanics.canUnloadCargo()?use+' · Unload cargo':target?.name?use+' · '+target.name:'';
+    const hint=input.active&&!input.toolsOpen?(rescue.zipline.active?rescue.zipline.readout(input.touch):
+      mechanics.driving?use+' · Exit wagon':mechanics.carried?(target?.acceptName?use+' · '+target.acceptName:
+        target===mechanics.car&&mechanics.carried.size?use+' · Load the wagon':use+' · Set down'):
+      target===mechanics.car&&mechanics.canUnloadCargo()?use+' · Unload cargo':target?.name?use+' · '+target.name:''):'';
+    const hintNode=$('hint');
+    if(hintNode.textContent!==hint)hintNode.textContent=hint;
+    hintNode.hidden=!hint;
+    $('use').classList.toggle('has-target',Boolean(hint));
     $('strap-button').hidden=!mechanics.cargo||mechanics.driving;
-    $('strap-button').textContent=mechanics.cargoSecured?'Unstrap':'Strap';
-    $('reticle').hidden=mechanics.driving;
+    const strapLabel=mechanics.cargoSecured?'Unstrap cargo':'Strap cargo';
+    const strap=$('strap-button');
+    if(strap.getAttribute('aria-label')!==strapLabel){
+      strap.setAttribute('aria-label',strapLabel);
+      strap.querySelector('span').textContent=strapLabel;
+    }
+    const handsBusy=Boolean(mechanics.carried);
+    const inRide=Boolean(rescue.zipline.active);
+    $('fire').hidden=mechanics.driving||handsBusy||inRide;
+    $('throw').hidden=mechanics.driving||!handsBusy||inRide;
+    $('grapple').hidden=mechanics.driving||inRide;
+    $('jump').setAttribute('aria-label',mechanics.driving?'Drift':inRide?'Switch zip-line anchor':'Jump');
+    const reticle=$('reticle');
+    reticle.hidden=mechanics.driving||!input.active||input.toolsOpen;
+    reticle.classList.toggle('on-target',Boolean(target?.name));
     renderer.render(activeScene,camera);
     gear.capture(renderer.domElement,story.area,player);
   });
