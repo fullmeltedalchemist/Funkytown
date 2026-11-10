@@ -519,3 +519,62 @@ for side in (-1,1):
     band.rotation_euler.z=side*.63
 box("Leather pouch",(0,-.093,.125),(.057,.033,.024),pouch,.01)
 export("field-slingshot.glb")
+
+reset()
+import random
+rng = random.Random(48)
+cloth = material("Villager coat", (.47,.49,.43), roughness=.95)
+texture = bpy.data.images.new("Woven coat fabric", width=64, height=64)
+pixels = []
+for y in range(64):
+    for x in range(64):
+        weave = (.78 if (x+y)%3==0 else .94) + rng.random()*.07
+        pixels.extend((weave,weave,weave,1))
+texture.pixels = pixels
+texture.pack()
+node = cloth.node_tree.nodes.new("ShaderNodeTexImage")
+node.image = texture
+cloth.node_tree.links.new(node.outputs["Color"],cloth.node_tree.nodes["Principled BSDF"].inputs["Base Color"])
+skin = material("Villager warm skin", (.56,.31,.19), roughness=.8)
+trouser = material("Villager twill trousers", (.12,.16,.18), roughness=.93)
+boot = material("Villager worn leather", (.13,.075,.044), roughness=.86)
+hair = material("Villager dark hair", (.075,.043,.027), roughness=.9)
+button = material("Villager brass buttons", (.42,.29,.12), .53,.5)
+
+def oval(name,center,scale,mat):
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=20,ring_count=12,location=center)
+    obj=bpy.context.object
+    obj.scale=scale
+    bpy.ops.object.transform_apply(location=False,rotation=False,scale=True)
+    return finish(obj,name,mat)
+
+box("Coat torso",(0,0,1.16),(.44,.24,.49),cloth,.085)
+box("Coat hem",(0,0,.91),(.43,.25,.16),cloth,.034)
+box("Shirt collar",(0,-.006,1.433),(.18,.12,.067),trouser,.015)
+oval("Neck",(0,0,1.46),(.066,.068,.095),skin)
+oval("Head",(0,-.005,1.63),(.115,.104,.159),skin)
+oval("Hair cap",(0,.019,1.724),(.118,.102,.08),hair)
+oval("Nose",(0,-.109,1.622),(.032,.044,.04),skin)
+for x in (-.044,.044):
+    oval("Eye",(x,-.104,1.662),(.014,.009,.012),hair)
+for z in (1.03,1.16,1.29):
+    oval("Coat button",(0,-.129,z),(.013,.009,.013),button)
+for x in (-.135,.135):
+    box("Patch pocket",(x,-.133,1.02),(.105,.019,.103),cloth,.014)
+for side,label in ((-1,"L"),(1,"R")):
+    pivot=bpy.data.objects.new("Arm_"+label,None)
+    pivot.location=(side*.242,0,1.34)
+    bpy.context.collection.objects.link(pivot)
+    arm=box("Sleeve_"+label,(0,0,-.19),(.128,.145,.37),cloth,.052)
+    arm.parent=pivot
+    hand=oval("Hand_"+label,(0,0,-.414),(.053,.048,.078),skin)
+    hand.parent=pivot
+    legPivot=bpy.data.objects.new("Leg_"+label,None)
+    legPivot.location=(side*.103,0,.84)
+    bpy.context.collection.objects.link(legPivot)
+    leg=box("Trouser_"+label,(0,0,-.34),(.158,.18,.66),trouser,.047)
+    leg.parent=legPivot
+    shoe=oval("Boot_"+label,(0,-.04,-.745),(.092,.154,.085),boot)
+    shoe.parent=legPivot
+# Blender local Z down maps to glTF local Y down.
+bpy.ops.export_scene.gltf(filepath=str(OUT / "villager-fieldworker.glb"),export_format="GLB",export_yup=True)

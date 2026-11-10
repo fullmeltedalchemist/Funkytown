@@ -64,15 +64,19 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] Two-hook tow line. A real rope joint connects a movable prop or wagon to a second object or an anchor on a solid surface.
 - [x] Powered wagon winch. When a tow line is attached to the wagon, Rig toggles reeling from the driver's seat.
 - [x] Add the slingshot, lever rifle and contact sample recording and playback.
-- [ ] Build the magnetic crawler.
+- [x] Build a camera crawler operated from the Foxglove workshop controller.
 - [x] Baseline physical props: carryable glass water jugs, splash and shards, explosive fuel cans with nearby reactions, and cargo that can shift or be strapped down.
 - [x] Give full and empty jugs different mass, flotation and break effects. Both drift in the current.
 - [ ] Extend buoyancy, balance, friction and break thresholds across boards, tires and lanterns. Verify lodging against gates.
-- [ ] Build everyday physics scenes: a diner tablecloth that drags tableware and draws the owner's attention, a workbench and inspection pit with dropped tools, movable furniture, and flour or chalk that records physical footprints and marks.
-- [ ] Make the magnetic pickup recover dropped tools, keys, license plates and lures. Let the camera crawler scout under doors, traverse suitable steel surfaces, pull a latch, and thread a line through a pipe.
+- [x] Build the Foxglove workbench and raised inspection channel with a movable tray and stool.
+- [ ] Add diner tablecloth physics and surfaces that preserve physical footprints or marks.
+- [x] Recover a dropped spanner, gate key, truck plate and fishing lure with the Field Kit magnet.
+- [x] Drive the workshop crawler under a door, climb a steel ramp, lift the latch, and thread a pull line through the pipe.
+- [ ] Expand crawler navigation to additional steel surfaces and locations.
 - [x] Give flares a lookout acknowledgement, a drifting light on water and the ability to reveal Echo tracks.
 - [x] Add quiet pebble distractions and breakable targets. The lever rifle can ring the distant bell, drop a counterweight and hit existing hunting targets. Preserve the scattergun’s close-range spread.
-- [ ] Add a climbing harness so the player can stop mid-grapple and work on a latch or attach a line. Add bolt cutters for chained routes and a portable stove, kettle and water filter for camp away from Foxglove.
+- [x] Add a portable stove, kettle and water filter for camp away from Foxglove.
+- [x] Lock the climbing harness mid-grapple to work a raised latch or attach a tow line. Earn bolt cutters from the crawler repair and use them as a ground-level alternative at the chained workshop gate.
 - [ ] Test two-hook and winch scenarios beyond pulling a crate: jammed gates, wreck recovery, mill wheels, lowering a load through a window and catching a runaway cooler.
 - [ ] Add mission-specific wagon packing, padding for fragile evidence and multi-item choices. Tune gravel drift, body lean, ditch bounce, prop impacts and forgiving recovery. Preserve optional foot routes where appropriate.
 - [ ] Add persistent quest-object recovery, and use sleeping bodies, nearby activation and bounded debris to keep mobile play responsive.

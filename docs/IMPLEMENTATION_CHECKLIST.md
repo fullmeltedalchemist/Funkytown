@@ -146,3 +146,12 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 ### Game audio lifecycle
 
 - [ ] Verify footsteps, water steps, wagon motor and tape playback on desktop and touch. Check that phone lock, app switching and leaving the page silence all game audio. Automated checks cover visibility, page lifecycle and focus events.
+
+- [ ] Verify magnetic pickup at the four world locations on desktop and touch. Automated physics tests pull all four finds into the bag and check that they stay recovered on reload.
+
+### Workshop and portable camp
+
+- [ ] Verify the workshop camera, gate, latch, pull line and movable props in the rendered game on desktop and touch. Automated tests drive the crawler through the workshop and verify the repaired door on reload.
+- [ ] Verify portable camp placement, stove timing, packing and creek filtration on desktop and touch. Automated tests cover cooking at the portable stove, packing, and the filter condition.
+
+- [ ] Verify the climbing harness and both service-gate approaches on desktop and touch. Automated tests cover lock and release, latch height, cutter unlock, and the gate state after reload.

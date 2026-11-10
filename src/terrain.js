@@ -42,6 +42,9 @@ export function height(x,z){
     const pad=1-smoothstep(Math.max(Math.abs(x-cx),Math.abs(z-cz)),3.5,7);
     result=lerp(result,y-.035,pad);
   }
+  const road=1-smoothstep(Math.abs(x-trailX(z)),1.45,3.35);
+  // Blend the road's cross-section toward its centerline without erasing the ford.
+  result=lerp(result,rawHeight(trailX(z),z),road*.92);
   const weight=basinInfluence(x,z);
   const ramp=smoothstep(z,22,37);
   return lerp(result,lerp(basin.floor,2.7,ramp),weight);
@@ -64,7 +67,7 @@ export function makeTerrain(scene,world,textures){
     const grain=.5+.5*Math.sin(x*.47+z*.31)*Math.cos(z*.77-x*.35);
     const front=plots[0].x-4.4;
     const spur=x>trailX(26)-.4&&x<front+.65?Math.abs(z-26)*1.35:Infinity;
-    const near=1-smoothstep(Math.min(trailDistance(x,z),spur)+.27*Math.sin(z*1.5),.95,2.35);
+    const near=1-smoothstep(Math.min(trailDistance(x,z),spur)+.09*Math.sin(z*1.5),1.25,2.45);
     temp.copy(moss).lerp(needle,grain*.66);
     temp.lerp(stone,creek(x,z)*.63).lerp(dirt,near*.85);
     temp.multiplyScalar(.78+.24*grain).toArray(color,i*3);

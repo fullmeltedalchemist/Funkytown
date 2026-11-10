@@ -42,25 +42,27 @@ export class CampLife {
       return 'Cache opened. Three old brass survey tokens recovered.';
     },{color:0x53655c});
     part(cache.body,[.37,.035,.22],[0,.96,0],0x998360,.012);
-    bag.record('canteen','Field canteen','Refill at the Foxglove Camp hand pump. U or Sip drinks from the canteen.','Gear');
+    bag.record('canteen','Field canteen','Refill at the Foxglove Camp hand pump or with a field filter. U or Sip drinks from the canteen.','Gear');
   }
-  cook(){
+  cook(hearth=this){
     if(this.elapsed===null){
       if(this.bag.records.has('camp-meal'))return 'Eat or deliver the meal you already packed before cooking another.';
       this.meatMeal=this.bag.records.has('cottontail-meat');
       if(!this.meatMeal&&!this.bag.records.has('camp-ingredients'))return 'Get ingredients from the camp pantry rack first.';
       this.bag.forget(this.meatMeal?'cottontail-meat':'camp-ingredients');
       this.elapsed=0;
-      this.food.visible=true;
-      this.food.material.color.setHex(0xb4864b);
-      this.heat.intensity=5;
+      this.hearth=hearth;
+      hearth.food.visible=true;
+      hearth.food.material.color.setHex(0xb4864b);
+      hearth.heat.intensity=5;
       return 'Skillet on the heat. Wait for the golden crust, then use the skillet to lift it off.';
     }
+    if(hearth!==this.hearth)return 'Finish the meal at the stove where you started it.';
     if(this.elapsed<5)return 'Still simmering. Watch for the food to turn golden.';
     const burned=this.elapsed>=12;
     this.elapsed=null;
-    this.food.visible=false;
-    this.heat.intensity=0;
+    hearth.food.visible=false;
+    hearth.heat.intensity=0;
     if(burned)return 'The batch burned. Clear the skillet and try a fresh batch from the pantry.';
     this.bag.record('camp-meal',this.meatMeal?'Roasted cottontail':'Hot skillet meal',
       'Eat at the mess station or share it with the ranger.','Cargo');
@@ -90,11 +92,11 @@ export class CampLife {
     const previous=this.elapsed;
     this.elapsed+=dt;
     if(previous<5&&this.elapsed>=5){
-      this.food.material.color.setHex(0xe0a33c);
+      this.hearth.food.material.color.setHex(0xe0a33c);
       this.notice('Skillet golden. Lift it off the heat now.');
     }
     if(previous<12&&this.elapsed>=12){
-      this.food.material.color.setHex(0x352820);
+      this.hearth.food.material.color.setHex(0x352820);
       this.notice('The skillet burned. Clear it before cooking another batch.');
     }
   }

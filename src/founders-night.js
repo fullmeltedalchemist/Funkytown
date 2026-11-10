@@ -54,6 +54,12 @@ export class FoundersNight {
       if(bag.records.has(tapeKey))return 'The archive tape has already been recovered.';
       if(!bag.records.has(leadKey))return 'The cage is tagged with an archive delivery number. Find the matching dispatch first.';
       if(!bag.records.has(latchKey))return 'The cage is jammed. Grapple the brass ring to lift the shutter.';
+      const item=this.case;
+      if(item&&mechanics.items.has(item.collider.handle)&&mechanics.cargo!==item&&mechanics.carried!==item&&
+        this.caseHome.distanceToSquared(item.body.translation())>16){
+        mechanics.resetProp(item,this.caseHome);
+        return 'The storehouse attendant puts the lost tape case back on the shelf.';
+      }
       return 'Take the archive case to the clerk at the dispatch board.';
     },{color:0x536961});
     this.depot=depot.point;

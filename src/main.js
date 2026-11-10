@@ -1,3 +1,7 @@
+import {ServiceGate} from './service-gate.js';
+import {PortableCamp} from './portable-camp.js';
+import {Workshop,nearWorkshop} from './workshop.js';
+import {FieldMagnet} from './field-magnet.js';
 import {watchAudioFocus} from './audio-focus.js';
 import {installFairground,nearFairground} from './fairground.js';
 import {installFieldRange} from './field-range.js';
@@ -18,7 +22,7 @@ import {Chapters} from './chapters.js';
 import {insideRescueCorridor} from './rigging.js';
 import {Gear} from './gear.js';
 import {Finale,MailRoute} from './finale.js';
-import {Rescue} from './rescue.js';
+import {configureVillagerModel,Rescue} from './rescue.js';
 import {Bag} from './bag.js';
 import {fieldPistol} from './effects.js';
 import * as T from 'three';
@@ -65,7 +69,7 @@ function forest(pipeline,models){
     if(basinInfluence(x,z)>.07||Math.hypot(x-secondAddress.x,z-secondAddress.z)<7.5)return;
     if(insideRescueCorridor(x,z,type==='rocks'?scale*.48:1.2))return;
     const yaw=rnd()*Math.PI*2;
-    if(nearFairground(x,z,type==='rocks'?scale*.48:.8))return;
+    if(nearFairground(x,z,type==='rocks'?scale*.48:.8)||nearWorkshop(x,z,type==='rocks'?scale*.48:.8))return;
     grove[type].push({x,y:height(x,z)-sink,z,scale,yaw});
   }
   for(let i=0;i<490;i++){
@@ -120,6 +124,7 @@ async function boot(){
   const [terrainTextures,entries]=await Promise.all([textures(),Promise.all(Object.entries(manifest.models)
     .map(async ([key,url])=>[key,await pipeline.load(key,url)]))]);
   const models=Object.fromEntries(entries);
+  configureVillagerModel(models.villager);
   const water=makeTerrain(scene,world,terrainTextures);
   const anchors={rangerCabin:[cabinX,cabinY,cabinZ]};
   for(const placement of manifest.placements){
@@ -250,6 +255,14 @@ async function boot(){
   bag.record('flare-pistol','Flare pistol','Cycle weapons with X or the weapon button. Fire a bouncing light that burns for twelve seconds.','Gear');
   bag.record('contact-mic','Contact microphone','M or Mic · aim at a surface and record its vibration. J or Speaker plays the recording from a placeable speaker.','Gear');
   const loopRoad=new LoopRoad(mechanics,story,bag,notice);
+  const portableCamp=new PortableCamp(mechanics,campLife);
+  bag.record('portable-camp','Portable camp kit','P or Camp kit · set down a stove, kettle and filter. Cook with your packed ingredients and refill beside the creek.','Gear');
+  const workshop=new Workshop(mechanics,bag);
+  const serviceGate=new ServiceGate(mechanics,bag);
+  bag.record('climbing-harness','Climbing harness','Y or Harness · lock in place while attached to the grapple. Use it again to resume pulling.','Gear');
+  bag.record('field-crawler','Workshop crawler','H or Crawler · connect near the workshop. Steer through its camera and use the latch or pull line.','Gear');
+  const magnet=new FieldMagnet(mechanics,bag,notice);
+  bag.record('field-magnet','Field magnet','N or Magnet · recover dropped metal around camp, the archive bay and the supply shop.','Gear');
   const recorder=new FieldRecorder(mechanics,pipeline,models.receiver,bag,playToolSound);
   function sampleContact(){
     if(mechanics.driving||rescue.zipline.active)return;
@@ -281,6 +294,7 @@ async function boot(){
   bag.record('grapple-hook','Grappling hook','Right click, press G, or tap Hook. Aim at trees, roofs, walls, or the brass spillway ring.','Gear');
   bag.record('signal-lantern','Signal lantern','K or Lantern · leave a warm light beside you. Use again to recall.','Gear');
   const input=new Input(renderer.domElement,()=>{
+    if(workshop.active)return notice(workshop.use());
     if(rescue.zipline.active)return notice(rescue.zipline.use());
     notice(mechanics.use(camera));
     if(rescue.zipline.active){
@@ -299,7 +313,12 @@ async function boot(){
   },()=>{if(!rescue.zipline.active)gear.deployLantern(mechanics,camera);},
     ()=>{if(!rescue.zipline.active)notice(campLife.drink());},
     ()=>{if(!rescue.zipline.active)notice(mechanics.toggleStrap());},sampleContact,()=>{if(!rescue.zipline.active)notice(towLine.select(camera));},
-    ()=>{if(!rescue.zipline.active)notice(recorder.deploy(camera));});
+    ()=>{if(!rescue.zipline.active)notice(recorder.deploy(camera));},
+    ()=>{if(!rescue.zipline.active)notice(magnet.use(camera));},
+    ()=>{if(!rescue.zipline.active)notice(workshop.toggle());},
+    ()=>{if(!rescue.zipline.active&&!workshop.active)notice(portableCamp.toggle(camera));},
+    ()=>{if(!rescue.zipline.active&&!workshop.active)notice(mechanics.toggleHarness());},
+    ()=>{if(!rescue.zipline.active&&!workshop.active)notice(serviceGate.cut(camera));});
   $('start').disabled=false;
   $('start').textContent='Walk the ridge';
   $('touch-mode').disabled=false;
@@ -317,7 +336,7 @@ async function boot(){
       if(bounds.isEmpty()||!Number.isFinite(longest)||longest<.00001)throw Error('No usable mesh geometry.');
       const scale=1.7/longest,center=bounds.getCenter(new T.Vector3());
       const z=31-imports*3,x=trailX(z)+3.8;
-      const position=[x-center.x*scale,height(x,z)-bounds.min.y*scale+.12,z-center.z*scale];
+      const position=[x-center.x*scale,height(x,z)-bounds.min.y*scale+.015,z-center.z*scale];
       mechanics.dynamic({...pipeline.loose(model,scale),position,name:file.name.replace(/\.glb$/i,''),area:0});
       imports++;
       world.step();
@@ -346,7 +365,7 @@ async function boot(){
     }
     if(input.active&&!input.toolsOpen&&!document.querySelector('dialog[open]')){
       const sensitivity=input.touch?.0048:.00235;
-      if(!mechanics.driving){
+      if(!mechanics.driving&&!workshop.active){
         yaw-=input.look[0]*sensitivity;
         pitch=T.MathUtils.clamp(pitch-input.look[1]*sensitivity,-1.52,1.52);
       }
@@ -355,6 +374,14 @@ async function boot(){
       while(accumulator>=STEP){
         const move=input.movement();
         move.drift ||= move.jump && mechanics.driving;
+        if(workshop.active){
+          workshop.step(move,STEP);
+          world.step(mechanics.events);
+          mechanics.after();
+          input.actions.clear();
+          accumulator-=STEP;
+          continue;
+        }
         if(rescue.zipline.active){
           const wasRiding=rescue.zipline.active==='ride';
           rescue.zipline.step(move,STEP);
@@ -385,7 +412,10 @@ async function boot(){
         mechanics.before(camera,move,input);
         input.actions.clear();
         if(mechanics.driving)world.step(mechanics.events);
-        else {
+        else if(mechanics.harnessSuspended){
+          walker.ride(walker.current);
+          world.step(mechanics.events);
+        }else {
           if(story.area===0&&finale.onFloodedFord(walker.current)){move.x*=.58;move.z*=.58;move.sprint=false;}
           if(input.touch&&campLife.energy>0&&Math.hypot(...input.stick)>.96)move.sprint=true;
           if(mechanics.carried?.size){move.x*=.75;move.z*=.75;move.sprint=false;}
@@ -415,12 +445,13 @@ async function boot(){
         chapters.tick();
         extraction.tick(STEP);
         loopRoad.tick(STEP);
+        magnet.tick(STEP,camera);
         recorder.tick(STEP);
         const pebble=mechanics.pebbleNoise;
         wildlife.tick(STEP,pebble?.area===0?pebble.position:recorder.area===0?recorder.source:null);
         checkLookoutSignal(mechanics,finale.lookout,bag,notice,point=>playToolSound(620,860,.42,.2,point));
         towLine.tick(STEP);
-        if(!mechanics.driving){
+        if(!mechanics.driving&&!mechanics.harnessSuspended){
           const transition=story.transition(walker.current,STEP);
           if(transition){
             notice(transition.notice);
@@ -449,11 +480,12 @@ async function boot(){
     }
     const riding=input.active&&rescue.zipline.active==='ride';
     soundCable(riding?rescue.zipline.speed:0);
+    if(workshop.active)workshop.view(camera);
     if(riding)camera.rotation.z=Math.sin(now*.008)*Math.min(.042,rescue.zipline.speed*.003);
     camera.updateMatrixWorld();
     const tool=weapons[weapon];
     for(const model of weapons)model.visible=false;
-    tool.visible=!mechanics.driving&&!mechanics.carried&&!rescue.zipline.active;
+    tool.visible=!workshop.active&&!mechanics.driving&&!mechanics.carried&&!rescue.zipline.active;
     const stride=mechanics.driving?0:Math.min(1,Math.hypot(walker.velocity.x,walker.velocity.z)/5);
     const recoil=Math.min(.15,Math.max(0,mechanics.cooldown-([.065,.45,.67,.33,.67][weapon])));
     tool.position.set(.173+Math.sin(now*.008)*.009*stride,-.19+Math.cos(now*.016)*.006*stride,-.49+recoil*.58);
@@ -468,10 +500,10 @@ async function boot(){
     }
     story.animate(now*.001);
     const objective=loopRoad.objective()??(rescue.showPractice?rescue.objective():null)??salvage.objective()??address.objective()??founders.objective()??fieldProps.objective()??fordRescue.objective()??extraction.objective()??chapters.objective()??finale.objective()??rescue.objective();
-    $('guide').textContent=objective?.text??story.guide(player);
+    $('guide').textContent=workshop.active?workshop.hint():objective?.text??story.guide(player);
     const waypoint=objective?objective.target:story.waypoint();
     const arrow=$('bearing');
-    arrow.hidden=!waypoint;
+    arrow.hidden=workshop.active||!waypoint;
     if(waypoint){
       const forward=camera.getWorldDirection(new T.Vector3());
       const heading=Math.atan2(waypoint.x-player.x,-(waypoint.z-player.z))-Math.atan2(forward.x,-forward.z);
@@ -481,7 +513,7 @@ async function boot(){
     if(now>noticeUntil)$('notice').textContent='';
     const target=input.active&&!input.toolsOpen&&!mechanics.driving?mechanics.target(camera):null;
     const use=input.touch?'Use':'E';
-    const hint=input.active&&!input.toolsOpen?(rescue.zipline.active?rescue.zipline.readout(input.touch):
+    const hint=input.active&&!input.toolsOpen?(workshop.active?use+' · Operate crawler':rescue.zipline.active?rescue.zipline.readout(input.touch):
       mechanics.driving?use+' · Exit wagon':mechanics.carried?(target?.acceptName?use+' · '+target.acceptName:
         target===mechanics.car&&mechanics.carried.size?use+' · Load the wagon':use+' · Set down'):
       target===mechanics.car&&mechanics.canUnloadCargo()?use+' · Unload cargo':target?.name?use+' · '+target.name:''):'';

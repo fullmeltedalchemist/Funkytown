@@ -1,12 +1,33 @@
 import {RescueLine} from './rigging.js';
 import * as T from 'three';
+import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import R from 'rapier';
 import {fieldPistol} from './effects.js';
 import {part} from './mechanics.js';
 import {cabinX,cabinZ,height,inCreek,trailX} from './terrain.js';
 
 const point=(x,z,h=0)=>new T.Vector3(x,height(x,z)+h,z);
+let villagerModel;
+export function configureVillagerModel(model){
+  for(const name of ['Arm_L','Arm_R','Leg_L','Leg_R']){
+    if(!model.getObjectByName(name))throw Error('Villager model is missing joint '+name);
+  }
+  villagerModel=model;
+}
 export function person(coat){
+  if(villagerModel){
+    const root=clone(villagerModel);
+    root.traverse(node=>{
+      if(!node.isMesh)return;
+      node.castShadow=node.receiveShadow=true;
+      if(node.material.name==='Villager coat'){
+        node.material=node.material.clone();
+        node.material.color.setHex(coat);
+      }
+    });
+    return {root,arms:['Arm_L','Arm_R'].map(name=>root.getObjectByName(name)),
+      legs:['Leg_L','Leg_R'].map(name=>root.getObjectByName(name))};
+  }
   const root=new T.Group();
   const material=(color)=>new T.MeshStandardMaterial({color,roughness:.84});
   const cloth=material(coat), trousers=material(0x343935), skin=material(0xba896d), leather=material(0x392d28);

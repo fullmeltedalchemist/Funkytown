@@ -99,7 +99,7 @@ export class FieldProps {
         if(node.isMesh&&node.material.name==='Creek water behind glass')node.visible=false;
       });
     }
-    const item=m.dynamic({...asset,position,name,size,area:0,impactLimit,
+    const item=m.dynamic({...asset,position,home:new T.Vector3(...position),name,size,area:0,impactLimit,
       breakEffect:(origin,velocity)=>type==='fuel'?this.blast(origin):this.shatter(origin,velocity,type==='water')});
     if(type!=='fuel'){
       item.floatSurface=-1.38;

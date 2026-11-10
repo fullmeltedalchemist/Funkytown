@@ -874,6 +874,16 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   assert.match(receipt(),/creek storehouse/);
   assert.match(depot(),/Grapple/);
   assert.match(grappleCage(),/shutter lifts/);
+  const caseBody=mission.case.body;
+  caseBody.setTranslation(mission.caseHome.clone().add(new T.Vector3(0,0,7)),true);
+  caseBody.setAngvel({x:4,y:2,z:1},true);
+  assert.match(depot(),/lost tape case back/);
+  assert.ok(mission.caseHome.distanceTo(caseBody.translation())<.001);
+  assert.equal(new T.Vector3().copy(caseBody.angvel()).length(),0);
+  caseBody.setTranslation({x:100,y:-12,z:0},true);
+  mechanics.after();
+  assert.ok(mission.caseHome.distanceTo(caseBody.translation())<.001);
+
   assert.equal(mission.gate.collider.isEnabled(),false);
   assert.match(pickUpCase(),/Carrying Archive tape case/);
   const nearCase=mission.caseHome.clone().add(new T.Vector3(.9,0,1.3));
@@ -1333,4 +1343,202 @@ test('game audio focus handles lock, navigation, freeze and overlapping backgrou
   unwatch();
   emit(host,'pagehide');
   assert.equal(states.at(-1),true);
+});
+
+test('the field magnet pulls four physical finds into the bag and skips recovered finds on reload',async t=>{
+  const {FieldMagnet}=await import('../src/field-magnet.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker,STEP}=await import('../src/walker.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  t.after(()=>world.free());
+  const walker=new Walker(world,[0,1,0]);
+  const m=new Mechanics(world,walker,new T.Scene(),new T.Scene());
+  const records=new Map(),bag={records,record:(id,name)=>records.set(id,name)};
+  const magnet=new FieldMagnet(m,bag,()=>{});
+  const camera=new T.PerspectiveCamera();
+  camera.position.set(0,1.58,0);
+  camera.lookAt(0,1.4,-4);camera.updateMatrixWorld(true);
+  const finds=[...m.items.values()].filter(item=>item.magneticFind);
+  assert.equal(finds.length,4);
+  for(const item of finds){
+    item.body.setGravityScale(0,true);
+    item.body.setTranslation({x:0,y:1.4,z:-4},true);
+    item.body.setLinvel({x:0,y:0,z:0},true);
+    world.step(m.events);
+    assert.match(magnet.use(camera),/attached/);
+    for(let i=0;i<150&&magnet.pull;i++){
+      magnet.tick(STEP,camera);
+      world.step(m.events);
+      m.after();
+    }
+    assert.ok(records.has('magnet-'+item.magneticFind.id));
+    assert.equal(m.items.has(item.collider.handle),false);
+    assert.equal(magnet.line.visible,false);
+  }
+  new FieldMagnet(m,bag,()=>{});
+  assert.equal([...m.items.values()].some(item=>item.magneticFind),false);
+});
+
+test('the workshop crawler drives under the door, climbs the ramp and threads the pipe',async t=>{
+  const {Workshop}=await import('../src/workshop.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker,STEP}=await import('../src/walker.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  t.after(()=>world.free());
+  const scene=new T.Scene(),walker=new Walker(world,[0,0,0]);
+  const m=new Mechanics(world,walker,scene,new T.Scene());
+  const records=new Map(),bag={records,record:(id,name)=>records.set(id,name)};
+  const shop=new Workshop(m,bag);
+  assert.match(shop.toggle(),/by the workshop bench/);
+  walker.teleport(shop.control.toArray());
+  assert.match(shop.toggle(),/camera connected/);
+  assert.match(shop.use(),/farther/);
+  assert.equal(shop.door.collider.isEnabled(),true);
+  for(let i=0;i<130;i++)shop.step({x:0,z:1},STEP);
+  assert.ok(shop.robot.position.y>shop.origin.y+.5);
+  assert.match(shop.use(),/Steer left/);
+  for(let i=0;i<25;i++)shop.step({x:-1,z:0},STEP);
+  assert.match(shop.use(),/door lifts/);
+  assert.equal(shop.door.collider.isEnabled(),false);
+  assert.match(shop.use(),/line up/);
+  for(let i=0;i<48;i++)shop.step({x:1,z:0},STEP);
+  assert.match(shop.use(),/threads the pipe/);
+  assert.equal(shop.cable.visible,true);
+  assert.ok(records.has('workshop-crawler-repair'));
+  assert.match(shop.toggle(),/recalled/);
+  assert.equal(new Workshop(m,bag).door.collider.isEnabled(),false);
+  assert.ok([...m.items.values()].some(item=>item.name==='Movable workshop stool'));
+});
+
+test('portable camp cooks on its own stove, packs safely and filters near the creek',async t=>{
+  const {PortableCamp}=await import('../src/portable-camp.js');
+  const {CampLife}=await import('../src/camp-life.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker}=await import('../src/walker.js');
+  const {height}=await import('../src/terrain.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  t.after(()=>world.free());
+  const scene=new T.Scene(),walker=new Walker(world,[0,height(0,25)+.9,25]);
+  const m=new Mechanics(world,walker,scene,new T.Scene());
+  const records=new Map(),bag={records,record:(id,name)=>records.set(id,{name}),forget:id=>records.delete(id)};
+  const camp=new CampLife(m,bag,()=>{});
+  const kit=new PortableCamp(m,camp),camera=new T.PerspectiveCamera();
+  assert.match(kit.toggle(camera),/set up/);
+  assert.match(kit.refill(),/flowing creek/);
+  records.set('camp-ingredients',true);
+  assert.match(camp.cook(kit),/Skillet on/);
+  assert.equal(kit.food.visible,true);
+  assert.match(kit.toggle(camera),/off the heat/);
+  assert.match(camp.cook(),/where you started/);
+  camp.tick(6);
+  assert.match(camp.cook(kit),/Meal packed/);
+  assert.equal(kit.food.visible,false);
+  assert.match(kit.toggle(camera),/packed/);
+  assert.ok(kit.targets.every(({collider})=>!collider.isEnabled()));
+  kit.kit.position.set(-12,0,-4);
+  assert.match(kit.refill(),/drink from the canteen/);
+});
+
+test('a locked harness permits the raised latch and earned cutters open the gate from the ground',async t=>{
+  const {ServiceGate}=await import('../src/service-gate.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker}=await import('../src/walker.js');
+  await R.init();
+  for(const method of ['harness','cutters']){
+    const world=new R.World({x:0,y:-9.81,z:0});
+    t.after(()=>world.free());
+    const walker=new Walker(world,[0,1,0]);
+    const m=new Mechanics(world,walker,new T.Scene(),new T.Scene());
+    const records=new Map(),bag={records,record:(id,name)=>records.set(id,name)};
+    const gate=new ServiceGate(m,bag);
+    const position=gate.gate.visual.position;
+    const camera=new T.PerspectiveCamera();
+    camera.position.copy(position).add(new T.Vector3(0,.35,1.65));
+    camera.lookAt(position);camera.updateMatrixWorld(true);
+    world.step(m.events);
+    assert.match(gate.cut(camera),/unlock/);
+    assert.match(m.toggleHarness(),/Attach/);
+    const latch=[...m.fixed.values()].find(item=>item.name==='Pull the raised service latch');
+    assert.match(latch.action(),/Lock your climbing harness/);
+    if(method==='harness'){
+      m.anchor=position.clone().add(new T.Vector3(0,2.5,0));
+      walker.velocity.set(3,4,-2);
+      assert.match(m.toggleHarness(),/locked/);
+      assert.equal(walker.velocity.length(),0);
+      assert.equal(m.harnessSuspended,true);
+      assert.match(latch.action(),/Climb higher/);
+      walker.teleport(position.clone().add(new T.Vector3(0,1.2,.6)).toArray());
+      assert.match(latch.action(),/swings clear/);
+      assert.match(m.grapple(camera),/released/);
+      assert.equal(m.harnessSuspended,false);
+    }else{
+      records.set('workshop-crawler-repair',true);
+      assert.match(gate.cut(camera),/snap the chain/);
+    }
+    assert.equal(gate.gate.collider.isEnabled(),false);
+    assert.ok(records.has('workshop-service-gate'));
+    assert.equal(new ServiceGate(m,bag).gate.collider.isEnabled(),false);
+  }
+});
+
+test('road crossfall is graded and a parked wagon holds on a slope',async t=>{
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker}=await import('../src/walker.js');
+  const {height,trailX}=await import('../src/terrain.js');
+  for(const z of [-34,-18,16,32]){
+    const x=trailX(z),a=height(x-.9,z),b=height(x+.9,z);
+    assert.ok(Math.abs(a-b)<.23,'road crossfall at '+z);
+  }
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  t.after(()=>world.free());
+  const scene=new T.Scene(),walker=new Walker(world,[4,3,0]);
+  const m=new Mechanics(world,walker,scene,new T.Scene());
+  const ground=R.ColliderDesc.cuboid(12,.15,12).setRotation(new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),.16)).setFriction(.85);
+  world.createCollider(ground);
+  m.makeCar([0,1,0]);
+  const camera=new T.PerspectiveCamera();
+  for(let i=0;i<120;i++){
+    m.before(camera,{},{actions:new Set()});world.step(m.events);m.after();
+  }
+  const stopped=new T.Vector3().copy(m.car.body.translation());
+  for(let i=0;i<600;i++){
+    m.before(camera,{},{actions:new Set()});world.step(m.events);m.after();
+  }
+  assert.ok(stopped.distanceTo(m.car.body.translation())<.025);
+});
+
+test('the villager asset preserves animation pivots and imports an embedded fabric texture',async t=>{
+  const {AssetPipeline}=await import('../src/assets.js');
+  const {configureVillagerModel,person}=await import('../src/rescue.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  t.after(()=>world.free());
+  const pipeline=new AssetPipeline(new T.Scene(),world);
+  const bytes=await readFile(new URL('../assets/villager-fieldworker.glb',import.meta.url));
+  // The loader's image decode needs the browser. Inspect the GLB texture table here.
+  const size=bytes.readUInt32LE(12);
+  const json=JSON.parse(bytes.subarray(20,20+size).toString());
+  assert.ok(json.images.every(image=>Number.isInteger(image.bufferView)));
+  assert.ok(json.materials.some(mat=>mat.pbrMetallicRoughness?.baseColorTexture));
+  const copy=JSON.parse(JSON.stringify(json));
+  for(const material of copy.materials)delete material.pbrMetallicRoughness.baseColorTexture;
+  const text=Buffer.from(JSON.stringify(copy));
+  const padded=Buffer.concat([text,Buffer.alloc((4-text.length%4)%4,32)]);
+  const binary=bytes.subarray(20+size);
+  const glb=Buffer.alloc(20+padded.length+binary.length);
+  glb.writeUInt32LE(0x46546c67,0);glb.writeUInt32LE(2,4);glb.writeUInt32LE(glb.length,8);
+  glb.writeUInt32LE(padded.length,12);glb.writeUInt32LE(0x4e4f534a,16);
+  padded.copy(glb,20);binary.copy(glb,20+padded.length);
+  const model=(await pipeline.loader.parseAsync(glb.buffer.slice(glb.byteOffset,glb.byteOffset+glb.byteLength),'')).scene;
+  configureVillagerModel(model);
+  const npc=person(0x476253),other=person(0x884433);
+  assert.equal(npc.arms.length,2);assert.equal(npc.legs.length,2);
+  npc.arms[0].rotation.x=.7;
+  assert.ok(Math.abs(other.arms[0].rotation.x)<.00001);
+  const grounded=pipeline.prepare(model,{position:[0,8,0],groundY:2});
+  assert.ok(Math.abs(new T.Box3().setFromObject(grounded).min.y-2)<.001);
 });
