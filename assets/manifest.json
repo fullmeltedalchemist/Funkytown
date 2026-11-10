@@ -19,6 +19,8 @@
     "flarePistol": "./assets/field-flare-pistol.glb",
     "pairedKitchen": "./assets/paired-kitchen.glb",
     "kitchenClock": "./assets/stopped-kitchen-clock.glb",
+    "echoShelter": "./assets/echo-reflected-shelter.glb",
+    "crossingMarker": "./assets/echo-crossing-marker.glb",
     "extractionHarness": "./assets/echo-extraction-harness.glb",
     "paradeFloat": "./assets/founders-parade-float.glb",
     "archiveTruck": "./assets/archive-truck.glb",

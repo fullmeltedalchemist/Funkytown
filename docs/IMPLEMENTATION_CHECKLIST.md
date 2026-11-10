@@ -101,7 +101,7 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 - [ ] Complete the world-wide pass for floating props, collision, grounded furniture and authored replacements. Include porch steps, interiors, the new ranch house, creek racks and Submerged Street.
 - [ ] Verify the entire opening-to-Second-Address route from a clean save. Check all three salvage deliveries, both ending paths, touch audio, objective readability and first-30-minute pacing.
 
-### Second Address playtest fixes in the draft
+### Published Second Address playtest fixes
 
 - [x] Fixed missing mission-awarded Keepsakes in the Field Bag, including the salvaged ledger.
 - [x] Saved the chosen entrance so the unlocked door and its dialogue survive a reload.
@@ -110,11 +110,12 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 - [x] Scripted WebGL touch run passed from a seeded salvaged-ledger save. It verified visible ledger, bluff entry, clock, both ball runs, and the post office handoff with normal Use taps.
 - [ ] Complete an uninterrupted, real-device playthrough. The browser fixture positions the player at the porch, room, and post office.
 
-### Founders’ Night first route in the draft
+### Published Founders’ Night routes
 
 - [x] Automated Rapier test verifies the Second Address unlock, following the truck with normal wagon physics, the missed-tail receipt fallback, and recovery of the original tape.
 - [x] The storehouse now requires a grapple release and a physical case handoff. Automated tests aim and grapple the ring, carry the case on foot across town, file it, and recover a lost case.
-- [ ] Hosted touch-browser check of the receipt, grapple and pickup. Real-device playthrough still needs the full drive and handoff.
+- [x] Production release `e183810` matched all ten changed game files. The hosted touch-browser check passed the getaway handoff, receipt, float recorder, shutter grapple and case pickup.
+- [ ] Play the full drive and case handoff on a real device.
 - [ ] Play the parade recorder, backstage bluff, and wagon pursuit in the rendered game. Verify truck impacts, the new ranger and family briefing, and the full extraction aftermath. Gameplay tests cover boarding the float, collecting its recording, the stagehand lead, the pursuit, and the receipt fallback.
 
 - [x] Interaction sensors no longer block walking. The Founders’ Night return test carries the case past the receipt stand on the direct approach.
@@ -127,5 +128,6 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 
 - [x] Draft implementation groups utilities into a field kit. Primary actions use accessible icons, with Fire/Throw switching by carry state and the prompt placed at the reticle.
 - [x] Tool selection closes the panel, suppresses movement/look while open and preserves keyboard shortcuts. Field Bag is scrollable on touch.
-- [ ] Confirm the hosted touch check and review the layout on real iPhone and iPad in portrait and landscape.
+- [x] The hosted touch check passed the Field Kit, lantern, weapon selection and canteen controls.
+- [ ] Review the layout on real iPhone and iPad in portrait and landscape.
 - [ ] Continue in-world prop, animation and interaction polish. This pass covers HUD and inputs.

@@ -406,3 +406,54 @@ for y in (-.46,.04,.39):
     box("Occupant restraint",(0,y,.365),(.72,.11,.025),tape,.012)
     box("Restraint buckle",(.18,y,.38),(.085,.105,.031),alloy,.011)
 export("echo-extraction-harness.glb")
+
+reset()
+brass = material("Weathered crossing brass", (.42,.28,.1), .62,.43)
+glass = material("Green survey glass", (.12,.67,.37), .28,.26)
+base = material("Dark iron footing", (.075,.11,.105), .53,.65)
+lathe("Weighted footing",[(.21,0),(.22,.027),(.205,.071),(.14,.095)],base,24)
+lathe("Tapered stake",[(.075,.07),(.069,.29),(.038,.73),(.038,.9)],brass,20)
+box("Number plate",(.0,-.03,.52),(.19,.026,.105),base,.009)
+for x in (-.095,.095):
+    box("Lamp cage upright",(x,0,.93),(.029,.046,.31),brass,.01)
+box("Lamp cage cap",(0,0,1.088),(.25,.16,.046),brass,.019)
+lathe("Green signal lens",[(.08,.82),(.104,.88),(.104,1.01),(.071,1.055)],glass,24)
+export("echo-crossing-marker.glb")
+
+reset()
+slate = material("Weathered slate roof", (.18,.24,.28), .26,.65)
+pine = material("Grey washed siding", (.28,.25,.22), roughness=.91)
+beam = material("Dark pine framing", (.125,.092,.076), roughness=.88)
+glass = material("Clouded kitchen glass", (.22,.33,.41), .23,.27)
+warm = material("Weak amber porch lamp", (.78,.39,.12), .08,.38)
+collision = material("Shelter collision", (.4,.4,.4))
+box("Floor boards",(0,0,.14),(5.25,4.03,.28),beam,.035)
+box("COL_floor",(0,0,.14),(5.25,4.03,.28),collision,0)
+for z in (.42,.7,.98,1.26,1.54,1.82,2.10,2.38):
+    box("Rear overlapping plank",(0,1.96,z),(5.23,.115,.29),pine,.017)
+    for side in (-1,1):
+        box("Side overlapping plank",(side*2.57,0,z),(.115,3.91,.29),pine,.017)
+        box("Front overlapping plank",(side*1.66,-1.96,z),(1.83,.115,.29),pine,.017)
+for name,x,y,w,d in (("back",0,1.96,5.23,.16),("left",-2.57,0,.16,3.91),
+    ("right",2.57,0,.16,3.91),("frontL",-1.66,-1.96,1.83,.16),("frontR",1.66,-1.96,1.83,.16)):
+    box("COL_"+name,(x,y,1.39),(w,d,2.25),collision,0)
+for x in (-2.57,2.57):
+    for y in (-1.97,1.97):
+        box("Corner trim",(x,y,1.41),(.15,.15,2.3),beam,.015)
+for x in (-.7,.7):
+    box("Open doorway jamb",(x,-2.04,1.34),(.11,.16,2.13),beam,.014)
+box("Door lintel",(0,-2.05,2.39),(1.56,.19,.18),beam,.018)
+box("Rear window frame",(1.19,2.032,1.58),(1.02,.09,.86),beam,.017)
+box("Rear window glass",(1.19,2.087,1.58),(.82,.035,.66),glass,.013)
+for x in (-1,1):
+    panel=box("Pitched slate roof",(x*1.36,0,2.88),(2.95,4.64,.17),slate,.03)
+    panel.rotation_euler.y=x*.29
+box("Roof ridge flashing",(0,0,3.32),(.2,4.69,.12),beam,.035)
+box("Porch landing",(0,-2.43,.11),(2.9,.91,.22),pine,.025)
+box("COL_landing",(0,-2.43,.11),(2.9,.91,.22),collision,0)
+for x in (-1.29,1.29):
+    box("Porch post",(x,-2.72,1.25),(.115,.115,2.21),beam,.013)
+box("Porch canopy",(0,-2.49,2.43),(3.04,1.04,.14),slate,.025)
+box("Porch light housing",(.98,-2.07,2.05),(.2,.17,.34),beam,.027)
+box("Porch light lens",(.98,-2.17,2.05),(.145,.05,.23),warm,.018)
+export("echo-reflected-shelter.glb")

@@ -40,14 +40,10 @@ export class Extraction {
     const transfer=mechanics.fixed.get(exit.collider.handle);
     transfer.acceptName='Bring Cal through the crossing';
     transfer.accept=item=>this.deliver(item);
-    this.beacon=new T.Group();
-    const metal=new T.MeshStandardMaterial({color:0xb88d52,metalness:.4});
-    const lens=new T.MeshStandardMaterial({color:0x8ff4c9,emissive:0x439d7b,emissiveIntensity:1.4});
-    const stake=new T.Mesh(new T.CylinderGeometry(.042,.072,.85,10),metal);
-    stake.position.y=.425;
-    const marker=new T.Mesh(new T.TorusGeometry(.145,.036,8,16),lens);
-    marker.position.y=.9;
-    this.beacon.add(stake,marker);
+    this.beacon=pipeline.prepare(models.crossingMarker);
+    const signal=new T.PointLight(0x7ff0bc,3.8,5,2);
+    signal.position.y=1;
+    this.beacon.add(signal);
     this.beacon.visible=false;
     realm.add(this.beacon);
     this.aid=aid;
@@ -151,7 +147,7 @@ export class Extraction {
   tick(dt){
     const active=this.available();
     if(active&&!this.house){
-      this.house=this.pipeline.place(this.models.cabin,{position:shelter.toArray(),scale:.76,collider:'authored'});
+      this.house=this.pipeline.place(this.models.echoShelter,{position:shelter.toArray(),collider:'authored'});
       this.mechanics.scenes[1].add(this.house);
     }
     if(this.visible!==active)this.show(active);

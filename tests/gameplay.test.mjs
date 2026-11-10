@@ -1035,7 +1035,7 @@ test('the Echo extraction opens three plans and recovers a timed-out harness bef
   m.staticBox([48,.55,51],[140,-.29,-4],0x271e49,1);
   const pipeline=new AssetPipeline(town,world);
   const models={};
-  for(const [key,path] of Object.entries({extractionHarness:'echo-extraction-harness',cabin:'ranger-cabin',
+  for(const [key,path] of Object.entries({extractionHarness:'echo-extraction-harness',echoShelter:'echo-reflected-shelter',crossingMarker:'echo-crossing-marker',
     transferPump:'creek-transfer-pump',receiver:'field-receiver',lantern:'camp-lantern'})){
     const bytes=await readFile(new URL('../assets/'+path+'.glb',import.meta.url));
     models[key]=(await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'')).scene;

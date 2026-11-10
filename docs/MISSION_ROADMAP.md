@@ -53,7 +53,7 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] Carry Cal in a physical harness through the marked Echo crossing. Losing the harness or running out of time returns him to the shelter for another attempt.
 - [ ] Connect the existing seal/open ending to who returned, who answers the radio and what changes at the diner and both addresses.
 - [x] Author the extraction harness as a Blender GLB and place a colliding cabin as the reflected shelter.
-- [ ] Author unique crossing markers and a distinct alternate-side house.
+- [x] Author a lantern-like crossing marker and a grey-sided alternate-side shelter with a walkable porch through the Blender GLB pipeline.
 
 ## Systems that serve these missions
 
