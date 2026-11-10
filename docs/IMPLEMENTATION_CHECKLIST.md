@@ -125,6 +125,13 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 
 - [ ] Play all three extraction routes, the timeout and retry, the harness handoff and both post-rescue arch endings in the rendered game. Physics tests carry the harness through all three routes and verify each handoff and timeout recovery. The address interactions have automated checks for both endings.
 
+### Field kit and the looping road
+
+- [ ] Verify the slingshot, lever rifle, practice targets and pebble distractions in the rendered game. Automated collision tests cover both weapons, a breakable crate, the long-range bell and the dropped counterweight.
+- [ ] Verify the Field Kit Speaker, contact recording and playback, and the flooded-house witness lead on desktop and touch.
+- [ ] Play The Road That Loops end to end with the rendered HUD and touch steering. Automated gameplay drives both the loop and verge using actual wagon physics.
+- [ ] Verify empty and full jugs, flares in the current, the lookout acknowledgement, and the Echo track and cottontail photographs. Automated gameplay covers jug flotation, the signal and photo records.
+
 ### Touch HUD and gadget controls
 
 - [x] Draft implementation groups utilities into a field kit. Primary actions use accessible icons, with Fire/Throw switching by carry state and the prompt placed at the reticle.

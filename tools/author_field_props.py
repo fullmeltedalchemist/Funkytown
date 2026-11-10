@@ -483,3 +483,39 @@ for i in range(13):
     box("Canopy raised seam",(-1.4+i*.233,.02,2.887),(.025,2.36,.035),zinc,.005)
 box("Archive enamel sign",(0,-1.015,2.61),(.94,.035,.17),warning,.018)
 export("archive-loading-bay.glb")
+
+reset()
+walnut = material("Polished walnut rifle furniture", (.25,.12,.063), roughness=.56)
+steel = material("Blued rifle steel", (.08,.105,.12), .75,.37)
+brass = material("Tarnished cartridge brass", (.49,.31,.098), .67,.46)
+box("Walnut buttstock",(0,-.21,-.045),(.092,.34,.145),walnut,.046)
+box("Steel butt plate",(0,-.38,-.044),(.097,.033,.149),steel,.018)
+box("Lever action receiver",(0,.025,.013),(.10,.225,.127),steel,.023)
+box("Walnut forearm",(0,.245,-.014),(.089,.24,.09),walnut,.032)
+for z,r,length in ((.052,.025,.48),(-.025,.018,.37)):
+    tube=lathe("Barrel or magazine tube",[(r,-length/2),(r,length/2)],steel,20)
+    tube.rotation_euler.x=tau/4
+    tube.location=(0,.38,z)
+box("Front sight",(0,.575,.087),(.018,.039,.029),steel,.008)
+box("Brass sight bead",(0,.579,.105),(.011,.012,.01),brass,.003)
+box("Rear sight",(0,.097,.094),(.059,.038,.028),steel,.005)
+bpy.ops.mesh.primitive_torus_add(major_radius=.075,minor_radius=.01,location=(0,-.062,-.086))
+lever=bpy.context.object
+lever.rotation_euler.y=tau/4
+lever.scale.x=.72
+finish(lever,"Loop lever",steel)
+export("field-lever-rifle.glb")
+
+reset()
+wood = material("Slingshot ash", (.35,.21,.095), roughness=.74)
+elastic = material("Amber elastic bands", (.69,.38,.106), roughness=.85)
+pouch = material("Dark leather pouch", (.12,.058,.034), roughness=.95)
+box("Palm grip",(0,0,-.034),(.065,.051,.205),wood,.023)
+for side in (-1,1):
+    arm=box("Forked ash arm",(side*.044,0,.083),(.052,.053,.128),wood,.02)
+    arm.rotation_euler.y=side*.54
+    box("Band keeper",(side*.076,0,.132),(.035,.065,.026),elastic,.008)
+    band=box("Flat elastic band",(side*.039,-.045,.125),(.016,.119,.015),elastic,.005)
+    band.rotation_euler.z=side*.63
+box("Leather pouch",(0,-.093,.125),(.057,.033,.024),pouch,.01)
+export("field-slingshot.glb")

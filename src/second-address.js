@@ -83,6 +83,11 @@ export class SecondAddress {
           '“The knocking stopped the night you closed the arch. The man you brought home recognized the chair before I said a word.”':
           '“He recognized the chair. Then someone on the other side knocked the same three beats. I’m leaving the porch light on.”';
       }
+      if(bag.records.has('flooded-knock')&&!bag.records.has('resident-knock')){
+        bag.record('resident-knock','The resident knew the knock',
+          'She says Cal knocked three times when the creek rose. She heard it through this kitchen wall after the other address was underwater.');
+        return '“Three knocks means it’s Cal. I heard them here after the other house went under. Check the kitchen clock. It stopped right after the last knock.”';
+      }
       if(this.route==='grapple latch')return '“Something just tripped the porch latch. If you’re here about the clock, go ahead. I’ve tried everything.”';
       if(this.route==='utility bluff'){
         if(this.getaway)return '“Take the wagon around the orchard. I’ll keep him at the house.”';

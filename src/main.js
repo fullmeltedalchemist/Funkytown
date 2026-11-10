@@ -1,7 +1,10 @@
+import {installFieldRange} from './field-range.js';
+import {LoopRoad} from './loop-road.js';
+import {FieldRecorder} from './field-recorder.js';
 import {FordRescue} from './ford-rescue.js';
 import {FoundersNight} from './founders-night.js';
 import {TowLine} from './tow-line.js';
-import {fireFlare} from './flare.js';
+import {checkLookoutSignal,fireFlare} from './flare.js';
 import {Wildlife} from './wildlife.js';
 import {SecondAddress} from './second-address.js';
 import {Extraction} from './extraction.js';
@@ -139,7 +142,10 @@ async function boot(){
   scene.add(camera);
   const pistol=fieldPistol(),scattergun=fieldPistol(true);
   const flarePistol=pipeline.prepare(models.flarePistol,{yaw:Math.PI,scale:1.12});
-  const weapons=[pistol,scattergun,flarePistol];
+  const slingshot=pipeline.prepare(models.slingshot,{scale:1.1});
+  const rifle=pipeline.prepare(models.leverRifle,{scale:.91});
+  const weapons=[pistol,scattergun,flarePistol,slingshot,rifle];
+  const weaponNames=['Pistol','Scattergun','Flare','Slingshot','Lever rifle'];
   let weapon=0;
   camera.add(...weapons);
   world.step();
@@ -192,6 +198,8 @@ async function boot(){
     tone.onended=()=>{tone.disconnect();gain.disconnect();pan?.disconnect();};
     tone.start(time);tone.stop(time+duration);
   };
+  installFieldRange(mechanics,bag,notice,playToolSound);
+  mechanics.onPebble=point=>playToolSound(560,190,.16,.12,point);
   const fordRescue=new FordRescue(mechanics,pipeline,models,story,rescue,bag,notice,
     point=>playToolSound(480,140,.44,.21,point));
   const fieldProps=new FieldProps(mechanics,pipeline,models,rescue,bag,notice,(event,position)=>{
@@ -205,18 +213,17 @@ async function boot(){
   const founders=new FoundersNight(mechanics,pipeline,models,bag,notice);
   const extraction=new Extraction(mechanics,chapters,bag,pipeline,models,notice);
   const wildlife=new Wildlife(mechanics,pipeline,models.cottontail,bag,notice);
+  bag.record('field-slingshot','Slingshot','Quiet pebbles arc and scatter nearby wildlife at the point of impact. Use it to break fragile props.','Gear');
+  bag.record('field-rifle','Lever-action rifle','A faster, flatter shot for distant targets. Cycle with X or the weapon control.','Gear');
   bag.record('flare-pistol','Flare pistol','Cycle weapons with X or the weapon button. Fire a bouncing light that burns for twelve seconds.','Gear');
-  bag.record('contact-mic','Contact microphone','M or Mic · aim at machinery or a loose prop and sample its vibration.','Gear');
+  bag.record('contact-mic','Contact microphone','M or Mic · aim at a surface and record its vibration. J or Speaker plays the recording from a placeable speaker.','Gear');
+  const loopRoad=new LoopRoad(mechanics,story,bag,notice);
+  const recorder=new FieldRecorder(mechanics,pipeline,models.receiver,bag,playToolSound);
   function sampleContact(){
     if(mechanics.driving||rescue.zipline.active)return;
     const target=mechanics.target(camera);
     if(!target)return notice('Aim the contact microphone at a surface you can reach.');
-    const sample=target.contact?.()??{
-      strength:target.body?Math.min(1,vec(target.body.linvel()).length()*.24):0,
-      message:'Contact sample taken.'
-    };
-    if(sample.strength)playToolSound(90+sample.strength*155,61,.34,.18*sample.strength);
-    notice(sample.message+' Contact signal '+Math.round(sample.strength*100)+'%.');
+    notice(recorder.record(target));
   }
   const towLine=new TowLine(mechanics);
   bag.record('tow-line','Two-hook tow line','V or Rig · rig two anchors on foot. If attached to the wagon, use Rig from the driver seat to reel in.','Gear');
@@ -252,14 +259,15 @@ async function boot(){
     if(rescue.zipline.active)return;
     weapon=(weapon+1)%weapons.length;
     if(weapon===1&&!bag.records.has('scattergun'))weapon=2;
-    const name=['Pistol','Scattergun','Flare'][weapon];
+    const name=weaponNames[weapon];
     const button=$('weapon-button');
     button.querySelector('span').textContent=name;
     button.setAttribute('aria-label','Switch weapon. Equipped: '+name);
     notice(name+' equipped.');
   },()=>{if(!rescue.zipline.active)gear.deployLantern(mechanics,camera);},
     ()=>{if(!rescue.zipline.active)notice(campLife.drink());},
-    ()=>{if(!rescue.zipline.active)notice(mechanics.toggleStrap());},sampleContact,()=>{if(!rescue.zipline.active)notice(towLine.select(camera));});
+    ()=>{if(!rescue.zipline.active)notice(mechanics.toggleStrap());},sampleContact,()=>{if(!rescue.zipline.active)notice(towLine.select(camera));},
+    ()=>{if(!rescue.zipline.active)notice(recorder.deploy(camera));});
   $('start').disabled=false;
   $('start').textContent='Walk the ridge';
   $('touch-mode').disabled=false;
@@ -324,8 +332,11 @@ async function boot(){
           if(weapon===2){
             if(fireFlare(mechanics,camera))playToolSound(430,73,.25,.23);
           }else{
-            mechanics.fire(camera,weapon===1);
-            if(mechanics.cooldown>before)playToolSound(weapon===1?94:168,41,weapon===1?.23:.13,.28);
+            mechanics.fire(camera,weapon===1,weapon===3?'slingshot':weapon===4?'rifle':'pistol');
+            if(mechanics.cooldown>before){
+              if(weapon===3)playToolSound(320,130,.08,.065);
+              else playToolSound(weapon===1?94:weapon===4?115:168,41,weapon===1||weapon===4?.23:.13,.28);
+            }
           }
         }
         if(input.actions.has('grapple')){
@@ -356,7 +367,11 @@ async function boot(){
         founders.tick(STEP);
         chapters.tick();
         extraction.tick(STEP);
-        wildlife.tick(STEP);
+        loopRoad.tick(STEP);
+        recorder.tick(STEP);
+        const pebble=mechanics.pebbleNoise;
+        wildlife.tick(STEP,pebble?.area===0?pebble.position:recorder.area===0?recorder.source:null);
+        checkLookoutSignal(mechanics,finale.lookout,bag,notice,point=>playToolSound(620,860,.42,.2,point));
         towLine.tick(STEP);
         if(!mechanics.driving){
           const transition=story.transition(walker.current,STEP);
@@ -393,7 +408,7 @@ async function boot(){
     for(const model of weapons)model.visible=false;
     tool.visible=!mechanics.driving&&!mechanics.carried&&!rescue.zipline.active;
     const stride=mechanics.driving?0:Math.min(1,Math.hypot(walker.velocity.x,walker.velocity.z)/5);
-    const recoil=Math.min(.15,Math.max(0,mechanics.cooldown-(weapon===1?.45:weapon===2?.67:.065)));
+    const recoil=Math.min(.15,Math.max(0,mechanics.cooldown-([.065,.45,.67,.33,.67][weapon])));
     tool.position.set(.173+Math.sin(now*.008)*.009*stride,-.19+Math.cos(now*.016)*.006*stride,-.49+recoil*.58);
     tool.rotation.x=recoil*.9;
     mechanics.drawWater(now*.001);
@@ -405,7 +420,7 @@ async function boot(){
       water.uniforms.ripple.value.set(player.x,player.z,now*.001);lastWake=now;
     }
     story.animate(now*.001);
-    const objective=(rescue.showPractice?rescue.objective():null)??salvage.objective()??address.objective()??founders.objective()??fieldProps.objective()??fordRescue.objective()??extraction.objective()??chapters.objective()??finale.objective()??rescue.objective();
+    const objective=loopRoad.objective()??(rescue.showPractice?rescue.objective():null)??salvage.objective()??address.objective()??founders.objective()??fieldProps.objective()??fordRescue.objective()??extraction.objective()??chapters.objective()??finale.objective()??rescue.objective();
     $('guide').textContent=objective?.text??story.guide(player);
     const waypoint=objective?objective.target:story.waypoint();
     const arrow=$('bearing');
@@ -444,7 +459,7 @@ async function boot(){
     reticle.hidden=mechanics.driving||!input.active||input.toolsOpen;
     reticle.classList.toggle('on-target',Boolean(target?.name));
     renderer.render(activeScene,camera);
-    gear.capture(renderer.domElement,story.area,player);
+    if(gear.capture(renderer.domElement,story.area,player))notice(wildlife.photograph(camera));
   });
 }
 boot().catch(error=>{$('status').textContent=error.message;console.error(error);});

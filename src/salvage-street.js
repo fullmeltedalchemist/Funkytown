@@ -50,7 +50,15 @@ export class SalvageStreet {
         scene.add(pipeline.prepare(models.kitchenClock,{position:clock,scale:houseScale,yaw}));
         const sensor=mechanics.world.createCollider(R.ColliderDesc.ball(.21)
           .setTranslation(clock[0]+.12,clock[1],clock[2]).setSensor(true).setCollisionGroups((128<<16)|2));
-        mechanics.tag(sensor,{name:'Listen by the flooded kitchen clock',action:()=>{
+        mechanics.tag(sensor,{name:'Listen by the flooded kitchen clock',contact:()=>{
+          if(!this.clock.running)return {strength:0,message:'The flooded wall is out of reach until you drain the street.'};
+          if(chapters.ending==='seal')return {strength:0,message:'The sealed arch has silenced the knocking.'};
+          if(!bag.records.has('flooded-knock')){
+            bag.record('flooded-knock','Three knocks in the flooded kitchen',
+              'The rhythm matches the dry house. Ask its resident how she knows the signal.');
+          }
+          return {strength:.71,message:'Three hard knocks resonate through the clock’s mounting screws.'};
+        },action:()=>{
           if(!this.clock.running)return 'Wait for the street to drain before listening inside.';
           if(!bag.records.has('extraction-return')||!chapters.ending){
             return 'Water has stopped the hands at nine. A faint knock seems to come from behind the wall.';

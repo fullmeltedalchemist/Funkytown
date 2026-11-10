@@ -324,6 +324,21 @@ test('field prop GLBs load and real impacts shatter a jug and detonate a fuel ca
   assert.match(relay.action(),/copied/);
   assert.ok(records.has('creek-pump-echo'));
   assert.equal(props.objective(),null);
+  const full={type:'water',position:[-9,-1.55,-3]};
+  const empty={type:'empty',position:[-9,-1.55,-5]};
+  props.stock(full);props.stock(empty);
+  let hiddenFill=false;
+  empty.item.visual.traverse(node=>{
+    if(node.isMesh&&node.material.name==='Creek water behind glass')hiddenFill=!node.visible;
+  });
+  assert.ok(hiddenFill);
+  assert.ok(empty.item.body.mass()<full.item.body.mass());
+  for(let i=0;i<150;i++)frame();
+  assert.ok(empty.item.body.translation().y>full.item.body.translation().y+.065);
+  assert.ok(empty.item.body.translation().x>-8.2);
+  const droplets=mechanics.drops.length;
+  mechanics.fracture(empty.item);
+  assert.equal(mechanics.drops.length,droplets);
   world.free();
 });
 
@@ -466,9 +481,12 @@ test('wagon drives the actual basin ramp and turns in salvage through normal int
   assert.equal(mission.clock.remaining,115);
   const clock=[...m.fixed.values()].find(target=>target.name==='Listen by the flooded kitchen clock');
   assert.match(clock.action(),/faint knock/);
+  assert.equal(clock.contact().strength,.71);
+  assert.ok(records.has('flooded-knock'));
   records.set('extraction-return',true);
   chapters.ending='seal';
   assert.match(clock.action(),/knocks have stopped/);
+  assert.equal(clock.contact().strength,0);
   chapters.ending='hold';
   assert.match(clock.action(),/porch light/);
   const highPark=vec(m.car.body.translation());
@@ -608,6 +626,9 @@ test('Second Address opens by three approaches and proves the slope with a simul
   assert.equal(records.has('founders-depot'),false);
   assert.match(finish.action(),/Two signatures/);
   assert.ok(records.has('second-address-filed'),'failed getaway must preserve the post office handoff');
+  records.set('flooded-knock',true);
+  assert.match(resident.action(),/Three knocks means/);
+  assert.ok(records.has('resident-knock'));
   records.set('extraction-return',true);
   chapters.ending='seal';
   assert.match(resident.action(),/knocking stopped/);
@@ -620,7 +641,8 @@ test('wildlife reacts to physical shots, meat cooks, flares expire, and straps h
   const {AssetPipeline}=await import('../src/assets.js');
   const {Wildlife}=await import('../src/wildlife.js');
   const {CampLife}=await import('../src/camp-life.js');
-  const {fireFlare}=await import('../src/flare.js');
+  const {checkLookoutSignal,fireFlare}=await import('../src/flare.js');
+  const {FieldRecorder}=await import('../src/field-recorder.js');
   const {Mechanics}=await import('../src/mechanics.js');
   const {Walker,STEP}=await import('../src/walker.js');
   await R.init();
@@ -665,6 +687,12 @@ test('wildlife reacts to physical shots, meat cooks, flares expire, and straps h
   camp.eat();
   assert.equal(camp.energy,165);
   const echo=wildlife.animals.at(-1);
+  const subject=echo.home.clone().add(new T.Vector3(0,.23,0));
+  camera.position.copy(subject).add(new T.Vector3(0,0,2));
+  camera.lookAt(subject);camera.updateMatrixWorld(true);
+  world.step(mechanics.events);
+  assert.match(wildlife.photograph(camera),/photographed/);
+  assert.ok(records.has('echo-cottontail-photo'));
   shoot(echo);
   assert.equal(echo.state,'gone');
   assert.ok(records.has('echo-cottontail'));
@@ -675,6 +703,27 @@ test('wildlife reacts to physical shots, meat cooks, flares expire, and straps h
   const flare=[...mechanics.items.values()].find(item=>item.name==='Burning signal flare');
   assert.ok(flare.body.linvel().z<0);
   assert.ok(flare.visual.children.some(node=>node.isPointLight));
+  const sounds=[];
+  flare.body.setTranslation(echo.home,true);
+  wildlife.tick(STEP);
+  assert.equal(wildlife.tracks.visible,true);
+  const track=wildlife.tracks.children[0].position;
+  camera.position.copy(track).add(new T.Vector3(0,1.1,2));
+  camera.lookAt(track);camera.updateMatrixWorld(true);
+  assert.match(wildlife.photograph(camera),/Flare-lit tracks/);
+  checkLookoutSignal(mechanics,echo.home,bag,()=>{},point=>sounds.push(point));
+  checkLookoutSignal(mechanics,echo.home,bag,()=>{},point=>sounds.push(point));
+  assert.equal(sounds.length,1);
+  const recorder=new FieldRecorder(mechanics,pipeline,await model('field-receiver'),bag,(...args)=>sounds.push(args));
+  assert.match(recorder.deploy(camera),/Record a contact sample/);
+  assert.match(recorder.record({contact:()=>({strength:.6,message:'Three knocks.'})}),/60%/);
+  assert.match(recorder.deploy(camera),/Playing the contact sample/);
+  assert.ok(recorder.source);
+  assert.equal(recorder.speaker.parent,scene);
+  assert.equal(sounds.at(-1)[4],recorder.source);
+  recorder.tick(2);
+  assert.equal(recorder.source,null);
+  assert.equal(recorder.indicator.intensity,0);
   flare.life=STEP;
   frame();
   assert.ok(!mechanics.items.has(flare.collider.handle));
@@ -1121,4 +1170,105 @@ test('the Echo extraction opens three plans and recovers a timed-out harness bef
     assert.match(records.get('extraction-return').description,new RegExp(plan+' approach'));
     assert.equal(extraction.returned.visible,true);
   }
+});
+
+test('the looping road resets the moving wagon and the chalk clue opens the bypass',async t=>{
+  const {LoopRoad}=await import('../src/loop-road.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker,STEP}=await import('../src/walker.js');
+  const {height,makeTerrain,trailX}=await import('../src/terrain.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  t.after(()=>world.free());
+  const town=new T.Scene();
+  const startZ=-17.1,startX=trailX(startZ);
+  const walker=new Walker(world,[startX,height(startX,startZ)+.9,startZ]);
+  const m=new Mechanics(world,walker,town,new T.Scene());
+  makeTerrain(town,world,{floor:null,normal:null});
+  m.makeCar([startX,height(startX,startZ)+.74,startZ]);
+  const records=new Map(),bag={records,record:(id,name)=>records.set(id,name)};
+  const story={state:3},messages=[];
+  const road=new LoopRoad(m,story,bag,message=>messages.push(message));
+  const use=()=>[...m.fixed.values()].find(target=>target.name==='Inspect the repeated mile marker').action();
+  assert.match(use(),/scratched the same number/);
+  story.state=4;
+  assert.match(use(),/chalk a slash/);
+  assert.match(use(),/still fresh/);
+  const car=m.car.body;
+  function driveToward(point,done){
+    for(let i=0;i<660;i++){
+      if(done())return;
+      const position=car.translation();
+      const front=new T.Vector3(0,0,-1).applyQuaternion(car.rotation());
+      const yaw=Math.atan2(-front.x,-front.z);
+      const desired=Math.atan2(position.x-point.x,position.z-point.z);
+      const error=Math.atan2(Math.sin(desired-yaw),Math.cos(desired-yaw));
+      m.drive({x:T.MathUtils.clamp(-error*2.8,-1,1),z:.37});
+      world.step(m.events);
+      m.after();
+      road.tick(STEP);
+    }
+    assert.fail('Wagon did not reach the road event target: '+JSON.stringify(car.translation()));
+  }
+  m.driving=true;walker.body.setEnabled(false);
+  driveToward(road.trigger.clone().add(new T.Vector3(0,0,-.6)),()=>road.run.laps===1);
+  assert.match(messages.at(-1),/mile seven again/);
+  assert.ok(car.translation().z>startZ);
+  assert.match(road.objective().text,/Compare the chalk/);
+  m.driving=false;
+  assert.match(use(),/old verge/);
+  m.driving=true;
+  driveToward(road.bypass,()=>records.has('road-that-loops'));
+  assert.equal(road.objective(),null);
+  assert.match(use(),/now leads past/);
+});
+
+test('field weapons send quiet pebbles and long rifle shots through normal collision',async t=>{
+  const {AssetPipeline}=await import('../src/assets.js');
+  const {installFieldRange}=await import('../src/field-range.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker}=await import('../src/walker.js');
+  const {height}=await import('../src/terrain.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  t.after(()=>world.free());
+  const scene=new T.Scene(),walker=new Walker(world,[0,0,0]);
+  const m=new Mechanics(world,walker,scene,new T.Scene());
+  const pipeline=new AssetPipeline(scene,world);
+  for(const name of ['field-lever-rifle','field-slingshot']){
+    const bytes=await readFile(new URL('../assets/'+name+'.glb',import.meta.url));
+    const {scene:model}=await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
+    assert.ok(new T.Box3().setFromObject(model).getSize(new T.Vector3()).length()>.19);
+  }
+  const records=new Map(),bag={records,record:(id,name)=>records.set(id,name)};
+  installFieldRange(m,bag,()=>{},()=>{});
+  const camera=new T.PerspectiveCamera();
+  const frame=()=>{
+    m.before(camera,{x:0,z:0},{actions:new Set()});
+    world.step(m.events);
+    m.after();
+  };
+  const fireAt=(point,offset,variant)=>{
+    m.cooldown=0;
+    camera.position.copy(point).add(new T.Vector3(0,0,offset));
+    camera.lookAt(point);
+    camera.updateMatrixWorld(true);
+    world.step(m.events);
+    m.fire(camera,false,variant);
+    for(let i=0;i<48;i++)frame();
+  };
+  const prop=m.crate([0,2,6]);
+  prop.body.setGravityScale(0,true);
+  fireAt(new T.Vector3(0,2,6),2,'slingshot');
+  assert.ok(m.pebbleNoise);
+  assert.equal(m.items.has(prop.collider.handle),false);
+  const base=height(13.2,-28);
+  fireAt(new T.Vector3(12.95,base+2,-28),25,'rifle');
+  assert.ok(records.has('range-bell'));
+  const plate=new T.Vector3(13.58,base+2.19,-28);
+  fireAt(plate,1.2,'pistol');
+  assert.equal(records.has('range-counterweight'),false);
+  fireAt(plate,27,'rifle');
+  assert.ok(records.has('range-counterweight'));
+  assert.ok([...m.items.values()].some(item=>item.name==='Iron range counterweight'));
 });
