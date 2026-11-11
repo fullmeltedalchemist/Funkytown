@@ -945,6 +945,13 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   assert.ok(Math.abs(mission.bellFloat.position.x-bellStart)>.1);
   assert.ok(mission.bellBody.numColliders()>0);
   assert.ok(mission.bellFloat.position.distanceTo(mission.bellBody.translation())<.001);
+  assert.equal(mission.bellFloat.userData.grappleSurface,false);
+  const bellPosition=mission.bellFloat.position;
+  aim(bellPosition.clone().add(new T.Vector3(0,3,0)),bellPosition);
+  assert.equal(mechanics.aim(camera,4)?.collider.parent()?.handle,mission.bellBody.handle);
+  assert.match(mechanics.grapple(camera),/Aim at a tree/);
+  assert.equal(mechanics.anchor,null);
+
   assert.match(interact('Read the memorial float program'),/penciled into the margin/);
   records.delete('founders-original-tape');
   assert.match(interact('Read the memorial float program'),/Cal is absent/);

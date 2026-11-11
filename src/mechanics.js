@@ -275,7 +275,8 @@ export class Mechanics {
     if(surface&&(!hit||surface.distance<=hit.timeOfImpact+.25)){
       this.anchor=surface.point.clone().addScaledVector(direction,-.55);
     }else{
-      if(!hit||hit.collider.isSensor()||hit.collider.parent()?.isDynamic())return 'Aim at a tree, roof, wall, or solid terrain.';
+      const body=hit?.collider.parent();
+      if(!hit||hit.collider.isSensor()||(body&&!body.isFixed()))return 'Aim at a tree, roof, wall, or solid terrain.';
       this.anchor=camera.position.clone().addScaledVector(direction,hit.timeOfImpact).addScaledVector(vec(hit.normal),.51);
     }
     return 'Hook attached. Tap Hook or press G again to release.';

@@ -93,7 +93,7 @@ export class AssetPipeline {
           .setTranslation(center.x,center.y,center.z));
       }
     }
-    root.userData.grappleSurface=options.collider==='authored';
+    root.userData.grappleSurface=options.collider==='authored'&&!options.body;
     this.scene.add(root);
     return root;
   }
