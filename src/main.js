@@ -8,10 +8,11 @@ import {installFieldRange} from './field-range.js';
 import {LoopRoad} from './loop-road.js';
 import {FieldRecorder} from './field-recorder.js';
 import {FordRescue} from './ford-rescue.js';
-import {FoundersNight} from './founders-night.js';
+import {FoundersNight,nearParadeStaging} from './founders-night.js';
 import {TowLine} from './tow-line.js';
 import {checkLookoutSignal,fireFlare} from './flare.js';
 import {Wildlife} from './wildlife.js';
+import {CreekBirds} from './creek-birds.js';
 import {SecondAddress} from './second-address.js';
 import {Extraction} from './extraction.js';
 import {SalvageStreet} from './salvage-street.js';
@@ -67,7 +68,7 @@ function forest(pipeline,models){
   const rnd=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
   const grove={oak:[],birch:[],maple:[],underbrush:[],rocks:[]};
   function place(type,x,z,scale,sink=0){
-    if(basinInfluence(x,z)>.07||[secondAddress,diner].some(p=>Math.hypot(x-p.x,z-p.z)<7.5))return;
+    if(basinInfluence(x,z)>.07||nearParadeStaging(x,z)||[secondAddress,diner].some(p=>Math.hypot(x-p.x,z-p.z)<7.5))return;
     if(insideRescueCorridor(x,z,type==='rocks'?scale*.48:1.2))return;
     const yaw=rnd()*Math.PI*2;
     if(nearFairground(x,z,type==='rocks'?scale*.48:.8)||nearWorkshop(x,z,type==='rocks'?scale*.48:.8))return;
@@ -251,6 +252,7 @@ async function boot(){
   installFairground(mechanics);
   const founders=new FoundersNight(mechanics,pipeline,models,bag,notice);
   const extraction=new Extraction(mechanics,chapters,bag,pipeline,models,notice);
+  const creekBirds=new CreekBirds(mechanics);
   const wildlife=new Wildlife(mechanics,pipeline,models.cottontail,bag,notice);
   bag.record('field-slingshot','Slingshot','Quiet pebbles arc and scatter nearby wildlife at the point of impact. Use it to break fragile props.','Gear');
   bag.record('field-rifle','Lever-action rifle','A faster, flatter shot for distant targets. Cycle with X or the weapon control.','Gear');
@@ -450,7 +452,9 @@ async function boot(){
         magnet.tick(STEP,camera);
         recorder.tick(STEP);
         const pebble=mechanics.pebbleNoise;
-        wildlife.tick(STEP,pebble?.area===0?pebble.position:recorder.area===0?recorder.source:null);
+        const wildlifeNoise=pebble?.area===0?pebble.position:recorder.area===0?recorder.source:null;
+        wildlife.tick(STEP,wildlifeNoise);
+        creekBirds.tick(STEP,wildlifeNoise);
         checkLookoutSignal(mechanics,finale.lookout,bag,notice,point=>playToolSound(620,860,.42,.2,point));
         towLine.tick(STEP);
         if(!mechanics.driving&&!mechanics.harnessSuspended){

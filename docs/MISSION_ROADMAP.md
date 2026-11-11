@@ -37,7 +37,8 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] Load a Blender-authored archive truck through the GLB pipeline. The first pass uses a scripted truck path.
 - [x] Stage a walkable parade float, spectator barriers and spectators. Give the moving archive truck physical collision.
 - [x] Build an open-front, collidable archive loading bay around the grapple shutter and tape case.
-- [ ] Expand the parade beyond the staged float.
+- [x] Add the memorial bell float and a program that reveals why Cal’s name was omitted.
+- [ ] Expand the parade with moving floats and more crowd activity.
 - [x] Offer a float-mounted recorder, a backstage bluff and a wagon pursuit. The recorder preserves the order in the Field Bag. The stagehand gives an off-the-record tip. A successful tail confirms the destination by observation.
 - [x] Make the truck chase recoverable if contact is lost. The delivery receipt reveals the same destination.
 - [x] Add a driveable fairground ramp, loose barrels and breakable roadside crates. The wagon retains cargo shift and strap behavior.
@@ -83,7 +84,8 @@ The central question is who returned after the reservoir evacuation. People who 
 - [ ] Add mission-specific wagon packing, padding for fragile evidence and multi-item choices. Tune gravel drift, body lean, ditch bounce, prop impacts and forgiving recovery. Preserve optional foot routes where appropriate.
 - [ ] Add persistent quest-object recovery, and use sleeping bodies, nearby activation and bounded debris to keep mobile play responsive.
 - [x] Authored cottontails that flee, can be shot and yield meat for the existing skillet and sharing loop.
-- [ ] Creek birds that flush in a group, a boar that can charge and knock over light props, and ordinary animals with trackable signs. Add meat bait, recipe variety, and sharing outcomes.
+- [x] Add creek birds that flush together when approached or distracted by a nearby sound.
+- [ ] Add a boar that can charge and knock over light props, and ordinary animals with trackable signs. Add meat bait, recipe variety, and sharing outcomes.
 - [x] First Echo cottontail. Observe it or shoot it to learn what it does. It yields a clue and no meat.
 - [x] Add separate evidence for photographing the Echo cottontail and flare-lit tracks.
 - [ ] Expand track-following and Echo species, including the deer whose tracks stop while its sound continues.

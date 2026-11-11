@@ -940,6 +940,10 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   records.delete('founders-depot');
   assert.match(interact('Ask the stagehand where the archive load goes'),/Route crew/);
   assert.match(records.get('founders-depot').description,/backstage bluff/);
+  assert.match(interact('Read the memorial float program'),/penciled into the margin/);
+  records.delete('founders-original-tape');
+  assert.match(interact('Read the memorial float program'),/Cal is absent/);
+
 });
 
 test('the ford rescue records each intervention and recovers from a missed wagon',async t=>{
@@ -1584,4 +1588,21 @@ test('the diner epilogue follows both arch choices and updates after a later res
       assert.equal(location.objective(),null);
     }
   }finally{world.free();}
+});
+
+
+test('creek birds flush as a flock and return after the player leaves',async()=>{
+  const {CreekBirds}=await import('../src/creek-birds.js');
+  const player=new T.Vector3(0,0,40);
+  const birds=new CreekBirds({scenes:[new T.Scene()],area:0,walker:{current:player}});
+  const [flock]=birds.flocks;
+  birds.tick(1);
+  assert.equal(flock.direction,null);
+  birds.tick(1,flock.home.clone());
+  assert.ok(flock.birds.every(bird=>bird.root.position.y>bird.perch.y));
+  birds.tick(4);
+  assert.ok(flock.birds.every(bird=>!bird.root.visible));
+  birds.tick(16);
+  assert.equal(flock.direction,null);
+  assert.ok(flock.birds.every(bird=>bird.root.visible&&bird.root.position.equals(bird.perch)));
 });

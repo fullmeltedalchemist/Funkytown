@@ -10,6 +10,8 @@ const tapeKey='founders-original-tape';
 const leadKey='founders-depot';
 const latchKey='founders-latch-open';
 const routePoint=z=>groundPoint(trailX(z)+.6,z);
+const bellFloatSite={x:-6.3,z:24.4};
+export const nearParadeStaging=(x,z)=>Math.hypot(x-bellFloatSite.x,z-bellFloatSite.z)<5.5;
 
 export class FoundersNight {
   constructor(mechanics,pipeline,models,bag,notice){
@@ -121,6 +123,29 @@ export class FoundersNight {
       this.revealDepot('parade dispatch recording');
       return 'The recorder catches an order to move the unedited roll-call tape to the creek storehouse. You keep the recording.';
     }});
+    const bellBase=groundPoint(bellFloatSite.x,bellFloatSite.z);
+    const bellFloat=this.pipeline.place(this.models.paradeFloat,{
+      position:bellBase.toArray(),yaw:Math.PI*.5,scale:.8,collider:'authored'
+    });
+    bellFloat.traverse(node=>{
+      if(!node.isMesh||!node.visible||!node.material.color)return;
+      node.material=node.material.clone();
+      node.material.color.multiply(new T.Color(0xc7d5a9));
+    });
+    const bell=new T.Mesh(new T.LatheGeometry([
+      new T.Vector2(.24,0),new T.Vector2(.17,.09),new T.Vector2(.13,.26),new T.Vector2(.045,.34)
+    ],20),new T.MeshStandardMaterial({color:0xc49a51,metalness:.55,roughness:.35,side:T.DoubleSide}));
+    bell.position.copy(bellBase).add(new T.Vector3(0,.75,0));
+    m.scenes[0].add(bell);
+    station(m,0,groundPoint(bellBase.x+2.35,bellBase.z+1.6),'Read the memorial float program',()=>{
+      const corrected=this.bag.records.has(tapeKey);
+      this.bag.record('founders-memorial-program','Founders’ Night memorial program',corrected?
+        'The postmaster added Cal to the memorial program after hearing the original tape.' :
+        'The bell float stops at the ford to read the missing names. The printed list leaves Cal off because the official roll call marked him safe.');
+      return corrected?
+        'Cal’s name is penciled into the margin. The postmaster has written “two replies, one name” beside it.' :
+        'The bell float will stop at the ford to read the missing names. Cal is absent from the list. The program says he answered the roll call from the safe bank.';
+    },{color:0x756c48});
     const worker=person(0x594946);
     const base=groundPoint(-4.7,19.6);
     worker.root.position.copy(base);

@@ -56,8 +56,10 @@ export function installFairground(mechanics){
       lid.position.y=y;visual.add(lid);
     }
     const home=groundPoint(x,z).add(new T.Vector3(0,.337,0));
-    mechanics.dynamic({position:home.toArray(),home,visual,name:'Loose fairground barrel',
+    const barrel=mechanics.dynamic({position:home.toArray(),home,visual,name:'Loose fairground barrel',
       size:[.562,.654,.562],impactLimit:9.6,shape:R.ColliderDesc.cylinder(.327,.277).setDensity(.7).setFriction(.49)});
+    barrel.floatSurface=-1.36;
+    barrel.floatLift=31;
   }
   for(const [x,z] of [[center-2.5,start-1.5],[center+2.2,start-2.65]]){
     mechanics.crate(groundPoint(x,z).add(new T.Vector3(0,.31,0)).toArray());
