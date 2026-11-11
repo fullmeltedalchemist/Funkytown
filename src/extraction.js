@@ -168,9 +168,10 @@ export class Extraction {
   }
   objective(){
     if(!this.available())return null;
+    if(this.chapters.ending==='hold'&&!this.plan())return null;
     if(this.chapters.story.area===0&&!this.plan()){
       const option=approaches.findIndex(route=>this.bag.records.has(route.requires));
-      return {text:'Optional extraction · Choose a crossing plan or decide the arch’s fate',target:this.plans[option].point};
+      return {text:'Chapter 4 · Plan Cal’s rescue or choose the arch’s fate at camp',target:this.plans[option].point};
     }
     if(this.chapters.story.area===0)return {text:'Optional extraction · Cross the arch to find Cal',target:this.chapters.story.gates[0]};
     if(!this.plan())return null;

@@ -50,7 +50,8 @@ The central question is who returned after the reservoir evacuation. People who 
 
 **Hook.** The original records establish who may still be alive beyond the arch. The ranger witnessed a copy taking somebody's place.
 
-- [x] After filing the archive tape, hear the ranger’s eyewitness account and Cal’s family disagree before deciding the arch’s fate.
+- [x] Require the original evacuation tape and both witness accounts before committing to either arch ending. If the tape is missing, guide the player to the submerged ledger, the second address and the archive in order.
+- [x] Explain why Mom closed the floodgate while leaving the Echo crossing open. Give Cal’s family a different response for each arch choice, with or without a successful rescue.
 - [x] Unlock three extraction plans through the salvaged pump, the aligned rescue recording or guidance from Cal’s family. Each gives a different route and crossing window.
 - [x] Carry Cal in a physical harness through the marked Echo crossing. Losing the harness or running out of time returns him to the shelter for another attempt.
 - [x] After the extraction, reflect the arch choice in the returned man’s dialogue, the radio and both addresses.

@@ -179,6 +179,10 @@ export class SalvageStreet {
     if(this.cargo.some(item=>this.mechanics.items.has(item.collider.handle)))return {
       text:'Submerged Street · Turn in the salvage at the high-bank drop',target:this.drop
     };
+    if(this.chapters.needsArchive?.()){
+      if(this.bag.records.has('pond-records'))return null;
+      return {text:'Chapter 4 · Drain Submerged Street and recover the missing-person ledger',target:this.control};
+    }
     const player=this.mechanics.driving?this.mechanics.car.body.translation():this.mechanics.walker.current;
     if(this.chapters.stage>=4&&!loads.every(load=>this.bag.records.has('pond-'+load.id))&&
       Math.hypot(player.x-basin.x,player.z-outside)<19){

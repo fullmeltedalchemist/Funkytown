@@ -10,6 +10,7 @@ const sequence=[1,0,2];
 const archiveTape='founders-original-tape';
 const rangerBriefing='extraction-ranger';
 const familyBriefing='extraction-family';
+const returnedKey='extraction-return';
 const echo=(x,z,y=-.015)=>new T.Vector3(x,y,z);
 
 export class Chapters {
@@ -79,8 +80,8 @@ export class Chapters {
       if(!this.released&&this.stage<4)return 'The latch holds the recorder under the porch beam. Grapple the brass ring above you.';
       if(this.stage!==3)return 'The recorder holds Mom’s original voice.';
       this.advance(4);
-      bag.record('moms-original','Mom’s original recording','The Echo remembers words spoken by the creek. Mom knows the porch light was left on.');
-      return 'The original recording confirms it. Head back to camp and choose what to do with the arch.';
+      bag.record('moms-original','Mom’s original recording','Mom shut the inner spillway gate to stop the flood. She kept the survey crossing open because Cal was still answering from the other bank. The porch light was her signal that someone was waiting.');
+      return 'Mom shut the floodgate, but kept the crossing open for Cal. Head back to camp and compare her recording with the original evacuation tape.';
     });
     this.recordingPoint=recording.point;
     mechanics.tag(hit.collider,{name:'Reflected porch ring',onGrapple:()=>{
@@ -123,6 +124,7 @@ export class Chapters {
       .setTranslation(...this.family.toArray()).setSensor(true).setCollisionGroups((128<<16)|2));
     target.setEnabled(false);
     mechanics.tag(target,{name:'Hear Cal’s family out',action:()=>{
+      if(this.ending)return this.familyAftermath();
       if(!this.bag.records.has(familyBriefing)){
         this.bag.record(familyBriefing,'Cal’s family at Foxglove Camp',
           'Cal’s sister wants the arch closed to protect her child. Her child heard Cal use a private family nickname on the other bank and wants to leave the way open.');
@@ -134,6 +136,20 @@ export class Chapters {
       target.setEnabled(visible);
     };
   }
+  needsArchive(){
+    return this.stage===4&&!this.bag.records.has(archiveTape);
+  }
+  familyAftermath(){
+    const returned=this.bag.records.has(returnedKey);
+    if(this.ending==='seal'){
+      return returned?
+        'Cricket puts the good mugs on the table. Cal’s sister says, “He knew where we kept them. I’m going to sit with him and hear what he remembers.”':
+        'Cal’s sister sets a mug out for Cricket. “I asked you to close it. I still wish we could have brought him home.”';
+    }
+    return returned?
+      'Cricket leaves the porch light on. “He found his way home. Maybe someone else is still waiting for a light.”':
+      'Cal’s sister hands Cricket a lantern. “We can mark the bank from here. Nobody crosses until the ranger has a line on them.”';
+  }
   briefingAvailable(){
     return (this.stage===4||this.ending==='hold')&&this.bag.records.has(archiveTape);
   }
@@ -144,7 +160,7 @@ export class Chapters {
     return null;
   }
   tick(){
-    const visible=this.briefingAvailable();
+    const visible=this.briefingAvailable()||!!this.ending&&this.bag.records.has(familyBriefing);
     if(visible===this.familyVisible)return;
     this.familyVisible=visible;
     this.showFamily?.(visible);
@@ -171,11 +187,12 @@ export class Chapters {
   finish(ending){
     if(this.ending)return this.ending==='seal'?'The arch is sealed.':'The arch stays open for the search party.';
     if(this.stage!==4)return 'Recover the original recording before deciding what to do with the arch.';
+    if(this.needsArchive())return 'File the original evacuation tape before deciding. Start with the ledger at Submerged Street if you haven’t found the second address.';
     if(this.briefingObjective())return 'Hear the ranger and Cal’s family out before deciding what to do with the crossing.';
     this.ending=ending;
     this.story.archSealed=ending==='seal';
     this.advance(5);
-    const returned=this.bag.records.has('extraction-return');
+    const returned=this.bag.records.has(returnedKey);
     const message=ending==='seal'?
       returned?'The arch goes quiet. The man you brought back can finally speak to his family. The second radio falls silent.':
         'The arch goes quiet. Mom’s recording stays with you.':

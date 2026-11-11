@@ -224,7 +224,9 @@ test('chapter route resets a wrong gauge order and persists each arch ending',as
     interact('Recover Mom’s original recording');
     mechanics.changeArea(0);
     const archChoice=ending==='seal'?'Seal the arch':'Keep the arch open for a rescue';
-    if(ending==='hold'){
+    assert.match(interact(archChoice),/File the original evacuation tape/);
+    assert.equal(chapter.stage,4);
+    {
       records.set('founders-original-tape',true);
       chapter.tick();
       assert.match(interact(archChoice),/Hear the ranger/);
@@ -236,6 +238,9 @@ test('chapter route resets a wrong gauge order and persists each arch ending',as
     }
     interact(archChoice);
     assert.equal(story.archSealed,ending==='seal');
+    assert.match(interact('Hear Cal’s family out'),ending==='seal'?/wish we could have brought him home/:/ranger has a line/);
+    records.set('extraction-return',true);
+    assert.match(interact('Hear Cal’s family out'),ending==='seal'?/good mugs/:/porch light/);
     assert.equal(new Chapters(mechanics,story,finale,bag,()=>{}).ending,ending);
     world.free();
   }
