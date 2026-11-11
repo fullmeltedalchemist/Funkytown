@@ -499,7 +499,9 @@ async function boot(){
       water.uniforms.ripple.value.set(player.x,player.z,now*.001);lastWake=now;
     }
     story.animate(now*.001);
-    const objective=loopRoad.objective()??(rescue.showPractice?rescue.objective():null)??salvage.objective()??address.objective()??founders.objective()??fieldProps.objective()??fordRescue.objective()??extraction.objective()??chapters.objective()??finale.objective()??rescue.objective();
+    const objective=fordRescue.objective()??loopRoad.objective()??salvage.objective()??
+      address.objective()??founders.objective()??extraction.objective()??chapters.objective()??
+      (rescue.showPractice?rescue.objective():null)??fieldProps.objective()??finale.objective()??rescue.objective();
     $('guide').textContent=workshop.active?workshop.hint():objective?.text??story.guide(player);
     const waypoint=objective?objective.target:story.waypoint();
     const arrow=$('bearing');

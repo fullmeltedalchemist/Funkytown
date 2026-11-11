@@ -143,7 +143,8 @@ export class Rescue {
       });
     this.marker(rig,0xc3a375,'Read rescue practice sign',()=>{
       if(this.stage<1)return 'Speak to the woman at the bank first.';
-      this.showPractice=true;
+      this.showPractice=!this.showPractice;
+      if(!this.showPractice)return 'Rescue practice untracked. You can return to the winch anytime.';
       return 'The rescue winch is on the south bank upstream of the ford. Follow the arrow to the orange crank.';
     });
     const rack=point(this.fire.x+2.6,this.fire.z-1.1);

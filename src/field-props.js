@@ -52,6 +52,7 @@ export class FieldProps {
       this.heardEcho=false;
       return 'The relay’s cable is cut and its casing is still. Something copied the sound of the pump without starting it.';
     },{color:0x4f6869});
+    this.pumpPoint=pump.point;
     this.echoPoint=relay.point;
     mechanics.fixed.get(relay.collider.handle).contact=()=>({
       strength:0,
@@ -165,8 +166,11 @@ export class FieldProps {
   }
 
   objective(){
-    if(this.heardEcho&&this.mechanics.area===0)return {text:'Optional · Find the source of the second pump start',target:this.echoPoint};
-    return null;
+    const m=this.mechanics;
+    if(!this.heardEcho||m.area!==0)return null;
+    const player=m.driving?m.car.body.translation():m.walker.current;
+    const nearby=[this.pumpPoint,this.echoPoint].some(point=>Math.hypot(player.x-point.x,player.z-point.z)<14);
+    return nearby?{text:'Optional · Find the source of the second pump start',target:this.echoPoint}:null;
   }
 
   tick(dt){

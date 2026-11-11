@@ -110,7 +110,8 @@ for(const flooded of [false,true]){
 const liveUrl=process.env.FUNKYTOWN_LIVE_URL;
 if(liveUrl){
   test('live site serves the game files from this checkout',async()=>{
-    const paths=['index.html','style.css','src/main.js','src/finale.js','src/rescue.js','src/gear.js'];
+    const paths=['index.html','style.css','src/main.js','src/finale.js','src/rescue.js','src/gear.js',
+      'src/chapters.js','src/salvage-street.js','src/extraction.js','src/field-props.js'];
     await Promise.all(paths.map(async path=>{
       const url=new URL(path,liveUrl.endsWith('/')?liveUrl:liveUrl+'/');
       const response=await fetch(url,{cache:'no-store',signal:AbortSignal.timeout(20000)});
