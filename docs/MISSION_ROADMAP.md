@@ -39,7 +39,8 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] Build an open-front, collidable archive loading bay around the grapple shutter and tape case.
 - [x] Add the memorial bell float and a program that reveals why Cal’s name was omitted.
 - [x] Move the memorial float in its staging lane with attached collision and spectators that turn to watch.
-- [ ] Extend parade movement into a full procession with crowd activity.
+- [x] Give the bell float a repeating staging lane route with stops for players in its path. Add Inez’s eyewitness account, Wes’s route guidance, and follow-up dialogue after filing the tape.
+- [ ] Extend the procession beyond the staging lane and verify the crowd and float timing on touch.
 - [x] Offer a float-mounted recorder, a backstage bluff and a wagon pursuit. The recorder preserves the order in the Field Bag. The stagehand gives an off-the-record tip. A successful tail confirms the destination by observation.
 - [x] Make the truck chase recoverable if contact is lost. The delivery receipt reveals the same destination.
 - [x] Add a driveable fairground ramp, loose barrels and breakable roadside crates. The wagon retains cargo shift and strap behavior.

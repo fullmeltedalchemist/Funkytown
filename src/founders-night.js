@@ -11,7 +11,9 @@ const leadKey='founders-depot';
 const latchKey='founders-latch-open';
 const routePoint=z=>groundPoint(trailX(z)+.6,z);
 const bellFloatSite={x:-6.3,z:24.4};
-export const nearParadeStaging=(x,z)=>Math.hypot(x-bellFloatSite.x,z-bellFloatSite.z)<5.5;
+const bellRouteLength=3.6;
+export const nearParadeStaging=(x,z)=>Math.abs(x-bellFloatSite.x)<4.5&&
+  z>bellFloatSite.z-bellRouteLength-4.5&&z<bellFloatSite.z+4.5;
 
 export class FoundersNight {
   constructor(mechanics,pipeline,models,bag,notice){
@@ -126,9 +128,10 @@ export class FoundersNight {
     const bellBase=groundPoint(bellFloatSite.x,bellFloatSite.z);
     this.bellBase=bellBase;
     this.bellTime=0;
+    this.bellPaused=false;
     this.bellBody=m.world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(...bellBase.toArray()));
     const bellFloat=this.bellFloat=this.pipeline.place(this.models.paradeFloat,{
-      position:bellBase.toArray(),yaw:Math.PI*.5,scale:.8,collider:'authored',body:this.bellBody
+      position:bellBase.toArray(),yaw:0,scale:.8,collider:'authored',body:this.bellBody
     });
     bellFloat.traverse(node=>{
       if(!node.isMesh||!node.visible||!node.material.color)return;
@@ -140,10 +143,18 @@ export class FoundersNight {
     ],20),new T.MeshStandardMaterial({color:0xc49a51,metalness:.55,roughness:.35,side:T.DoubleSide}));
     bell.position.set(0,.71,0);
     bellFloat.add(bell);
-    this.bellSpectators=[-1,1].map(side=>{
-      const spectator=person(side<0?0x816643:0x596a66).root;
-      spectator.position.copy(groundPoint(bellBase.x+side*2.9,bellBase.z-1.9));
+    this.bellSpectators=[
+      {name:'Inez',x:bellBase.x-1.75,z:bellBase.z-1.65,coat:0x816643,
+        listen:()=>this.memorialWitness()},
+      {name:'Wes',x:bellBase.x+1.95,z:bellBase.z-2.1,coat:0x596a66,
+        listen:()=>this.routeMarshal()}
+    ].map(({name,x,z,coat,listen})=>{
+      const spectator=person(coat).root;
+      spectator.position.copy(groundPoint(x,z));
       m.scenes[0].add(spectator);
+      const sensor=m.world.createCollider(R.ColliderDesc.capsule(.28,.34)
+        .setTranslation(x,spectator.position.y+1,z).setSensor(true).setCollisionGroups((128<<16)|2));
+      m.tag(sensor,{name:'Talk to '+name,action:listen});
       return spectator;
     });
     station(m,0,groundPoint(bellBase.x+2.35,bellBase.z+1.6),'Read the memorial float program',()=>{
@@ -167,8 +178,42 @@ export class FoundersNight {
       this.bag.record('founders-stagehand','Stagehand’s delivery tip',
         'You say you are clearing the parade route. A stagehand names the creek storehouse but asks you to keep the conversation private.');
       this.revealDepot('backstage bluff');
-      return '“Route crew? Tell the truck to use the creek storehouse.” The stagehand lowers her voice. “And don’t say you got that from me.”';
+      return '“Route crew? Tell the truck to use the creek storehouse.” The stagehand lowers her voice. “My dad is on the memorial list. I want the tape heard, but leave my name out of it.”';
     }});
+  }
+
+  memorialWitness(){
+    if(this.bag.records.has(tapeKey))return 'Inez folds her program around the pencil marks. “When they read his name, I’ll ring once for the man who came back and once for the voice we left behind.”';
+    if(this.bag.records.has('founders-bell-witness'))return '“Look at the program. I rang the bell from the bank. The man calling for me was still across the creek.”';
+    this.bag.record('founders-bell-witness','Inez’s evacuation account',
+      'Inez used to signal the mill shift with the bell. She was on the near bank when Cal answered from across the creek, after dispatch marked him safe.');
+    return '“I rang that bell at the mill for thirty years. On flood night I rang it from this bank. Cal answered from the other side after dispatch had already marked him safe.”';
+  }
+
+  routeMarshal(){
+    if(this.bag.records.has(tapeKey))return 'Wes lowers the route flag. “The clerk says the tape’s safe. We can read the names without hurrying now.”';
+    return this.bellPaused?
+      '“Hold there. I stopped the float because someone’s in the lane. Walk along the shoulder and I’ll wave it through.”':
+      '“The bell crew uses this lane. The archive truck takes the main road. If you lose it, the clerk has the delivery receipt beside the dispatch board.”';
+  }
+
+  advanceParade(dt,player){
+    const {x,z}=this.bellBase;
+    const nextTime=this.bellTime+dt;
+    // Pause between passes so people can cross the lane.
+    const phase=nextTime%24;
+    const progress=phase<10?phase/10:phase<12?1:phase<22?1-(phase-12)/10:0;
+    const nextZ=z-progress*bellRouteLength;
+    this.bellPaused=Math.abs(player.x-x)<1.22&&Math.abs(player.z-nextZ)<2.85;
+    if(!this.bellPaused){
+      this.bellTime=nextTime;
+      const position=this.bellFloat.position.set(x,height(x,nextZ),nextZ);
+      this.bellBody.setNextKinematicTranslation(position);
+    }
+    const float=this.bellFloat.position;
+    for(const spectator of this.bellSpectators){
+      spectator.rotation.y=Math.atan2(float.x-spectator.position.x,float.z-spectator.position.z);
+    }
   }
 
   raiseShutter(){
@@ -202,7 +247,10 @@ export class FoundersNight {
     const witness=this.bag.records.has('founders-float-audio')?
       ' The clerk recognizes the dispatcher’s voice from the parade recording.' :
       this.bag.records.has('founders-stagehand')?' The clerk agrees to keep the stagehand out of the report.':'';
-    return 'The clerk plays the tape. Two people answer to the same name. Then you hear Mom ask the ranger to keep the crossing open.'+witness;
+    const corroboration=this.bag.records.has('founders-bell-witness')?
+      ' The clerk marks Inez’s bell in the margin, just before the second reply.' : '';
+    return 'The clerk plays the tape. Two people answer to the same name. Then you hear Mom ask the ranger to keep the crossing open.'+
+      witness+corroboration;
   }
 
   unlocked(){return this.bag.records.has('second-address-filed');}
@@ -222,22 +270,12 @@ export class FoundersNight {
     const m=this.mechanics;
     if(m.area!==0)return;
     if(!this.float&&this.unlocked())this.installParade();
-    if(this.bellFloat&&this.mechanics.area===0){
-      this.bellTime+=dt;
-      // The memorial crew eases the float back and forth in its staging lane.
-      const x=this.bellBase.x+Math.sin(this.bellTime*.35)*.65;
-      const z=this.bellBase.z;
-      const position=this.bellFloat.position.set(x,height(x,z),z);
-      this.bellBody.setNextKinematicTranslation(position);
-      for(const spectator of this.bellSpectators){
-        spectator.rotation.y=Math.atan2(x-spectator.position.x,z-spectator.position.z);
-      }
-    }
+    const player=m.driving?vec(m.car.body.translation()):m.walker.current;
+    if(this.bellFloat)this.advanceParade(dt,player);
     if(this.bag.records.has(latchKey)&&!this.bag.records.has(tapeKey)&&
       (!this.case||!m.items.has(this.case.collider.handle)))this.stockCase();
     if(!this.tail)return;
     const {tail,truck}=this;
-    const player=m.driving?vec(m.car.body.translation()):m.walker.current;
     const near=Math.hypot(player.x-truck.position.x,player.z-truck.position.z);
     if(!tail.started){
       if(!m.driving||near>9)return;

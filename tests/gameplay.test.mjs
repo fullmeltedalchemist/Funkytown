@@ -940,9 +940,9 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   records.delete('founders-depot');
   assert.match(interact('Ask the stagehand where the archive load goes'),/Route crew/);
   assert.match(records.get('founders-depot').description,/backstage bluff/);
-  const bellStart=mission.bellFloat.position.x;
+  const bellStart=mission.bellFloat.position.z;
   for(let i=0;i<60;i++){mission.tick(STEP);world.step(mechanics.events);}
-  assert.ok(Math.abs(mission.bellFloat.position.x-bellStart)>.1);
+  assert.ok(Math.abs(mission.bellFloat.position.z-bellStart)>.1);
   assert.ok(mission.bellBody.numColliders()>0);
   assert.ok(mission.bellFloat.position.distanceTo(mission.bellBody.translation())<.001);
   assert.equal(mission.bellFloat.userData.grappleSurface,false);
@@ -955,6 +955,20 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   assert.match(interact('Read the memorial float program'),/penciled into the margin/);
   records.delete('founders-original-tape');
   assert.match(interact('Read the memorial float program'),/Cal is absent/);
+  assert.match(interact('Talk to Inez'),/marked him safe/);
+  assert.ok(records.has('founders-bell-witness'));
+  const time=mission.bellTime;
+  mission.advanceParade(STEP,mission.bellFloat.position.clone());
+  assert.equal(mission.bellTime,time);
+  assert.match(interact('Talk to Wes'),/stopped the float/);
+  mission.advanceParade(STEP,new T.Vector3(30,0,30));
+  assert.ok(mission.bellTime>time);
+  records.set('founders-original-tape',true);
+  assert.match(interact('Talk to Inez'),/voice we left behind/);
+  records.delete('founders-original-tape');
+  mission.stockCase();
+  assert.match(mission.fileTape(mission.case),/Inez’s bell/);
+
 
 });
 
@@ -1583,10 +1597,16 @@ test('the diner epilogue follows both arch choices and updates after a later res
     const location=new Diner(mechanics,chapters,bag,new AssetPipeline(scene,world),{receiver:new T.Group()});
     const interact=name=>[...mechanics.fixed.values()].find(tag=>tag.name===name).action();
     const booth=()=>interact('Check Cal’s booth at the diner');
-    const radio=()=>interact('Listen at the diner counter');
+    const radio=()=>interact('Talk to June at the diner counter');
     assert.equal(location.objective(),null);
     assert.match(booth(),/night shift/);
     assert.equal(records.size,0);
+    assert.match(radio(),/leave the lights on/);
+    records.set('founders-original-tape',true);
+    assert.match(radio(),/old coffee ledger/);
+    assert.ok(records.has('diner-night-shift'));
+    records.set('extraction-return',true);
+    assert.match(radio(),/two cups/);
     for(const ending of ['seal','hold']){
       records.clear();
       chapters.ending=ending;

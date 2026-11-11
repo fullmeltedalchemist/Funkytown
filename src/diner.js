@@ -34,16 +34,24 @@ export class Diner {
     const owner=person(0x806347).root;
     owner.position.set(x-.65,floor,z-2.46);
     mechanics.scenes[0].add(radio,owner);
-    mechanics.tag(counter.collider,{name:'Listen at the diner counter',action:()=>this.counterStory()});
+    mechanics.tag(counter.collider,{name:'Talk to June at the diner counter',action:()=>this.counterStory()});
     const booth=box([1.26,.055,.86],-2.08,.85,.45,0xe5ba7d);
     this.booth=booth.visual.position;
     mechanics.tag(booth.collider,{name:'Check Cal’s booth at the diner',action:()=>this.boothStory()});
   }
 
   counterStory(){
-    if(!this.chapters.ending)return 'The owner keeps a radio by the till. “On evacuation night we put the coffee on and left the door unlocked. The rescue crew could see our windows from the road.”';
+    if(!this.chapters.ending){
+      if(this.bag.records.has('extraction-return'))return 'June sets out two cups. “He remembered how I used to burn the first pot. If he wants to tell us more, we can listen over coffee.”';
+      if(this.bag.records.has('founders-original-tape')){
+        this.bag.record('diner-night-shift','June’s coffee ledger',
+          'June served the man who came back after the evacuation. He ordered his coffee exactly the way Cal did. She cannot say which man was speaking from the far bank.');
+        return 'June opens the old coffee ledger. “The man who came back ordered Cal’s coffee exactly right. Same cracked cup, same spoon. Hearing two voices on that tape changes what I thought I knew.”';
+      }
+      return 'June checks the radio by the till. “I ran the night shift when the creek came up. Cal said to leave the lights on so the rescue crew could see us. He never asked me to put his coffee on the tab. I did anyway.”';
+    }
     if(this.chapters.ending==='seal')return 'The radio gives the regular weather report. “First night in years it hasn’t called out a second temperature. I can hear the fridge again.”';
-    return 'The owner turns down the radio. “The ranger calls a roll every hour. We write the replies on paper so the next shift knows who’s still out there.”';
+    return 'June turns down the radio. “The ranger calls a roll every hour. We write the replies on paper so the next shift knows who’s still out there.”';
   }
 
   boothStory(){
