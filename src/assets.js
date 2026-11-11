@@ -59,9 +59,19 @@ export class AssetPipeline {
     if(options.collider==='authored' && !shapes.length)throw Error('Model has no COL_ collider meshes.');
     if(options.collider==='authored'){
       for(const node of shapes){
-        const shape=R.ColliderDesc.convexHull(pointsFor(node));
+        const vertices=pointsFor(node);
+        // Attached hulls are expressed relative to the moving body's initial position.
+        if(options.body){
+          const origin=options.body.translation();
+          for(let i=0;i<vertices.length;i+=3){
+            vertices[i]-=origin.x;
+            vertices[i+1]-=origin.y;
+            vertices[i+2]-=origin.z;
+          }
+        }
+        const shape=R.ColliderDesc.convexHull(vertices);
         if(!shape)throw Error('Degenerate collision node: '+node.name);
-        this.world.createCollider(shape);
+        this.world.createCollider(shape,options.body);
       }
     }
     if(options.collider==='hull'){

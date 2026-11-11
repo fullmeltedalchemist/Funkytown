@@ -13,6 +13,7 @@ import {TowLine} from './tow-line.js';
 import {checkLookoutSignal,fireFlare} from './flare.js';
 import {Wildlife} from './wildlife.js';
 import {CreekBirds} from './creek-birds.js';
+import {CreekWildlife} from './creek-wildlife.js';
 import {SecondAddress} from './second-address.js';
 import {Extraction} from './extraction.js';
 import {SalvageStreet} from './salvage-street.js';
@@ -253,6 +254,7 @@ async function boot(){
   const founders=new FoundersNight(mechanics,pipeline,models,bag,notice);
   const extraction=new Extraction(mechanics,chapters,bag,pipeline,models,notice);
   const creekBirds=new CreekBirds(mechanics);
+  const creekWildlife=new CreekWildlife(mechanics,bag,notice,point=>playToolSound(610,290,.64,.18,point));
   const wildlife=new Wildlife(mechanics,pipeline,models.cottontail,bag,notice);
   bag.record('field-slingshot','Slingshot','Quiet pebbles arc and scatter nearby wildlife at the point of impact. Use it to break fragile props.','Gear');
   bag.record('field-rifle','Lever-action rifle','A faster, flatter shot for distant targets. Cycle with X or the weapon control.','Gear');
@@ -455,6 +457,7 @@ async function boot(){
         const wildlifeNoise=pebble?.area===0?pebble.position:recorder.area===0?recorder.source:null;
         wildlife.tick(STEP,wildlifeNoise);
         creekBirds.tick(STEP,wildlifeNoise);
+        creekWildlife.tick(STEP);
         checkLookoutSignal(mechanics,finale.lookout,bag,notice,point=>playToolSound(620,860,.42,.2,point));
         towLine.tick(STEP);
         if(!mechanics.driving&&!mechanics.harnessSuspended){

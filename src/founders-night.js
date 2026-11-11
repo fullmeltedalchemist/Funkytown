@@ -124,8 +124,11 @@ export class FoundersNight {
       return 'The recorder catches an order to move the unedited roll-call tape to the creek storehouse. You keep the recording.';
     }});
     const bellBase=groundPoint(bellFloatSite.x,bellFloatSite.z);
-    const bellFloat=this.pipeline.place(this.models.paradeFloat,{
-      position:bellBase.toArray(),yaw:Math.PI*.5,scale:.8,collider:'authored'
+    this.bellBase=bellBase;
+    this.bellTime=0;
+    this.bellBody=m.world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(...bellBase.toArray()));
+    const bellFloat=this.bellFloat=this.pipeline.place(this.models.paradeFloat,{
+      position:bellBase.toArray(),yaw:Math.PI*.5,scale:.8,collider:'authored',body:this.bellBody
     });
     bellFloat.traverse(node=>{
       if(!node.isMesh||!node.visible||!node.material.color)return;
@@ -135,8 +138,14 @@ export class FoundersNight {
     const bell=new T.Mesh(new T.LatheGeometry([
       new T.Vector2(.24,0),new T.Vector2(.17,.09),new T.Vector2(.13,.26),new T.Vector2(.045,.34)
     ],20),new T.MeshStandardMaterial({color:0xc49a51,metalness:.55,roughness:.35,side:T.DoubleSide}));
-    bell.position.copy(bellBase).add(new T.Vector3(0,.75,0));
-    m.scenes[0].add(bell);
+    bell.position.set(0,.71,0);
+    bellFloat.add(bell);
+    this.bellSpectators=[-1,1].map(side=>{
+      const spectator=person(side<0?0x816643:0x596a66).root;
+      spectator.position.copy(groundPoint(bellBase.x+side*2.9,bellBase.z-1.9));
+      m.scenes[0].add(spectator);
+      return spectator;
+    });
     station(m,0,groundPoint(bellBase.x+2.35,bellBase.z+1.6),'Read the memorial float program',()=>{
       const corrected=this.bag.records.has(tapeKey);
       this.bag.record('founders-memorial-program','Founders’ Night memorial program',corrected?
@@ -213,6 +222,17 @@ export class FoundersNight {
     const m=this.mechanics;
     if(m.area!==0)return;
     if(!this.float&&this.unlocked())this.installParade();
+    if(this.bellFloat&&this.mechanics.area===0){
+      this.bellTime+=dt;
+      // The memorial crew eases the float back and forth in its staging lane.
+      const x=this.bellBase.x+Math.sin(this.bellTime*.35)*.65;
+      const z=this.bellBase.z;
+      const position=this.bellFloat.position.set(x,height(x,z),z);
+      this.bellBody.setNextKinematicTranslation(position);
+      for(const spectator of this.bellSpectators){
+        spectator.rotation.y=Math.atan2(x-spectator.position.x,z-spectator.position.z);
+      }
+    }
     if(this.bag.records.has(latchKey)&&!this.bag.records.has(tapeKey)&&
       (!this.case||!m.items.has(this.case.collider.handle)))this.stockCase();
     if(!this.tail)return;

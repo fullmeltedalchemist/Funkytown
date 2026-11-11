@@ -940,6 +940,11 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   records.delete('founders-depot');
   assert.match(interact('Ask the stagehand where the archive load goes'),/Route crew/);
   assert.match(records.get('founders-depot').description,/backstage bluff/);
+  const bellStart=mission.bellFloat.position.x;
+  for(let i=0;i<60;i++){mission.tick(STEP);world.step(mechanics.events);}
+  assert.ok(Math.abs(mission.bellFloat.position.x-bellStart)>.1);
+  assert.ok(mission.bellBody.numColliders()>0);
+  assert.ok(mission.bellFloat.position.distanceTo(mission.bellBody.translation())<.001);
   assert.match(interact('Read the memorial float program'),/penciled into the margin/);
   records.delete('founders-original-tape');
   assert.match(interact('Read the memorial float program'),/Cal is absent/);
@@ -1605,4 +1610,35 @@ test('creek birds flush as a flock and return after the player leaves',async()=>
   birds.tick(16);
   assert.equal(flock.direction,null);
   assert.ok(flock.birds.every(bird=>bird.root.visible&&bird.root.position.equals(bird.perch)));
+});
+
+
+test('the boar displaces light props and the Echo deer calls after disappearing',async()=>{
+  const {CreekWildlife}=await import('../src/creek-wildlife.js');
+  const player=new T.Vector3();
+  const items=new Map();
+  const records=new Map();
+  const calls=[];
+  const wildlife=new CreekWildlife({scenes:[new T.Scene()],area:0,walker:{current:player},items},
+    {record:(id,name,description)=>records.set(id,{name,description})},()=>{},point=>calls.push(point.clone()));
+  player.copy(wildlife.home).add(new T.Vector3(4,0,0));
+  const impulses=[];
+  const propPosition=wildlife.home.clone().add(new T.Vector3(1,.4,0));
+  items.set('crate',{area:0,kind:'prop',body:{
+    mass:()=>5,translation:()=>propPosition,applyImpulse:impulse=>impulses.push(impulse)
+  }});
+  wildlife.tick(.1);
+  for(let i=0;i<15;i++)wildlife.tick(.1);
+  assert.equal(impulses.length,1);
+  assert.ok(impulses[0].x>0);
+  player.copy(wildlife.trackEnd);
+  wildlife.tick(.5);
+  assert.equal(wildlife.deer.visible,true);
+  assert.equal(calls.length,0);
+  wildlife.tick(1.4);
+  assert.equal(wildlife.deer.visible,false);
+  assert.equal(calls.length,1);
+  assert.ok(records.has('echo-deer'));
+  wildlife.tick(2);
+  assert.equal(calls.length,1);
 });
