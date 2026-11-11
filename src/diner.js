@@ -1,5 +1,7 @@
 import {diner,height} from './terrain.js';
 import {person} from './rescue.js';
+import * as T from 'three';
+import {part} from './mechanics.js';
 
 export class Diner {
   constructor(mechanics,chapters,bag,pipeline,models){
@@ -33,9 +35,55 @@ export class Diner {
     const radio=pipeline.prepare(models.receiver,{scale:.69,position:[x+.82,floor+1.06,z-1.95],groundY:floor+1.06});
     const owner=person(0x806347).root;
     owner.position.set(x-.65,floor,z-2.46);
-    mechanics.scenes[0].add(radio,owner);
-    mechanics.tag(counter.collider,{name:'Talk to June at the diner counter',action:()=>this.counterStory()});
+    const scene=mechanics.scenes[0];
+    scene.add(radio,owner);
+    const tiles=new T.InstancedMesh(new T.BoxGeometry(.395,.008,.395),
+      new T.MeshStandardMaterial({roughness:.81}),16*14);
+    const tile=new T.Matrix4();
+    for(let row=0;row<14;row++)for(let col=0;col<16;col++){
+      const i=row*16+col;
+      tiles.setMatrixAt(i,tile.makeTranslation(x+(col-7.5)*.4,floor+.004,z+(row-6.5)*.4));
+      tiles.setColorAt(i,new T.Color((row+col)%2?0xc9b997:0x706c60));
+    }
+    tiles.receiveShadow=true;
+    scene.add(tiles);
+    const mugs=new T.CylinderGeometry(.073,.056,.11,12);
+    const ceramic=new T.MeshStandardMaterial({color:0xc7dbd0,roughness:.42});
+    for(const [dx,y,dz] of [[-2.3,.88,.1],[-1.89,.88,.75],[.33,1.06,-1.83],[-.17,1.06,-1.91]]){
+      const mug=new T.Mesh(mugs,ceramic);
+      mug.position.set(x+dx,floor+y+.055,z+dz);
+      scene.add(mug);
+    }
+    for(const shelfY of [1.33,1.75]){
+      part(scene,[2.8,.07,.25],[x,floor+shelfY,z-2.56],wood,.015);
+      for(const dx of [-1.17,-.71,-.25,.21,.67,1.13]){
+        const cup=new T.Mesh(mugs,ceramic);
+        cup.position.set(x+dx,floor+shelfY+.09,z-2.55);
+        scene.add(cup);
+      }
+    }
+    mechanics.tag(counter.collider,{
+      name:'Talk to June at the diner counter',
+      action:()=>this.counterStory(),
+      acceptName:'Show June the mill time slip',
+      accept:item=>{
+        if(!item.millSlip)return 'June sets a hand on the counter. “I can read the mill’s time slip if you bring it by.”';
+        mechanics.remove(item);
+        bag.record('mill-slip-identified','June identified the mill time slip',
+          'The alarm time was stamped after Cal’s coffee was marked paid. June’s ledger counted a prepaid pot. Inez’s far-bank account still stands.');
+        return 'June runs a finger over the stamp. “I wrote PAID when he left money for the whole shift. That entry tells us when he paid, not when he got home.”';
+      }
+    });
     const booth=box([1.26,.055,.86],-2.08,.85,.45,0xe5ba7d);
+    const serving=box([.42,.042,.29],.8,1.08,-1.77,0x75867c);
+    mechanics.tag(serving.collider,{name:'Share a hot plate with June',action:()=>{
+      if(bag.records.has('diner-hot-plate'))return 'June has already taken a plate to the relief crew.';
+      if(!bag.records.has('camp-meal'))return 'Bring a meal from the camp skillet to share with the relief crew.';
+      bag.forget('camp-meal');
+      bag.record('diner-hot-plate','A plate for the relief crew',
+        'June took your hot plate to the crew and put your name next to Cal’s on her kitchen chalkboard.','Keepsakes');
+      return 'June sets a lid over the plate. “Cal used to leave a second one for the late shift. They’ll be glad you remembered.”';
+    }});
     this.booth=booth.visual.position;
     mechanics.tag(booth.collider,{name:'Check Cal’s booth at the diner',action:()=>this.boothStory()});
   }
@@ -43,6 +91,7 @@ export class Diner {
   counterStory(){
     if(!this.chapters.ending){
       if(this.bag.records.has('extraction-return'))return 'June sets out two cups. “He remembered how I used to burn the first pot. If he wants to tell us more, we can listen over coffee.”';
+      if(this.bag.records.has('mill-slip-identified'))return 'June folds the slip into her ledger. “Inez and I were both telling the truth. I just remembered the wrong part of the night.”';
       if(this.bag.records.has('founders-original-tape')){
         this.bag.record('diner-night-shift','June’s coffee ledger',
           'June served the man who came back after the evacuation. He ordered his coffee exactly the way Cal did. She cannot say which man was speaking from the far bank.');

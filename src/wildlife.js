@@ -2,6 +2,7 @@ import * as T from 'three';
 import R from 'rapier';
 import {height} from './terrain.js';
 import {vec} from './mechanics.js';
+import {groundPoint,station} from './field-stations.js';
 
 const sites=[[-14,19],[18,9],[-10,-17]];
 const echoSite=[-12,4.8];
@@ -33,6 +34,25 @@ export class Wildlife {
       mechanics.tag(collider,{name:echo?'Observe the Echo cottontail':'Observe the cottontail',action:()=>this.use(animal)});
       return animal;
     });
+    const ordinary=this.animals[0];
+    const trail=groundPoint(ordinary.home.x+2.4,ordinary.home.z+.8);
+    const prints=new T.MeshBasicMaterial({color:0x594936,polygonOffset:true,polygonOffsetFactor:-1});
+    for(let i=0;i<5;i++){
+      const x=trail.x-i*.35,z=trail.z+(i%2)*.15;
+      const print=new T.Mesh(new T.CircleGeometry(.07,8),prints);
+      print.position.set(x,height(x,z)+.02,z);
+      print.rotation.x=-Math.PI/2;
+      mechanics.scenes[0].add(print);
+    }
+    station(mechanics,0,trail,'Inspect cottontail tracks and set bait',()=>{
+      if(ordinary.state!=='alive')return 'Fresh tracks lead to the brush. Check again after the rabbit returns.';
+      if(ordinary.bait)return 'Bait is down. Back away from the station and watch the tracks.';
+      if(!bag.records.has('camp-ingredients'))return 'Paired prints lead into the brush. Bring camp ingredients to bait this spot.';
+      bag.forget('camp-ingredients');
+      ordinary.bait=trail;
+      ordinary.baitTime=45;
+      return 'Bait set. Give the cottontail room to follow the tracks.';
+    },{color:0x766047});
     const home=this.animals.at(-1).home;
     this.tracks=new T.Group();
     const print=new T.MeshBasicMaterial({color:0x75ffd2,transparent:true,opacity:.73,depthWrite:false});
@@ -117,13 +137,21 @@ export class Wildlife {
         m.fixed.get(collider.handle).name=animal.echo?'Observe the Echo cottontail':'Observe the cottontail';
       }
       if(animal.state!=='alive')continue;
+      if(animal.bait&&(animal.baitTime-=dt)<=0)animal.bait=null;
       animal.phase+=dt;
       const position=visual.position;
       const threat=noise&&noise.distanceToSquared(position)<35?noise:player;
       const toPlayer=threat.clone().sub(position);toPlayer.y=0;
       const toHome=home.clone().sub(position);toHome.y=0;
       const fleeing=toPlayer.lengthSq()<23&&toHome.lengthSq()<72;
+      const toBait=animal.bait?.clone().sub(position).setY(0);
+      if(!fleeing&&toBait?.lengthSq()<.08){
+        animal.bait=null;
+        this.bag.record('cottontail-track-study','Cottontail track study',
+          'A cottontail followed the tracks back to the bait once the trail was quiet.');
+      }
       const direction=fleeing?toPlayer.normalize().negate():
+        toBait&&animal.bait?toBait.normalize():
         toHome.lengthSq()>7?toHome.normalize():new T.Vector3(Math.sin(animal.phase*.7),0,Math.cos(animal.phase*.7));
       const speed=fleeing?3.2:.51;
       position.addScaledVector(direction,speed*dt);

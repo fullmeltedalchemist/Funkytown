@@ -145,7 +145,7 @@ export class Mechanics {
     if(target?.kind==='car'){
       if(this.canUnloadCargo())return this.unloadCargo();
       this.anchor=null;this.driving=true;this.walker.body.setEnabled(false);
-      return 'Wagon controls: steer and accelerate with movement. Space or Jump drifts. Use exits.';
+      return 'Wagon controls: steer and accelerate with movement. Space or Jump drifts under throttle and brakes with the throttle released. Use exits.';
     }
     if(target?.kind==='prop')return this.grab(target);
     return '';
@@ -324,8 +324,10 @@ export class Mechanics {
     const right=new T.Vector3(1,0,0).applyQuaternion(rot);
     const current=vec(body.linvel()),along=current.dot(front),side=current.dot(right);
     const target=movement.z*(movement.z<0?6:15);
-    const accel=T.MathUtils.clamp((target-along)*(movement.z<0?4.8:3),-18,13);
-    const grip=movement.drift?1.55:15;
+    const braking=movement.drift&&Math.abs(movement.z)<.15;
+    const accel=braking?T.MathUtils.clamp(-along*8,-25,25):
+      T.MathUtils.clamp((target-along)*(movement.z<0?4.8:3),-18,13);
+    const grip=movement.drift&&!braking?1.55:15;
     const impulse=front.multiplyScalar(accel).addScaledVector(right,-side*grip).multiplyScalar(STEP*body.mass());
     body.applyImpulse(impulse,true);
     body.setAngvel({x:0,y:-movement.x*Math.min(1,Math.abs(along)*.45)*(along<0?-1:1)*(movement.drift?2.1:1.55),z:0},true);

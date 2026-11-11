@@ -1693,3 +1693,69 @@ test('the boar displaces light props and the Echo deer calls after disappearing'
   wildlife.tick(2);
   assert.equal(calls.length,1);
 });
+
+test('clearing the mill brake yields a recoverable time slip June can identify',async()=>{
+  const {MillYard}=await import('../src/mill-yard.js');
+  const {Diner}=await import('../src/diner.js');
+  const {AssetPipeline}=await import('../src/assets.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker}=await import('../src/walker.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  try{
+    const scene=new T.Scene();
+    const m=new Mechanics(world,new Walker(world,[0,2,0]),scene,new T.Scene());
+    const records=new Map();
+    const bag={records,record:(id,name,description)=>records.set(id,{name,description})};
+    let open=false;
+    const mill=new MillYard(m,bag,()=>{},()=>open);
+    const chapters={story:{area:0},ending:''};
+    new Diner(m,chapters,bag,new AssetPipeline(scene,world),{receiver:new T.Group()});
+    const june=[...m.fixed.values()].find(tag=>tag.name==='Talk to June at the diner counter');
+    assert.match(june.accept(mill.brake),/time slip/);
+    mill.brake.body.setTranslation(mill.brakeHome.clone().add(new T.Vector3(2,0,0)),true);
+    mill.tick(.2);
+    assert.equal(records.has('mill-wheel-cleared'),false);
+    open=true;
+    mill.tick(.2);mill.tick(.2);
+    assert.ok(records.has('mill-wheel-cleared'));
+    assert.ok(mill.wheel.rotation.z>0);
+    m.remove(mill.slip);
+    mill.tick(.2);
+    assert.ok(m.items.has(mill.slip.collider.handle));
+    m.grab(mill.slip);
+    assert.match(june.accept(mill.slip),/whole shift/);
+    assert.equal(m.carried,null);
+    mill.tick(.2);
+    assert.equal(m.items.has(mill.slip.collider.handle),false);
+    assert.match(june.action(),/wrong part of the night/);
+  }finally{world.free();}
+});
+
+test('the midnight cook-off rewards two golden skillets and permits retries',async()=>{
+  const {CampLife}=await import('../src/camp-life.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker}=await import('../src/walker.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  try{
+    const m=new Mechanics(world,new Walker(world,[0,2,0]),new T.Scene(),new T.Scene());
+    const records=new Map();
+    const bag={records,record:(id,name)=>records.set(id,{name}),forget:id=>records.delete(id)};
+    const camp=new CampLife(m,bag,()=>{});
+    const use=name=>[...m.fixed.values()].find(tag=>tag.name===name).action();
+    const left=()=>use('Work the left cook-off skillet');
+    const right=()=>use('Work the right cook-off skillet');
+    left();right();camp.tick(6);
+    assert.match(left(),/One hot plate/);
+    assert.match(right(),/Still simmering/);
+    use('Open or close the cook-off stove draft');
+    camp.tick(10);
+    assert.match(right(),/batch burned/);
+    right();camp.tick(5);
+    assert.match(right(),/Two hot plates/);
+    records.set('camp-meal',{name:'Hot skillet meal'});
+    camp.eat();
+    assert.equal(camp.energy,140);
+  }finally{world.free();}
+});

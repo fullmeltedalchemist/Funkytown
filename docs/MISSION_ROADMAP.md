@@ -40,7 +40,8 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] Add the memorial bell float and a program that reveals why Cal’s name was omitted.
 - [x] Move the memorial float in its staging lane with attached collision and spectators that turn to watch.
 - [x] Give the bell float a repeating staging lane route with stops for players in its path. Add Inez’s eyewitness account, Wes’s route guidance, and follow-up dialogue after filing the tape.
-- [ ] Extend the procession beyond the staging lane and verify the crowd and float timing on touch.
+- [x] Extend the memorial float route to a stop closer to the post office. Spectators acknowledge the stop and signal when the lane is blocked.
+- [ ] Verify procession clearance, crowd activity and float timing in a rendered touch playthrough.
 - [x] Offer a float-mounted recorder, a backstage bluff and a wagon pursuit. The recorder preserves the order in the Field Bag. The stagehand gives an off-the-record tip. A successful tail confirms the destination by observation.
 - [x] Make the truck chase recoverable if contact is lost. The delivery receipt reveals the same destination.
 - [x] Add a driveable fairground ramp, loose barrels and breakable roadside crates. The wagon retains cargo shift and strap behavior.
@@ -82,18 +83,21 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] Add quiet pebble distractions and breakable targets. The lever rifle can ring the distant bell, drop a counterweight and hit existing hunting targets. Preserve the scattergun’s close-range spread.
 - [x] Add a portable stove, kettle and water filter for camp away from Foxglove.
 - [x] Lock the climbing harness mid-grapple to work a raised latch or attach a tow line. Earn bolt cutters from the crawler repair and use them as a ground-level alternative at the chained workshop gate.
-- [ ] Test two-hook and winch scenarios beyond pulling a crate: jammed gates, wreck recovery, mill wheels, lowering a load through a window and catching a runaway cooler.
+- [x] Add a movable mill brake sled that can be cleared by hand or rigged to the wagon. Identify the recovered time slip with June.
+- [ ] Verify the mill winch in a rendered playthrough and add wreck recovery, window lowering and cooler recovery scenarios.
 - [ ] Add mission-specific wagon packing, padding for fragile evidence and multi-item choices. Tune gravel drift, body lean, ditch bounce, prop impacts and forgiving recovery. Preserve optional foot routes where appropriate.
 - [ ] Add persistent quest-object recovery, and use sleeping bodies, nearby activation and bounded debris to keep mobile play responsive.
 - [x] Authored cottontails that flee, can be shot and yield meat for the existing skillet and sharing loop.
 - [x] Add creek birds that flush together when approached or distracted by a nearby sound.
 - [x] Add a boar that charges and knocks light props aside.
-- [ ] Add ordinary animals with trackable signs, meat bait, recipe variety, and sharing outcomes.
+- [x] Add ordinary cottontail tracks and a bait station that uses camp ingredients. Share a hot plate with June’s relief crew.
+- [ ] Add meat bait, more trackable animals, and additional recipes and sharing outcomes.
 - [x] First Echo cottontail. Observe it or shoot it to learn what it does. It yields a clue and no meat.
 - [x] Add separate evidence for photographing the Echo cottontail and flare-lit tracks.
 - [x] Add an Echo deer whose hoofprints stop while its call continues beyond the bend.
 - [ ] Expand track-following and Echo species.
-- [ ] Add standalone activities: a midnight cook-off with two skillets and an unreliable stove, a runaway bait cooler, and a distress call that changes location when answered.
+- [x] Add the midnight cook-off with two independently timed skillets, an adjustable draft and a meal stamina reward.
+- [ ] Add a runaway bait cooler and a distress call that changes location when answered.
 - [x] Build The Road That Loops. The wagon returns to the chalked mile marker until you compare the mark and find the eastern verge.
 - [x] Record the flooded-house knock by contact mic and unlock the dry-house resident’s account.
 - [x] Add a thrown-prop strike on the survey plate and a roof service ledge as alternate ways to discover the flooded-house knock.

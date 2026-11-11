@@ -9,6 +9,7 @@ export class CampLife {
   water=0;
   constructor(mechanics,bag,notice){
     Object.assign(this,{bag,notice});
+    this.installCookoff(mechanics);
     const rack=station(mechanics,0,groundPoint(cabinX+5.2,cabinZ+7.8),'Take camp ingredients',()=>{
       if(bag.records.has('camp-ingredients')||this.elapsed!==null)return 'The next batch is already out.';
       bag.record('camp-ingredients','Camp ingredients','Beans, corn and peppers for the skillet.','Cargo');
@@ -43,6 +44,45 @@ export class CampLife {
     },{color:0x53655c});
     part(cache.body,[.37,.035,.22],[0,.96,0],0x998360,.012);
     bag.record('canteen','Field canteen','Refill at the Foxglove Camp hand pump or with a field filter. U or Sip drinks from the canteen.','Gear');
+  }
+  installCookoff(mechanics){
+    const pans=[];
+    const shift=station(mechanics,0,groundPoint(cabinX+9.4,cabinZ+8.7),'Read the midnight cook-off card',()=>{
+      if(this.bag.records.has('midnight-cookoff'))return 'The night crew signed your card. Their spice tin is yours to use at the pantry.';
+      return 'The night shift needs two hot plates. Start each skillet and lift it when golden. The right burner runs cold until you open its draft.';
+    },{color:0x887049});
+    part(shift.body,[.24,.025,.27],[0,.96,0],0xceb588,.005);
+    const draft=station(mechanics,0,groundPoint(cabinX+10.8,cabinZ+9.2),'Open or close the cook-off stove draft',()=>{
+      this.draftOpen=!this.draftOpen;
+      return this.draftOpen?'Draft open. The right skillet now heats at full strength.':'Draft closed. The right skillet is barely warming.';
+    },{color:0x77624a});
+    part(draft.body,[.14,.14,.07],[0,1.01,.06],0x984737,.015);
+    for(const [i,label] of ['left','right'].entries()){
+      const pan={elapsed:null,done:false};
+      const stove=station(mechanics,0,groundPoint(cabinX+9.4+i*1.4,cabinZ+7.2),'Work the '+label+' cook-off skillet',()=>{
+        if(this.bag.records.has('midnight-cookoff'))return 'The night shift has eaten.';
+        if(pan.done)return 'This plate is ready. Finish the other skillet.';
+        if(pan.elapsed===null){
+          pan.elapsed=0;
+          pan.food.material.color.setHex(0xb4864b);
+          return 'Skillet on. Watch for a golden crust.';
+        }
+        if(pan.elapsed<5)return 'Still simmering.';
+        if(pan.elapsed>=12){
+          pan.elapsed=null;
+          pan.food.material.color.setHex(0x525052);
+          return 'This batch burned. The night crew left enough ingredients to try again.';
+        }
+        pan.done=true;
+        if(!pans.every(entry=>entry.done))return 'One hot plate ready. Finish the other skillet.';
+        this.bag.record('midnight-cookoff','Night shift spice tin',
+          'You served two hot plates to the relief crew. Their spice mix now improves the stamina boost of meals you cook and eat.','Gear');
+        return 'Two hot plates served. You earned the night shift spice tin.';
+      },{color:0x7f5d4c});
+      pan.food=part(stove.body,[.36,.07,.36],[0,.98,0],0x525052,.025);
+      pans.push(pan);
+    }
+    this.cookoff=pans;
   }
   cook(hearth=this){
     if(this.elapsed===null){
@@ -82,10 +122,15 @@ export class CampLife {
     if(!this.bag.records.has('camp-meal'))return 'Cook a skillet meal before sitting down to eat.';
     const meat=this.bag.records.get('camp-meal')?.name==='Roasted cottontail';
     this.bag.forget('camp-meal');
-    this.energy=meat?165:110;
+    this.energy=(meat?165:110)+(this.bag.records.has('midnight-cookoff')?30:0);
     return 'You eat the hot skillet meal. Sprint speed improved for a short time. On touch, push the movement stick all the way.';
   }
   tick(dt){
+    for(const [i,pan] of (this.cookoff??[]).entries()){
+      if(pan.elapsed===null||pan.done)continue;
+      pan.elapsed+=dt*(i===0||this.draftOpen?1:.44);
+      pan.food.material.color.setHex(pan.elapsed>=12?0x352820:pan.elapsed>=5?0xe0a33c:0xb4864b);
+    }
     this.energy=Math.max(0,this.energy-dt);
     this.hydrated=Math.max(0,(this.hydrated??0)-dt);
     if(this.elapsed===null)return;

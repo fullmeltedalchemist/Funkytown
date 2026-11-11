@@ -245,6 +245,8 @@ export class Finale {
           'Post office relay: The returned man is safe at camp. The second radio has fallen silent.' :
           'Post office relay: The returned man is marking the next crossing. A second voice is still on the open channel.';
       }
+      if(echoEnding==='seal')return 'Post office relay: All further crossings are cancelled. The search ledger remains open for families to amend.';
+      if(echoEnding==='hold')return 'Post office relay: Search crews check in at the diner. Three knocks means somebody is still listening.';
       if(this.choice==='public')return 'The postmaster cuts into the broadcast. “I logged Cal’s parcel the morning after the rescue. If the sheriff wants that ledger, he can ask me in front of everyone.”';
       if(this.choice==='private')return 'The public channel is quiet. On the ranger’s frequency: “I have Cal’s tape locked up. Meet me at dawn, before the sheriff starts his rounds.”';
       if(this.stage>0)return 'Post office advisory: the ford has reopened. Keep clear of the intake while the ranger checks the gate seals.';

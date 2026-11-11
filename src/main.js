@@ -22,6 +22,7 @@ import {CreekEncounter} from './creek-encounter.js';
 import {CampLife} from './camp-life.js';
 import {Chapters} from './chapters.js';
 import {Diner} from './diner.js';
+import {MillYard} from './mill-yard.js';
 import {insideRescueCorridor} from './rigging.js';
 import {Gear} from './gear.js';
 import {Finale,MailRoute} from './finale.js';
@@ -69,7 +70,7 @@ function forest(pipeline,models){
   const rnd=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
   const grove={oak:[],birch:[],maple:[],underbrush:[],rocks:[]};
   function place(type,x,z,scale,sink=0){
-    if(basinInfluence(x,z)>.07||nearParadeStaging(x,z)||[secondAddress,diner].some(p=>Math.hypot(x-p.x,z-p.z)<7.5))return;
+    if(basinInfluence(x,z)>.07||Math.hypot(x-15,z+16)<5.8||nearParadeStaging(x,z)||[secondAddress,diner].some(p=>Math.hypot(x-p.x,z-p.z)<7.5))return;
     if(insideRescueCorridor(x,z,type==='rocks'?scale*.48:1.2))return;
     const yaw=rnd()*Math.PI*2;
     if(nearFairground(x,z,type==='rocks'?scale*.48:.8)||nearWorkshop(x,z,type==='rocks'?scale*.48:.8))return;
@@ -108,10 +109,18 @@ function forest(pipeline,models){
 }
 async function boot(){
   await R.init();
-  const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
   const mobile=matchMedia('(pointer:coarse)').matches;
-  renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1.2:1.65));
-  renderer.shadowMap.enabled=true;
+  const makeRenderer=options=>new T.WebGLRenderer(options);
+  let renderer, reducedGraphics=false;
+  try{
+    renderer=makeRenderer({antialias:!mobile,powerPreference:mobile?'low-power':'default'});
+  }catch{
+    reducedGraphics=true;
+    try{renderer=makeRenderer({antialias:false,powerPreference:'low-power',failIfMajorPerformanceCaveat:false});}
+    catch{throw Error('WebGL 2 could not start in this browser. Try another browser or enable graphics acceleration.');}
+  }
+  renderer.setPixelRatio(Math.min(devicePixelRatio,reducedGraphics?1:mobile?1.2:1.65));
+  renderer.shadowMap.enabled=!reducedGraphics;
   renderer.shadowMap.type=T.PCFSoftShadowMap;
   renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.02;
   document.body.prepend(renderer.domElement);
@@ -151,6 +160,7 @@ async function boot(){
   const campLife=new CampLife(mechanics,bag,message=>notice(message));
   const chapters=new Chapters(mechanics,story,finale,bag,message=>notice(message));
   const townDiner=new Diner(mechanics,chapters,bag,pipeline,models);
+  const millYard=new MillYard(mechanics,bag,notice,()=>chapters.stage>=2);
   const creekEncounter=new CreekEncounter(mechanics,bag,message=>notice(message));
   scene.add(camera);
   const pistol=fieldPistol(),scattergun=fieldPistol(true);
@@ -448,6 +458,7 @@ async function boot(){
         salvage.tick(STEP);
         address.tick(STEP);
         founders.tick(STEP);
+        millYard.tick(STEP);
         chapters.tick();
         extraction.tick(STEP);
         loopRoad.tick(STEP);
@@ -544,7 +555,7 @@ async function boot(){
     $('fire').hidden=mechanics.driving||handsBusy||inRide;
     $('throw').hidden=mechanics.driving||!handsBusy||inRide;
     $('grapple').hidden=mechanics.driving||inRide;
-    $('jump').setAttribute('aria-label',mechanics.driving?'Drift':inRide?'Switch zip-line anchor':'Jump');
+    $('jump').setAttribute('aria-label',mechanics.driving?'Brake or drift':inRide?'Switch zip-line anchor':'Jump');
     const reticle=$('reticle');
     reticle.hidden=mechanics.driving||!input.active||input.toolsOpen;
     reticle.classList.toggle('on-target',Boolean(target?.name));

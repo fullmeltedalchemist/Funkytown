@@ -35,6 +35,13 @@ jobs:
               {name:'touch',viewport:{width:390,height:844},hasTouch:true,isMobile:true}
             ]){
               const {name,...options}=profile;
+              const fresh=await browser.newPage(options);
+              try{
+                await fresh.goto('http://127.0.0.1:8080/');
+                await fresh.getByRole('button',{name:'Walk the ridge'}).waitFor({timeout:60000});
+                assert.equal(await fresh.locator('canvas').first().isVisible(),true);
+                assert.equal(await fresh.locator('#status').textContent(),'');
+              }finally{await fresh.close();}
               const page=await browser.newPage(options);
               const errors=[];
               page.on('pageerror',error=>errors.push(error.message));

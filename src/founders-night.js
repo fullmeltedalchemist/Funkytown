@@ -11,7 +11,7 @@ const leadKey='founders-depot';
 const latchKey='founders-latch-open';
 const routePoint=z=>groundPoint(trailX(z)+.6,z);
 const bellFloatSite={x:-6.3,z:24.4};
-const bellRouteLength=3.6;
+const bellRouteLength=6.2;
 export const nearParadeStaging=(x,z)=>Math.abs(x-bellFloatSite.x)<4.5&&
   z>bellFloatSite.z-bellRouteLength-4.5&&z<bellFloatSite.z+4.5;
 
@@ -149,13 +149,13 @@ export class FoundersNight {
       {name:'Wes',x:bellBase.x+1.95,z:bellBase.z-2.1,coat:0x596a66,
         listen:()=>this.routeMarshal()}
     ].map(({name,x,z,coat,listen})=>{
-      const spectator=person(coat).root;
+      const {root:spectator,arms}=person(coat);
       spectator.position.copy(groundPoint(x,z));
       m.scenes[0].add(spectator);
       const sensor=m.world.createCollider(R.ColliderDesc.capsule(.28,.34)
         .setTranslation(x,spectator.position.y+1,z).setSensor(true).setCollisionGroups((128<<16)|2));
       m.tag(sensor,{name:'Talk to '+name,action:listen});
-      return spectator;
+      return {root:spectator,arm:arms[1]};
     });
     station(m,0,groundPoint(bellBase.x+2.35,bellBase.z+1.6),'Read the memorial float program',()=>{
       const corrected=this.bag.records.has(tapeKey);
@@ -200,9 +200,9 @@ export class FoundersNight {
   advanceParade(dt,player){
     const {x,z}=this.bellBase;
     const nextTime=this.bellTime+dt;
-    // Pause between passes so people can cross the lane.
-    const phase=nextTime%24;
-    const progress=phase<10?phase/10:phase<12?1:phase<22?1-(phase-12)/10:0;
+    // Hold at the memorial stop before returning to the staging lane.
+    const phase=nextTime%34;
+    const progress=phase<14?phase/14:phase<18?1:phase<32?1-(phase-18)/14:0;
     const nextZ=z-progress*bellRouteLength;
     this.bellPaused=Math.abs(player.x-x)<1.22&&Math.abs(player.z-nextZ)<2.85;
     if(!this.bellPaused){
@@ -211,8 +211,9 @@ export class FoundersNight {
       this.bellBody.setNextKinematicTranslation(position);
     }
     const float=this.bellFloat.position;
-    for(const spectator of this.bellSpectators){
-      spectator.rotation.y=Math.atan2(float.x-spectator.position.x,float.z-spectator.position.z);
+    for(const {root,arm} of this.bellSpectators){
+      root.rotation.y=Math.atan2(float.x-root.position.x,float.z-root.position.z);
+      arm.rotation.x=this.bellPaused||phase>=14&&phase<18?-.85+Math.sin(this.bellTime*7)*.12:0;
     }
   }
 
