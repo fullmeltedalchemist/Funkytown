@@ -6,10 +6,22 @@ Run `blender -b -t 2 --python tools/author_field_props.py` to export authored GL
 assets into `assets/`. This includes the villager, its embedded fabric texture,
 weapons and rescue equipment.
 
-Text-to-3D generation currently takes place in an external generator. This repository
-imports its output. It has no configured model-generation API or API key. Export a
-self-contained GLB, then use **Test a local GLB** in the pause menu to load it through
-the game's loader and physics setup.
+For generated static props, use fal's Tripo H3.1 text-to-3D endpoint
+(`tripo3d/h3.1/text-to-3d`) with textures enabled and download the GLB
+from the completed job. This is an authoring workflow that uses the connected
+fal account. The game only needs the exported GLB.
+
+Normalize the prop in Blender before testing. Set the height in meters and
+give the output a new filename.
+
+```sh
+blender -b -t 2 --python-exit-code 1 --python tools/prepare_prop.py -- \
+  raw-jerrycan.glb prepared-jerrycan.glb --height 0.47
+```
+
+This preserves the textures, centers the footprint, and puts the base at
+floor level. Use **Test a local GLB** in the pause menu to check appearance
+and physics. Use the villager workflow below for animated characters.
 
 For persistent use, register the GLB in `assets/manifest.json` and add a placement or
 load it from a gameplay class. Run `python3 tools/check_assets.py` and `npm test`
