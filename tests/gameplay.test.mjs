@@ -975,6 +975,11 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   assert.equal(mechanics.aim(camera,4)?.collider.parent()?.handle,mission.bellBody.handle);
   assert.match(mechanics.grapple(camera),/Aim at a tree/);
   assert.equal(mechanics.anchor,null);
+  const {TowLine}=await import('../src/tow-line.js');
+  const tow=new TowLine(mechanics);
+  tow.first={item:mechanics.car,point:new T.Vector3()};
+  assert.match(tow.select(camera),/move on their own/);
+  assert.equal(tow.joint,undefined);
 
   assert.match(interact('Read the memorial float program'),/penciled into the margin/);
   records.delete('founders-original-tape');
@@ -1699,7 +1704,8 @@ test('clearing the mill brake yields a recoverable time slip June can identify',
   const {Diner}=await import('../src/diner.js');
   const {AssetPipeline}=await import('../src/assets.js');
   const {Mechanics}=await import('../src/mechanics.js');
-  const {Walker}=await import('../src/walker.js');
+  const {Walker,STEP}=await import('../src/walker.js');
+  const {TowLine}=await import('../src/tow-line.js');
   await R.init();
   const world=new R.World({x:0,y:-9.81,z:0});
   try{
@@ -1716,8 +1722,36 @@ test('clearing the mill brake yields a recoverable time slip June can identify',
     mill.brake.body.setTranslation(mill.brakeHome.clone().add(new T.Vector3(2,0,0)),true);
     mill.tick(.2);
     assert.equal(records.has('mill-wheel-cleared'),false);
+    m.resetProp(mill.brake,mill.brakeHome);
+    const brake=mill.brakeHome;
+    const carPosition=brake.clone().add(new T.Vector3(5,.29,0));
+    m.staticBox([14,.2,6],[brake.x+3,brake.y-.28,brake.z],0x544d42);
+    m.makeCar(carPosition.toArray());
+    world.step(m.events);
+    const camera=new T.PerspectiveCamera();
+    const aimAt=p=>{
+      camera.position.set(p.x,p.y+2,p.z);
+      camera.lookAt(p);
+      camera.updateMatrixWorld(true);
+    };
+    const tow=new TowLine(m);
+    aimAt(brake);
+    assert.match(tow.select(camera),/First hook attached/);
+    aimAt(carPosition);
+    assert.match(tow.select(camera),/Tow line rigged/);
+    m.driving=true;
+    assert.match(tow.select(camera),/Winch reeling/);
     open=true;
-    mill.tick(.2);mill.tick(.2);
+    for(let i=0;i<250&&!records.has('mill-wheel-cleared');i++){
+      m.before(camera,{x:0,z:0},{actions:new Set()});
+      world.step(m.events);
+      m.after();
+      tow.tick(STEP);
+      mill.tick(STEP);
+    }
+    tow.clear();
+    m.driving=false;
+    mill.tick(.2);
     assert.ok(records.has('mill-wheel-cleared'));
     assert.ok(mill.wheel.rotation.z>0);
     m.remove(mill.slip);

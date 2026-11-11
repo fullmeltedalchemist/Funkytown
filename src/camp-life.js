@@ -128,7 +128,11 @@ export class CampLife {
   tick(dt){
     for(const [i,pan] of (this.cookoff??[]).entries()){
       if(pan.elapsed===null||pan.done)continue;
+      const before=pan.elapsed;
       pan.elapsed+=dt*(i===0||this.draftOpen?1:.44);
+      const side=i===0?'Left':'Right';
+      if(before<5&&pan.elapsed>=5&&pan.elapsed<12)this.notice(side+' cook-off skillet is golden. Lift it now.');
+      if(before<12&&pan.elapsed>=12)this.notice(side+' cook-off skillet burned. Use it to clear the pan.');
       pan.food.material.color.setHex(pan.elapsed>=12?0x352820:pan.elapsed>=5?0xe0a33c:0xb4864b);
     }
     this.energy=Math.max(0,this.energy-dt);

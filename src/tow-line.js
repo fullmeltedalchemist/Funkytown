@@ -33,6 +33,8 @@ export class TowLine {
     const first=this.first;
     if(!m.items.has(first.item.collider.handle)){this.clear();return 'The first anchor is gone. Choose another.';}
     if(item===first.item)return 'Choose a different anchor.';
+    const targetBody=hit.collider.parent();
+    if(!item&&targetBody&&!targetBody.isFixed())return 'Choose a loose prop or fixed surface. The parade float and archive truck move on their own.';
     const start=this.worldPoint(first.item.body,first.point);
     const length=start.distanceTo(point);
     if(length>12||length<.35)return 'Pick an anchor between half a meter and twelve meters away.';
