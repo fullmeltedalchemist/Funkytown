@@ -22,6 +22,7 @@ import {CreekEncounter} from './creek-encounter.js';
 import {CampLife} from './camp-life.js';
 import {Chapters} from './chapters.js';
 import {Diner} from './diner.js';
+import {DistressCall} from './distress-call.js';
 import {MillYard} from './mill-yard.js';
 import {insideRescueCorridor} from './rigging.js';
 import {Gear} from './gear.js';
@@ -280,6 +281,8 @@ async function boot(){
   const magnet=new FieldMagnet(mechanics,bag,notice);
   bag.record('field-magnet','Field magnet','N or Magnet · recover dropped metal around camp, the archive bay and the supply shop.','Gear');
   const recorder=new FieldRecorder(mechanics,pipeline,models.receiver,bag,playToolSound);
+  const distress=new DistressCall(mechanics,pipeline,models.receiver,bag,townDiner,
+    ()=>rescue.stage>=4,point=>playToolSound(380,125,.54,.19,point));
   function sampleContact(){
     if(mechanics.driving||rescue.zipline.active)return;
     const target=mechanics.target(camera);
@@ -520,7 +523,7 @@ async function boot(){
     }
     story.animate(now*.001);
     const objective=fordRescue.objective()??loopRoad.objective()??salvage.objective()??
-      address.objective()??founders.objective()??extraction.objective()??townDiner.objective()??chapters.objective()??
+      address.objective()??founders.objective()??extraction.objective()??distress.objective()??townDiner.objective()??chapters.objective()??
       (rescue.showPractice?rescue.objective():null)??fieldProps.objective()??finale.objective()??rescue.objective();
     $('guide').textContent=workshop.active?workshop.hint():objective?.text??story.guide(player);
     const waypoint=objective?objective.target:story.waypoint();

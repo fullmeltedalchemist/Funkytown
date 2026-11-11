@@ -1793,3 +1793,56 @@ test('the midnight cook-off rewards two golden skillets and permits retries',asy
     assert.equal(camp.energy,140);
   }finally{world.free();}
 });
+
+test('the moving distress call survives reload and requires both recorded relay samples',async()=>{
+  const {DistressCall}=await import('../src/distress-call.js');
+  const {Diner}=await import('../src/diner.js');
+  const {FieldRecorder}=await import('../src/field-recorder.js');
+  const {AssetPipeline}=await import('../src/assets.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker}=await import('../src/walker.js');
+  await R.init();
+  const records=new Map();
+  const bag={records,record:(id,name,description)=>records.set(id,{name,description})};
+  const chapters={story:{area:0},ending:''};
+  let ready=false;
+  const create=()=>{
+    const world=new R.World({x:0,y:-9.81,z:0});
+    const scene=new T.Scene();
+    const mechanics=new Mechanics(world,new Walker(world,[0,2,0]),scene,new T.Scene());
+    const pipeline=new AssetPipeline(scene,world);
+    const receiver=new T.Group();
+    const diner=new Diner(mechanics,chapters,bag,pipeline,{receiver});
+    const quest=new DistressCall(mechanics,pipeline,receiver,bag,diner,()=>ready,()=>{});
+    const recorder=new FieldRecorder(mechanics,pipeline,receiver,bag,()=>{});
+    const target=name=>[...mechanics.fixed.values()].find(tag=>tag.name===name);
+    return {world,quest,recorder,target};
+  };
+  const first=create();
+  try{
+    assert.match(first.quest.answer(),/Finish reconstructing/);
+    ready=true;
+    assert.match(first.quest.answer(),/West-bank relay/);
+    assert.equal(first.quest.objective().target,first.quest.west);
+    assert.match(first.quest.answer(),/untracked/);
+    assert.equal(first.quest.objective(),null);
+    assert.match(first.quest.answer(),/tracked again/);
+    assert.match(first.quest.answerWest(),/East survey relay/);
+    assert.equal(first.quest.sample(false).strength,0);
+    assert.equal(first.quest.objective().target,first.quest.east);
+  }finally{first.world.free();}
+  const resumed=create();
+  try{
+    assert.equal(resumed.quest.objective().target,resumed.quest.east);
+    const june=resumed.target('Talk to June at the diner counter');
+    assert.match(june.action(),/night shift/);
+    assert.equal(records.has('distress-resolved'),false);
+    const east=resumed.target('Check the old survey relay');
+    assert.match(resumed.recorder.record(east),/Contact signal 74%/);
+    assert.match(resumed.quest.objective().text,/Compare both samples/);
+    assert.match(june.action(),/broken spring/);
+    assert.ok(records.has('distress-resolved'));
+    assert.equal(resumed.quest.objective(),null);
+    assert.match(resumed.quest.answer(),/genuine call/);
+  }finally{resumed.world.free();}
+});

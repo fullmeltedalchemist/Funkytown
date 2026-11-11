@@ -32,6 +32,7 @@ export class Diner {
     box([6.55,.52,.2],0,2.49,2.81,cream);
     box([3.8,.96,.68],0,.48,-1.94,red);
     const counter=box([3.95,.1,.8],0,1.01,-1.94,cream);
+    this.counterPoint=counter.visual.position;
     const radio=pipeline.prepare(models.receiver,{scale:.69,position:[x+.82,floor+1.06,z-1.95],groundY:floor+1.06});
     const owner=person(0x806347).root;
     owner.position.set(x-.65,floor,z-2.46);
@@ -89,6 +90,8 @@ export class Diner {
   }
 
   counterStory(){
+    const distress=this.distressWitness?.();
+    if(distress)return distress;
     if(!this.chapters.ending){
       if(this.bag.records.has('extraction-return'))return 'June sets out two cups. “He remembered how I used to burn the first pot. If he wants to tell us more, we can listen over coffee.”';
       if(this.bag.records.has('mill-slip-identified'))return 'June folds the slip into her ledger. “Inez and I were both telling the truth. I just remembered the wrong part of the night.”';

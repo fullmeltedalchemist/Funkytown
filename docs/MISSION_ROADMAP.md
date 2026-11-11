@@ -97,7 +97,8 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] Add an Echo deer whose hoofprints stop while its call continues beyond the bend.
 - [ ] Expand track-following and Echo species.
 - [x] Add the midnight cook-off with two independently timed skillets, an adjustable draft and a meal stamina reward.
-- [ ] Add a runaway bait cooler and a distress call that changes location when answered.
+- [x] Add a distress call that changes banks when answered. Compare two Mic samples with June and hear the corrected dispatch.
+- [ ] Add a runaway bait cooler.
 - [x] Build The Road That Loops. The wagon returns to the chalked mile marker until you compare the mark and find the eastern verge.
 - [x] Record the flooded-house knock by contact mic and unlock the dry-house resident’s account.
 - [x] Add a thrown-prop strike on the survey plate and a roof service ledge as alternate ways to discover the flooded-house knock.

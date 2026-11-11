@@ -148,7 +148,15 @@ export class FordRescue {
     if(this.story.area!==0||this.story.state<4||this.state==='finished')return null;
     if(this.state==='waiting')return this.rescue.stage===0?
       {text:'The Rescue That Happens Twice · Check the ford emergency radio',target:this.radio}:null;
-    return {text:'Stop the wagon · Hook its bracket, help the woman, or pull the high-bank line',
-      target:vec(this.cart.body.translation())};
+    const player=this.mechanics.walker.current;
+    const bracket=vec(this.cart.body.translation()).add(new T.Vector3(0,.64,1.65));
+    const approaches=[
+      {text:'Hook the brass bracket on the wagon',target:bracket},
+      {text:'Pull the tow rope at the high-bank stand',target:this.high},
+      {text:'Reach the woman by the ford',target:this.womanSite}
+    ];
+    const route=approaches.reduce((nearest,option)=>
+      option.target.distanceToSquared(player)<nearest.target.distanceToSquared(player)?option:nearest);
+    return {text:'Stop the wagon · '+route.text,target:route.target};
   }
 }

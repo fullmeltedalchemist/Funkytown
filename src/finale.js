@@ -240,6 +240,8 @@ export class Finale {
     this.supportedModel(bulletin,pipeline,models.receiver,.55);
     this.station(bulletin,'Check the post office radio',()=>{
       const echoEnding=this.echoEnding?.();
+      const correction=bag.records.has('distress-resolved')?
+        ' June confirmed the east-bank lamp crew. Disregard the repeat from the west bank.' : '';
       if(bag.records.has('extraction-return')&&echoEnding){
         return echoEnding==='seal'?
           'Post office relay: The returned man is safe at camp. The second radio has fallen silent.' :
@@ -247,8 +249,8 @@ export class Finale {
       }
       if(echoEnding==='seal')return 'Post office relay: All further crossings are cancelled. The search ledger remains open for families to amend.';
       if(echoEnding==='hold')return 'Post office relay: Search crews check in at the diner. Three knocks means somebody is still listening.';
-      if(this.choice==='public')return 'The postmaster cuts into the broadcast. “I logged Cal’s parcel the morning after the rescue. If the sheriff wants that ledger, he can ask me in front of everyone.”';
-      if(this.choice==='private')return 'The public channel is quiet. On the ranger’s frequency: “I have Cal’s tape locked up. Meet me at dawn, before the sheriff starts his rounds.”';
+      if(this.choice==='public')return 'The postmaster cuts into the broadcast. “I logged Cal’s parcel the morning after the rescue. If the sheriff wants that ledger, he can ask me in front of everyone.”'+correction;
+      if(this.choice==='private')return 'The public channel is quiet. On the ranger’s frequency: “I have Cal’s tape locked up. Meet me at dawn, before the sheriff starts his rounds.”'+correction;
       if(this.stage>0)return 'Post office advisory: the ford has reopened. Keep clear of the intake while the ranger checks the gate seals.';
       return this.flood>.24?'Post office advisory: ford closed. Use the high bank path.':'Post office advisory: crews are working at the spillway.';
     });

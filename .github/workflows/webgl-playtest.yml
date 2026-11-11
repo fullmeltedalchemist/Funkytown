@@ -41,6 +41,14 @@ jobs:
                 await fresh.getByRole('button',{name:'Walk the ridge'}).waitFor({timeout:60000});
                 assert.equal(await fresh.locator('canvas').first().isVisible(),true);
                 assert.equal(await fresh.locator('#status').textContent(),'');
+                if(name==='touch'){
+                  await fresh.locator('#touch-mode').tap();
+                  await fresh.locator('#touch').waitFor({state:'visible'});
+                }else{
+                  await fresh.locator('#start').click();
+                }
+                await fresh.locator('#guide').filter({hasText:'Read the field journal in Vale House'}).waitFor();
+                await fresh.screenshot({path:'playtest-results/fresh-'+name+'.png'});
               }finally{await fresh.close();}
               const page=await browser.newPage(options);
               const errors=[];
