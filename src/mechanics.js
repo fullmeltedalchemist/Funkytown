@@ -213,6 +213,7 @@ export class Mechanics {
     const item=this.carried;if(!item)return;
     this.carried=null;item.body.setGravityScale(1,true);
     item.collider.setCollisionGroups(groups(bits.prop,item.mask));
+    item.thrown=Boolean(velocity);
     if(velocity)item.body.setLinvel(velocity,true);
   }
   fire(camera,scatter=false,variant='pistol'){
@@ -393,6 +394,7 @@ export class Mechanics {
     if(this.anchor&&!this.harnessSuspended&&this.anchor.distanceTo(this.walker.current)<1.2)this.anchor=null;
   }
   resetProp(item,position){
+    item.thrown=false;
     item.body.setTranslation(position,true);
     item.body.setRotation({x:0,y:0,z:0,w:1},true);
     item.body.setLinvel({x:0,y:0,z:0},true);
@@ -406,6 +408,10 @@ export class Mechanics {
       if(!started)return;
       const one=this.items.get(a),two=this.items.get(b);
       const solid=!(this.world.getCollider(a)?.isSensor()||this.world.getCollider(b)?.isSensor());
+      if(solid){
+        if(one?.thrown&&one.speed>2)this.fixed.get(b)?.onThrownImpact?.(one);
+        if(two?.thrown&&two.speed>2)this.fixed.get(a)?.onThrownImpact?.(two);
+      }
       if(one?.kind==='round'&&!spent.has(one))this.roundImpact(one,b,spent);
       if(two?.kind==='round'&&!spent.has(two))this.roundImpact(two,a,spent);
       if(solid&&one?.size&&one!==this.cargo&&one!==this.carried&&(one.speed>one.impactLimit||two?.kind==='round'))broken.add(one);

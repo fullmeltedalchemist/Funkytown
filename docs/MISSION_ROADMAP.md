@@ -96,7 +96,7 @@ The central question is who returned after the reservoir evacuation. People who 
 - [ ] Add standalone activities: a midnight cook-off with two skillets and an unreliable stove, a runaway bait cooler, and a distress call that changes location when answered.
 - [x] Build The Road That Loops. The wagon returns to the chalked mile marker until you compare the mark and find the eastern verge.
 - [x] Record the flooded-house knock by contact mic and unlock the dry-house resident’s account.
-- [ ] Add thrown-marker and roof approaches to the flooded-house knock.
+- [x] Add a thrown-prop strike on the survey plate and a roof service ledge as alternate ways to discover the flooded-house knock.
 - [x] Add aim-based contact recording and a placeable speaker with spatial playback, a light cue and wildlife response.
 - [ ] Check spatial audio and visual cues on a phone.
 - [ ] Expand the playable Chapters 2–4 route beyond the current first pass. Connect the late rescue choice to relationships, original evacuation evidence, and different outcomes at the diner, houses and radio.

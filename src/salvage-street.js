@@ -53,20 +53,17 @@ export class SalvageStreet {
         mechanics.tag(sensor,{name:'Listen by the flooded kitchen clock',contact:()=>{
           if(!this.clock.running)return {strength:0,message:'The flooded wall is out of reach until you drain the street.'};
           if(chapters.ending==='seal')return {strength:0,message:'The sealed arch has silenced the knocking.'};
-          if(!bag.records.has('flooded-knock')){
-            bag.record('flooded-knock','Three knocks in the flooded kitchen',
-              'The rhythm matches the dry house. Ask its resident how she knows the signal.');
-          }
+          this.recordKnock('The contact microphone picked up three knocks through the kitchen clock’s mounting screws.');
           return {strength:.71,message:'Three hard knocks resonate through the clock’s mounting screws.'};
         },action:()=>{
           if(!this.clock.running)return 'Wait for the street to drain before listening inside.';
-          if(!bag.records.has('extraction-return')||!chapters.ending){
+          if(chapters.ending==='seal')return 'Behind the clock there is only the sound of draining water. The knocks have stopped.';
+          if(!chapters.ending){
             return 'Water has stopped the hands at nine. A faint knock seems to come from behind the wall.';
           }
-          return chapters.ending==='seal'?
-            'Behind the clock there is only the sound of draining water. The knocks have stopped.' :
-            'Three knocks come from behind the clock. A voice names the dry address, then asks you to keep the porch light on.';
+          return 'Three knocks come from behind the clock. A voice names the dry address, then asks you to keep the porch light on.';
         }});
+        this.installKnockRoutes(x+dx,y,z);
       }
     }
     // Sloped entry stays on the terrain so the wagon can cross it.
@@ -97,6 +94,49 @@ export class SalvageStreet {
     this.water.position.set(x,this.surface,(basin.back+24)/2);
     scene.add(this.water);
   }
+  recordKnock(observation){
+    if(!this.bag.records.has('flooded-knock')){
+      this.bag.record('flooded-knock','Three knocks in the flooded kitchen',
+        observation+' Ask the dry-house resident how she knows the signal.');
+    }
+  }
+  installKnockRoutes(x,y,z){
+    const m=this.mechanics;
+    const perch=[x,y+2.05,z-2.75];
+    this.roofPerch=new T.Vector3(...perch);
+    m.staticBox([1.3,.2,1],perch,0x5b554b);
+    for(const offset of [-.53,.53]){
+      const base=height(x+offset,perch[2]);
+      const top=perch[1]-.1;
+      m.staticBox([.12,top-base,.12],[x+offset,(base+top)/2,perch[2]],0x514539);
+    }
+    const rail=m.staticBox([1.3,.15,.13],[x,y+2.95,z-2.58],0x8e7350);
+    m.tag(rail.collider,{name:'Listen at the roof service rail',action:()=>{
+      if(!this.clock.running)return 'Drain the street first. Rising water makes the service rail unsafe.';
+      if(this.chapters.ending==='seal')return 'The sealed arch has silenced the knocking.';
+      const player=m.walker.current;
+      if(player.y<perch[1]+.45||Math.hypot(player.x-perch[0],player.z-perch[2])>1.3)return 'Hook the service rail and step onto the maintenance ledge to listen.';
+      this.recordKnock('From the roof service ledge, three knocks carried up the vent after the rest of the house fell quiet.');
+      return 'Three knocks travel up the vent. The sound comes from the kitchen clock below.';
+    }});
+
+    const plate=m.staticBox([.72,.58,.12],[x+.82,y+1.38,z-2.47],0x9f774c);
+    this.soundingPlate=plate.visual.position;
+    const markerHome=groundPoint(x+.82,z-4.3).add(new T.Vector3(0,.12,0));
+    const marker=new T.Group();
+    part(marker,[.19,.19,.25],[0,0,0],0xb17540,.025);
+    part(marker,[.2,.065,.26],[0,0,0],0xd5b36e,.012);
+    this.surveyMarker=m.dynamic({position:markerHome.toArray(),home:markerHome,visual:marker,
+      name:'Wooden survey marker',size:[.2,.19,.26],impactLimit:Infinity,shape:R.ColliderDesc.cuboid(.1,.095,.13)});
+    m.tag(plate.collider,{name:'Inspect the survey sounding plate',action:()=>
+      'The survey crew used this brass plate to trace sound through the walls. Throw a loose prop at it while the street is drained.',
+    onThrownImpact:()=>{
+      if(!this.clock.running||this.chapters.ending==='seal'||this.bag.records.has('flooded-knock'))return;
+      this.recordKnock('One thrown strike rang the survey plate once. The flooded kitchen answered with three knocks.');
+      this.bell?.();
+      this.notice('The plate rings once. Three knocks answer from inside.');
+    }});
+  }
   start(){
     if(this.chapters.stage<4)return 'The drain motor is locked. The old survey crossing notes explain how to open it.';
     if(this.clock.running)return 'The street is draining. One load per run. Follow the curb back up the ramp.';
@@ -107,9 +147,12 @@ export class SalvageStreet {
     for(const item of remaining)this.mechanics.remove(item);
     this.cargo.length=0;
     const picks=loads.filter(load=>!this.bag.records.has('pond-'+load.id));
-    if(!picks.length)return 'All three salvage requests are filled.';
     for(const load of picks)this.stock(load);
+    if(this.surveyMarker&&this.mechanics.carried!==this.surveyMarker&&this.mechanics.cargo!==this.surveyMarker){
+      this.mechanics.resetProp(this.surveyMarker,this.surveyMarker.home);
+    }
     this.clock.start(this.bag.records.has('pond-pump'));
+    if(!picks.length)return 'Listening run open. Follow the curb down to the house and get uphill when the bell sounds.';
     return 'Drain open. Drive down the curb-lined ramp. When the bell sounds, you have fifteen seconds to get uphill.';
   }
   stock(load){

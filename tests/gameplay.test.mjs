@@ -482,9 +482,25 @@ test('wagon drives the actual basin ramp and turns in salvage through normal int
   assert.match(use(mission.drop),/extra thirty seconds/);
   assert.ok(records.has('pond-pump'));
   mission.tick(mission.clock.remaining+STEP);
+  walkTo(parked.x-1.8,parked.z+4.4);
   walkTo(mission.control.x,mission.control.z+1.3);
   assert.match(use(mission.control),/Drain open/);
   assert.equal(mission.clock.remaining,115);
+  const rail=[...m.fixed.values()].find(target=>target.name==='Listen at the roof service rail');
+  assert.match(rail.action(),/Hook the service rail/);
+  const originalPosition=walker.current.clone();
+  walker.current.copy(mission.roofPerch).add(new T.Vector3(0,.9,0));
+  assert.match(rail.action(),/Three knocks travel up the vent/);
+  assert.match(records.get('flooded-knock').result,/roof service ledge/);
+  walker.current.copy(originalPosition);
+  records.delete('flooded-knock');
+  const marker=mission.surveyMarker;
+  marker.body.setTranslation(mission.soundingPlate.clone().add(new T.Vector3(0,0,-.9)),true);
+  m.grab(marker);
+  m.release(new T.Vector3(0,0,9));
+  for(let i=0;i<16;i++)frame();
+  assert.match(records.get('flooded-knock')?.result??'',/One thrown strike/);
+  records.delete('flooded-knock');
   const clock=[...m.fixed.values()].find(target=>target.name==='Listen by the flooded kitchen clock');
   assert.match(clock.action(),/faint knock/);
   assert.equal(clock.contact().strength,.71);
@@ -504,6 +520,14 @@ test('wagon drives the actual basin ramp and turns in salvage through normal int
   assert.equal(m.car.body.translation().z,32);
   assert.equal(m.driving,true);
   assert.equal(mission.cargo.some(item=>m.items.has(item.collider.handle)),false);
+  records.set('pond-records',true);
+  records.set('pond-water',true);
+  assert.match(mission.start(),/Listening run open/);
+  assert.equal(mission.cargo.length,0);
+  records.delete('extraction-return');
+  chapters.ending='seal';
+  assert.match(clock.action(),/knocks have stopped/);
+  assert.equal(clock.contact().strength,0);
 });
 
 test('Second Address opens by three approaches and proves the slope with a simulated brass ball',async t=>{
@@ -633,7 +657,7 @@ test('Second Address opens by three approaches and proves the slope with a simul
   assert.match(finish.action(),/Two signatures/);
   assert.ok(records.has('second-address-filed'),'failed getaway must preserve the post office handoff');
   records.set('flooded-knock',true);
-  assert.match(resident.action(),/Three knocks means/);
+  assert.match(resident.action(),/Three knocks was Cal’s signal/);
   assert.ok(records.has('resident-knock'));
   records.set('extraction-return',true);
   chapters.ending='seal';

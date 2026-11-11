@@ -78,6 +78,11 @@ export class SecondAddress {
     this.personSensor=personSensor;
     mechanics.tag(personSensor,{name:'Talk to the resident at the mailbox',action:()=>{
       if(!this.unlocked())return '“Can I help you? The utility office is across town.”';
+      if(chapters?.ending&&!bag.records.has('extraction-return')){
+        return chapters.ending==='seal'?
+          '“I finally slept through nine o’clock. I miss hearing him, though. I still leave the lamp on when it rains.”':
+          '“The ranger asked me to write down every time the wall knocks. If Cal’s still out there, he ought to know somebody’s listening.”';
+      }
       if(bag.records.has('extraction-return')&&chapters?.ending){
         return chapters.ending==='seal'?
           '“The knocking stopped the night you closed the arch. The man you brought home recognized the chair before I said a word.”':
@@ -86,7 +91,7 @@ export class SecondAddress {
       if(bag.records.has('flooded-knock')&&!bag.records.has('resident-knock')){
         bag.record('resident-knock','The resident knew the knock',
           'She says Cal knocked three times when the creek rose. She heard it through this kitchen wall after the other address was underwater.');
-        return '“Three knocks means it’s Cal. I heard them here after the other house went under. Check the kitchen clock. It stopped right after the last knock.”';
+        return '“Three knocks was Cal’s signal when he got home with his hands full. I heard it through this wall after the other house went under. Check the kitchen clock. It stopped right after the last knock.”';
       }
       if(this.route==='grapple latch')return '“Something just tripped the porch latch. If you’re here about the clock, go ahead. I’ve tried everything.”';
       if(this.route==='utility bluff'){
