@@ -1548,3 +1548,40 @@ test('the villager asset preserves animation pivots and imports an embedded fabr
   const grounded=pipeline.prepare(model,{position:[0,8,0],groundY:2});
   assert.ok(Math.abs(new T.Box3().setFromObject(grounded).min.y-2)<.001);
 });
+
+test('the diner epilogue follows both arch choices and updates after a later rescue',async()=>{
+  const {Diner}=await import('../src/diner.js');
+  const {diner,height}=await import('../src/terrain.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker}=await import('../src/walker.js');
+  const {AssetPipeline}=await import('../src/assets.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  try{
+    const scene=new T.Scene();
+    const walker=new Walker(world,[diner.x,height(diner.x,diner.z+4)+1,diner.z+4]);
+    const mechanics=new Mechanics(world,walker,scene,new T.Scene());
+    const records=new Map();
+    const bag={records,record:(key,name,description)=>records.set(key,{name,description})};
+    const chapters={ending:'',story:{area:0}};
+    const location=new Diner(mechanics,chapters,bag,new AssetPipeline(scene,world),{receiver:new T.Group()});
+    const interact=name=>[...mechanics.fixed.values()].find(tag=>tag.name===name).action();
+    const booth=()=>interact('Check Cal’s booth at the diner');
+    const radio=()=>interact('Listen at the diner counter');
+    assert.equal(location.objective(),null);
+    assert.match(booth(),/night shift/);
+    assert.equal(records.size,0);
+    for(const ending of ['seal','hold']){
+      records.clear();
+      chapters.ending=ending;
+      assert.match(location.objective().text,/Epilogue/);
+      assert.match(radio(),ending==='seal'?/weather report/:/roll every hour/);
+      assert.match(booth(),ending==='seal'?/upside down/:/search roster/);
+      assert.equal(location.objective(),null);
+      records.set('extraction-return',true);
+      assert.match(location.objective().text,/Epilogue/);
+      assert.match(booth(),ending==='seal'?/coming back Saturday/:/next search/);
+      assert.equal(location.objective(),null);
+    }
+  }finally{world.free();}
+});

@@ -19,6 +19,7 @@ import {FieldProps} from './field-props.js';
 import {CreekEncounter} from './creek-encounter.js';
 import {CampLife} from './camp-life.js';
 import {Chapters} from './chapters.js';
+import {Diner} from './diner.js';
 import {insideRescueCorridor} from './rigging.js';
 import {Gear} from './gear.js';
 import {Finale,MailRoute} from './finale.js';
@@ -28,7 +29,7 @@ import {fieldPistol} from './effects.js';
 import * as T from 'three';
 import R from 'rapier';
 import {AssetPipeline} from './assets.js';
-import {cabinX,cabinY,cabinZ,height,basinInfluence,secondAddress,inCreek,makeTerrain,plots,spawn,trailDistance,trailX} from './terrain.js';
+import {cabinX,cabinY,cabinZ,height,basinInfluence,diner,secondAddress,inCreek,makeTerrain,plots,spawn,trailDistance,trailX} from './terrain.js';
 import {Walker,STEP} from './walker.js';
 import {Input} from './input.js';
 import {Mechanics,vec} from './mechanics.js';
@@ -66,7 +67,7 @@ function forest(pipeline,models){
   const rnd=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
   const grove={oak:[],birch:[],maple:[],underbrush:[],rocks:[]};
   function place(type,x,z,scale,sink=0){
-    if(basinInfluence(x,z)>.07||Math.hypot(x-secondAddress.x,z-secondAddress.z)<7.5)return;
+    if(basinInfluence(x,z)>.07||[secondAddress,diner].some(p=>Math.hypot(x-p.x,z-p.z)<7.5))return;
     if(insideRescueCorridor(x,z,type==='rocks'?scale*.48:1.2))return;
     const yaw=rnd()*Math.PI*2;
     if(nearFairground(x,z,type==='rocks'?scale*.48:.8)||nearWorkshop(x,z,type==='rocks'?scale*.48:.8))return;
@@ -147,6 +148,7 @@ async function boot(){
   const mail=new MailRoute(mechanics,bag,pipeline,models,finale);
   const campLife=new CampLife(mechanics,bag,message=>notice(message));
   const chapters=new Chapters(mechanics,story,finale,bag,message=>notice(message));
+  const townDiner=new Diner(mechanics,chapters,bag,pipeline,models);
   const creekEncounter=new CreekEncounter(mechanics,bag,message=>notice(message));
   scene.add(camera);
   const pistol=fieldPistol(),scattergun=fieldPistol(true);
@@ -500,7 +502,7 @@ async function boot(){
     }
     story.animate(now*.001);
     const objective=fordRescue.objective()??loopRoad.objective()??salvage.objective()??
-      address.objective()??founders.objective()??extraction.objective()??chapters.objective()??
+      address.objective()??founders.objective()??extraction.objective()??townDiner.objective()??chapters.objective()??
       (rescue.showPractice?rescue.objective():null)??fieldProps.objective()??finale.objective()??rescue.objective();
     $('guide').textContent=workshop.active?workshop.hint():objective?.text??story.guide(player);
     const waypoint=objective?objective.target:story.waypoint();
