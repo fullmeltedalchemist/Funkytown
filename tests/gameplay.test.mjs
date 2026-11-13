@@ -2085,3 +2085,77 @@ test('archive window lowers the authored dispatch case and preserves intact and 
     }finally{world.free();}
   }
 });
+
+test('boar signs lead to a safe lookout and creek stew supports bait, a retry and a separate diner reward',async()=>{
+  const {CreekWildlife}=await import('../src/creek-wildlife.js');
+  const {Wildlife}=await import('../src/wildlife.js');
+  const {CampLife}=await import('../src/camp-life.js');
+  const {Diner}=await import('../src/diner.js');
+  const {AssetPipeline}=await import('../src/assets.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker}=await import('../src/walker.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  try{
+    const scene=new T.Scene(),walker=new Walker(world,[0,3,0]);
+    const m=new Mechanics(world,walker,scene,new T.Scene());
+    const pipeline=new AssetPipeline(scene,world);
+    const records=new Map();
+    const bag={records,record:(id,name,description)=>records.set(id,{name,description}),forget:id=>records.delete(id)};
+    const camp=new CampLife(m,bag,()=>{});
+    const creek=new CreekWildlife(m,bag,()=>{},()=>{});
+    creek.installBoarTrail();
+    const wildlife=new Wildlife(m,pipeline,new T.Group(),bag,()=>{});
+    new Diner(m,{story:{area:0},ending:''},bag,pipeline,{receiver:new T.Group()});
+    const act=name=>[...m.fixed.values()].find(tag=>tag.name===name).action();
+    const sod=[...m.fixed.values()].filter(tag=>tag.name==='Inspect the torn sod');
+    assert.match(sod[0].action(),/Follow the marks/);
+    assert.match(sod[1].action(),/Bear west/);
+    walker.current.copy(creek.overlook);
+    creek.tick(.1);
+    assert.equal(creek.chargeTime,0);
+    assert.match(act('Watch the boar from the survey stake'),/around its feeding gully/);
+    assert.ok(records.has('boar-bank-watch'));
+
+    const [rabbit]=wildlife.animals;
+    const packMeat=()=>{
+      rabbit.state='alive';
+      wildlife.hit(rabbit);
+      assert.match(wildlife.use(rabbit),/Meat packed/);
+    };
+    act('Take camp ingredients');
+    packMeat();
+    rabbit.state='alive';
+    assert.match(act('Set meat bait by the cottontail trail'),/Bait set/);
+    assert.ok(!records.has('cottontail-meat')&&records.has('camp-ingredients'));
+    for(let i=0;i<170;i++)wildlife.tick(.1);
+    assert.ok(records.has('cottontail-track-study'));
+    const cook=()=>act('Cook creek stew in the stockpot');
+    assert.match(cook(),/one portion/);
+    assert.ok(records.has('camp-ingredients'));
+    packMeat();
+    assert.match(cook(),/Stockpot on/);
+    assert.ok(!records.has('camp-ingredients')&&!records.has('cottontail-meat'));
+    camp.tick(8);
+    assert.match(cook(),/still thin/);
+    camp.tick(13);
+    assert.match(cook(),/scorched/);
+    assert.ok(!records.has('camp-meal'));
+    for(let batch=0;batch<2;batch++){
+      act('Take camp ingredients');
+      packMeat();
+      cook();
+      camp.tick(12);
+      assert.match(cook(),/Stew packed/);
+      if(!batch){
+        records.set('diner-hot-plate',{});
+        assert.match(act('Share a hot plate with June'),/two thermoses/);
+        assert.ok(records.has('diner-creek-stew')&&!records.has('camp-meal'));
+      }
+    }
+    assert.match(act('Share a hot plate with June'),/Keep this pot/);
+    assert.ok(records.has('camp-meal'));
+    camp.eat();
+    assert.equal(camp.energy,260);
+  }finally{world.free();}
+});

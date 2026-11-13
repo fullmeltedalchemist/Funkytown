@@ -13,7 +13,7 @@ import {TowLine} from './tow-line.js';
 import {checkLookoutSignal,fireFlare} from './flare.js';
 import {Wildlife} from './wildlife.js';
 import {CreekBirds} from './creek-birds.js';
-import {CreekWildlife} from './creek-wildlife.js';
+import {CreekWildlife,nearBoarTrail} from './creek-wildlife.js';
 import {SecondAddress} from './second-address.js';
 import {Extraction} from './extraction.js';
 import {SalvageStreet} from './salvage-street.js';
@@ -78,6 +78,7 @@ function forest(pipeline,models){
     if(basinInfluence(x,z)>.07||Math.hypot(x-coolerBank.x,z-coolerBank.z)<3.2||Math.hypot(x-15,z+16)<5.8||nearParadeStaging(x,z)||[secondAddress,diner].some(p=>Math.hypot(x-p.x,z-p.z)<7.5))return;
     if(insideRescueCorridor(x,z,type==='rocks'?scale*.48:1.2))return;
     const yaw=rnd()*Math.PI*2;
+    if(nearBoarTrail(x,z,type==='rocks'?scale*.48:.8))return;
     if(nearFairground(x,z,type==='rocks'?scale*.48:.8)||nearWorkshop(x,z,type==='rocks'?scale*.48:.8))return;
     grove[type].push({x,y:height(x,z)-sink,z,scale,yaw});
   }
@@ -270,6 +271,7 @@ async function boot(){
   const extraction=new Extraction(mechanics,chapters,bag,pipeline,models,notice);
   const creekBirds=new CreekBirds(mechanics);
   const creekWildlife=new CreekWildlife(mechanics,bag,notice,point=>playToolSound(610,290,.64,.18,point));
+  creekWildlife.installBoarTrail();
   const wildlife=new Wildlife(mechanics,pipeline,models.cottontail,bag,notice);
   bag.record('field-slingshot','Slingshot','Quiet pebbles arc and scatter nearby wildlife at the point of impact. Use it to break fragile props.','Gear');
   bag.record('field-rifle','Lever-action rifle','A faster, flatter shot for distant targets. Cycle with X or the weapon control.','Gear');

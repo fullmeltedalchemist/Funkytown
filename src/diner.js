@@ -1,6 +1,7 @@
 import {diner,height} from './terrain.js';
 import {person} from './rescue.js';
 import * as T from 'three';
+import {stewName,stewShared} from './field-stew.js';
 import {part} from './mechanics.js';
 import {dispatchLog,dispatchReceipt} from './archive-window.js';
 import {recoveryNote,identifiedNote} from './wagon-recovery.js';
@@ -99,6 +100,13 @@ export class Diner {
     const booth=box([1.26,.055,.86],-2.08,.85,.45,0xe5ba7d);
     const serving=box([.42,.042,.29],.8,1.08,-1.77,0x75867c);
     mechanics.tag(serving.collider,{name:'Share a hot plate with June',action:()=>{
+      if(bag.records.get('camp-meal')?.name===stewName){
+        if(bag.records.has(stewShared))return 'June has stew on the stove for the crew. Keep this pot for the trail.';
+        bag.forget('camp-meal');
+        bag.record(stewShared,'June’s creek stew recipe',
+          'June split your stew between the bank crews. Her trick of adding the corn near the end extends the stamina benefit when you eat creek stew.','Keepsakes');
+        return 'June fills two thermoses. “Cal sent one to each bank, even when the radio said nobody was on the far side. Add your corn last next time. It’ll keep you going longer.”';
+      }
       if(bag.records.has('diner-hot-plate'))return 'June has already taken a plate to the relief crew.';
       if(!bag.records.has('camp-meal'))return 'Bring a meal from the camp skillet to share with the relief crew.';
       bag.forget('camp-meal');

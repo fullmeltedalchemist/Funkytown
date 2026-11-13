@@ -44,16 +44,21 @@ export class Wildlife {
       print.rotation.x=-Math.PI/2;
       mechanics.scenes[0].add(print);
     }
-    station(mechanics,0,trail,'Inspect cottontail tracks and set bait',()=>{
+    const setBait=bait=>{
       if(ordinary.state!=='alive')return 'Fresh tracks lead to the brush. Check again after the rabbit returns.';
       if(ordinary.bait)return 'Bait is down. Back away from the station and watch the tracks.';
-      const bait=bag.records.has('cottontail-lure')?'cottontail-lure':'camp-ingredients';
-      if(!bag.records.has(bait))return 'Paired prints lead into the brush. Bring camp ingredients to bait this spot.';
+      if(!bag.records.has(bait))return bait==='cottontail-meat'?
+        'The bait hook is empty. Bring a portion of meat to set it here.':
+        'Paired prints lead into the brush. Bring camp ingredients or bait from the refilled tin.';
       bag.forget(bait);
       ordinary.bait=trail;
       ordinary.baitTime=45;
       return 'Bait set. Give the cottontail room to follow the tracks.';
-    },{color:0x766047});
+    };
+    station(mechanics,0,trail,'Inspect cottontail tracks and set pantry bait',
+      ()=>setBait(bag.records.has('cottontail-lure')?'cottontail-lure':'camp-ingredients'),{color:0x766047});
+    station(mechanics,0,groundPoint(trail.x+.45,trail.z+1.45),'Set meat bait by the cottontail trail',
+      ()=>setBait('cottontail-meat'),{color:0x826052});
     const home=this.animals.at(-1).home;
     this.tracks=new T.Group();
     const print=new T.MeshBasicMaterial({color:0x75ffd2,transparent:true,opacity:.73,depthWrite:false});

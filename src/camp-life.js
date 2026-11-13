@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {part} from './mechanics.js';
 import {cabinX,cabinZ} from './terrain.js';
+import {stewName,stewShared} from './field-stew.js';
 import {groundPoint,station} from './field-stations.js';
 
 export class CampLife {
@@ -13,7 +14,7 @@ export class CampLife {
     const rack=station(mechanics,0,groundPoint(cabinX+5.2,cabinZ+7.8),'Take camp ingredients',()=>{
       if(bag.records.has('camp-ingredients')||this.elapsed!==null)return 'The next batch is already out.';
       bag.record('camp-ingredients','Camp ingredients','Beans, corn and peppers for the skillet.','Cargo');
-      return 'Ingredients packed. Use the skillet on the cookstove.';
+      return 'Ingredients packed. Use the skillet, or bring cottontail meat to the stockpot for creek stew.';
     });
     for(const x of [-.17,0,.17])part(rack.body,[.12,.17,.12],[x,1.02,0],0xd3ae60,.028);
     const lure=station(mechanics,0,groundPoint(cabinX+4.1,cabinZ+8.75),'Check the pantry bait tin',()=>{
@@ -32,6 +33,21 @@ export class CampLife {
     this.food.position.y=1.055;this.food.visible=false;stove.body.add(this.food);
     this.heat=new T.PointLight(0xff973e,0,3,2);
     this.heat.position.set(0,.98,.18);stove.body.add(this.heat);
+    const stew=station(mechanics,0,groundPoint(cabinX+4.25,cabinZ+6.72),'Cook creek stew in the stockpot',
+      ()=>this.cook(stewHearth),{color:0x615347});
+    const pot=new T.Mesh(new T.CylinderGeometry(.245,.21,.29,24),
+      new T.MeshStandardMaterial({color:0x42494a,metalness:.62,roughness:.37}));
+    pot.position.y=1.09;pot.castShadow=true;pot.receiveShadow=true;stew.body.add(pot);
+    for(const x of [-.245,.245]){
+      const handle=new T.Mesh(new T.TorusGeometry(.102,.023,8,18),pot.material);
+      handle.position.set(x,1.13,0);handle.scale.set(1,.49,1);
+      handle.rotation.x=-Math.PI/3;stew.body.add(handle);
+    }
+    const broth=new T.Mesh(new T.CircleGeometry(.225,24),new T.MeshStandardMaterial({color:0x9d673c,roughness:.4}));
+    broth.rotation.x=-Math.PI/2;broth.position.y=1.24;broth.visible=false;stew.body.add(broth);
+    const fire=new T.PointLight(0xffa24c,0,3,2);
+    fire.position.set(0,.96,.15);stew.body.add(fire);
+    const stewHearth={food:broth,heat:fire,stew:true};
     const pump=station(mechanics,0,groundPoint(cabinX+7.8,cabinZ+5.4),'Refill canteen and drink at the hand pump',()=>this.refill(),{color:0x517b75});
     part(pump.body,[.08,.3,.09],[0,1.07,0],0x567e7b,.012);
     part(pump.body,[.28,.05,.055],[.12,1.22,0],0x344540,.017);
@@ -94,25 +110,33 @@ export class CampLife {
   cook(hearth=this){
     if(this.elapsed===null){
       if(this.bag.records.has('camp-meal'))return 'Eat or deliver the meal you already packed before cooking another.';
+      if(hearth.stew&&(!this.bag.records.has('camp-ingredients')||!this.bag.records.has('cottontail-meat'))){
+        return 'Creek stew takes one portion of cottontail and one pack of beans, corn and peppers.';
+      }
       this.meatMeal=this.bag.records.has('cottontail-meat');
       if(!this.meatMeal&&!this.bag.records.has('camp-ingredients'))return 'Get ingredients from the camp pantry rack first.';
-      this.bag.forget(this.meatMeal?'cottontail-meat':'camp-ingredients');
+      if(this.meatMeal)this.bag.forget('cottontail-meat');
+      if(hearth.stew||!this.meatMeal)this.bag.forget('camp-ingredients');
       this.elapsed=0;
       this.hearth=hearth;
       hearth.food.visible=true;
       hearth.food.material.color.setHex(0xb4864b);
       hearth.heat.intensity=5;
+      if(hearth.stew)return 'Stockpot on the heat. Wait for the broth to turn amber, then use the pot to pack the stew.';
       return 'Skillet on the heat. Wait for the golden crust, then use the skillet to lift it off.';
     }
     if(hearth!==this.hearth)return 'Finish the meal at the stove where you started it.';
-    if(this.elapsed<5)return 'Still simmering. Watch for the food to turn golden.';
-    const burned=this.elapsed>=12;
+    const {stew}=hearth;
+    if(this.elapsed<(stew?9:5))return stew?'The broth is still thin. Let it simmer.':'Still simmering. Watch for the food to turn golden.';
+    const burned=this.elapsed>=(stew?21:12);
     this.elapsed=null;
     hearth.food.visible=false;
     hearth.heat.intensity=0;
+    if(burned&&stew)return 'The broth scorched. The pot is clear for a fresh batch with new ingredients.';
     if(burned)return 'The batch burned. Clear the skillet and try a fresh batch from the pantry.';
-    this.bag.record('camp-meal',this.meatMeal?'Roasted cottontail':'Hot skillet meal',
-      'Eat at the mess station or share it with the ranger.','Cargo');
+    this.bag.record('camp-meal',stew?stewName:this.meatMeal?'Roasted cottontail':'Hot skillet meal',
+      stew?'Eat at the mess station or bring the pot to June’s relief crew.':'Eat at the mess station or share it with the ranger.','Cargo');
+    if(stew)return 'Stew packed. Eat at the mess station or bring it to June’s diner.';
     return 'Meal packed. Eat at the mess station or deliver a plate for the ranger.';
   }
   refill(){
@@ -127,9 +151,10 @@ export class CampLife {
   }
   eat(){
     if(!this.bag.records.has('camp-meal'))return 'Cook a skillet meal before sitting down to eat.';
-    const meat=this.bag.records.get('camp-meal')?.name==='Roasted cottontail';
+    const meal=this.bag.records.get('camp-meal')?.name;
     this.bag.forget('camp-meal');
-    this.energy=(meat?165:110)+(this.bag.records.has('midnight-cookoff')?30:0);
+    const duration=meal===stewName?(this.bag.records.has(stewShared)?260:225):meal==='Roasted cottontail'?165:110;
+    this.energy=duration+(this.bag.records.has('midnight-cookoff')?30:0);
     return 'You eat the hot skillet meal. Sprint speed improved for a short time. On touch, push the movement stick all the way.';
   }
   tick(dt){
@@ -147,13 +172,14 @@ export class CampLife {
     if(this.elapsed===null)return;
     const previous=this.elapsed;
     this.elapsed+=dt;
-    if(previous<5&&this.elapsed>=5){
+    const stew=this.hearth.stew,ready=stew?9:5,burn=stew?21:12;
+    if(previous<ready&&this.elapsed>=ready&&this.elapsed<burn){
       this.hearth.food.material.color.setHex(0xe0a33c);
-      this.notice('Skillet golden. Lift it off the heat now.');
+      this.notice(stew?'The broth has turned amber. Pack the stew now.':'Skillet golden. Lift it off the heat now.');
     }
-    if(previous<12&&this.elapsed>=12){
+    if(previous<burn&&this.elapsed>=burn){
       this.hearth.food.material.color.setHex(0x352820);
-      this.notice('The skillet burned. Clear it before cooking another batch.');
+      this.notice(stew?'The broth scorched. Use the pot to clear it.':'The skillet burned. Clear it before cooking another batch.');
     }
   }
 }

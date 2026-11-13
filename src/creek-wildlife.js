@@ -1,5 +1,10 @@
 import * as T from 'three';
 import {height} from './terrain.js';
+import {groundPoint,station} from './field-stations.js';
+
+const roots=[[12,-13.9],[13.4,-12.7],[15,-11.1]];
+const overlook=[10.4,-8.1];
+export const nearBoarTrail=(x,z,pad=0)=>x>9.4-pad&&x<17.8+pad&&z>-14.6-pad&&z<-7.2+pad;
 
 function animal(scene,color,deer){
   const root=new T.Group();
@@ -55,6 +60,51 @@ export class CreekWildlife {
     this.trackEnd=this.tracks.children.at(-1).position.clone();
     this.echoTime=0;
     this.called=false;
+  }
+
+  installBoarTrail(){
+    const m=this.mechanics;
+    const material=new T.MeshStandardMaterial({color:0x634429,roughness:1,side:T.DoubleSide});
+    for(const [index,[x,z]] of roots.entries()){
+      for(let n=0;n<5;n++){
+        const dirt=new T.CircleGeometry(.22+n*.028,7).rotateX(-Math.PI/2).scale(1,1,.63);
+        const pos=dirt.getAttribute('position');
+        const dx=x+Math.sin(n*2.3)*.43,dz=z+Math.cos(n*2.3)*.28;
+        for(let v=0;v<pos.count;v++){
+          const px=pos.getX(v)+dx,pz=pos.getZ(v)+dz;
+          pos.setXYZ(v,px,height(px,pz)+.065,pz);
+        }
+        dirt.computeVertexNormals();
+        m.scenes[0].add(new T.Mesh(dirt,material));
+      }
+      const base=groundPoint(x-.6,z+.3);
+      const clue=[
+        'Fresh patches of torn sod lead northeast toward the creek. Follow the marks before stepping into the clearing.',
+        'The furrows get deeper here. The straight gully ahead is where the boar charges. Bear west toward the survey stake by the bank.',
+        'The boar feeds just beyond this patch. Back out toward the survey stake to watch from the side of the gully.'
+      ][index];
+      station(m,0,base,'Inspect the torn sod',()=>{
+        if(!this.bag.records.has('boar-rooting-sign')){
+          this.bag.record('boar-rooting-sign','Fresh boar rooting',
+            'Torn sod and deep furrows lead to the feeding gully east of the creek. The west survey stake is outside the charge lane.');
+        }
+        return clue;
+      },{color:0x62513c});
+    }
+    this.overlook=station(m,0,groundPoint(...overlook),'Watch the boar from the survey stake',()=>{
+      const player=m.walker.current;
+      if(Math.hypot(player.x-this.home.x,player.z-this.home.z)<6.2){
+        return 'Circle to the west side of the stake to stay outside the charge lane.';
+      }
+      if(Math.hypot(this.boar.position.x-this.home.x,this.boar.position.z-this.home.z)>2||this.chargeTime){
+        return 'The feeding patch is empty. Give the boar time to settle and return.';
+      }
+      if(!this.bag.records.has('boar-bank-watch')){
+        this.bag.record('boar-bank-watch','The boar’s feeding gully',
+          'From the west survey stake you watched the boar follow the rooting furrows down the gully. The stake marks a way around its charge lane.');
+      }
+      return 'The boar noses up a mat of roots. The trail behind the survey stake takes you around its feeding gully.';
+    },{color:0x887447}).point;
   }
 
   tick(dt){

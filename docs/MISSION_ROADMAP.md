@@ -99,7 +99,10 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] Add creek birds that flush together when approached or distracted by a nearby sound.
 - [x] Add a boar that charges and knocks light props aside.
 - [x] Add ordinary cottontail tracks and a bait station that uses camp ingredients. Share a hot plate with June’s relief crew.
-- [ ] Expand tracking and food. Add distinct boar rooting marks that guide players away from its charge lane, and permit meat bait as an alternative to pantry bait. Add a stew using camp ingredients and meat, with a slower cooking window and a larger sharing reward. If the pan burns, allow a new batch. Verify signs lead to the animal, the recipe consumes its ingredients once, and sharing records its own outcome.
+- [x] Read three patches of boar rooting east of the creek. The deeper furrows warn about the charge lane. Watch the boar from the west survey stake once it returns to its feeding patch.
+- [x] Give the cottontail trail a separate meat-bait hook alongside pantry bait. At Foxglove, use the stockpot to combine one meat portion and one pantry pack. At nine seconds the broth is ready and at twenty-one it scorches. Clear the pot and bring fresh ingredients to retry. Share a finished pot with June to unlock a recipe that extends the stew’s sprint boost.
+- [x] Verify the overlook sits outside charge range, meat bait draws a cottontail without spending pantry stock, scorched stew can be retried, and June’s stew reward works after the regular hot plate has already been delivered.
+- [ ] Check rooting visibility, station prompts, and the stockpot’s amber cue in a rendered desktop and touch playthrough.
 - [x] First Echo cottontail. Observe it or shoot it to learn what it does. It yields a clue and no meat.
 - [x] Add separate evidence for photographing the Echo cottontail and flare-lit tracks.
 - [x] Add an Echo deer whose hoofprints stop while its call continues beyond the bend.
