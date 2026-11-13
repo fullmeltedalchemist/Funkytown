@@ -2,6 +2,7 @@ import {diner,height} from './terrain.js';
 import {person} from './rescue.js';
 import * as T from 'three';
 import {part} from './mechanics.js';
+import {recoveryNote,identifiedNote} from './wagon-recovery.js';
 
 export class Diner {
   constructor(mechanics,chapters,bag,pipeline,models){
@@ -75,6 +76,14 @@ export class Diner {
         return 'June runs a finger over the stamp. “I wrote PAID when he left money for the whole shift. That entry tells us when he paid, not when he got home.”';
       }
     });
+    const ledger=box([.32,.05,.25],-1.15,1.085,-1.77,0x83613d);
+    mechanics.tag(ledger.collider,{name:'Compare Ed’s dispatch slip with June’s ledger',action:()=>{
+      if(bag.records.has(identifiedNote))return 'June has penciled “road crew” beside the second bell so the next shift can tell the calls apart.';
+      if(!bag.records.has(recoveryNote))return 'June’s ledger lists the coffee and sandwiches she sent out to the road crews.';
+      bag.record(identifiedNote,'June confirmed Ed’s callout',
+        'The town bell called out the road crew after the evacuation. Ed saw a wagon’s lanterns in the cut but found no tire ruts. June marked the two calls separately in her ledger.');
+      return 'June folds the slip beside the ledger. “Ed went out on the second bell. He told me he followed two wagon lamps into the cut. Come morning, his own tracks were the only ones in the mud.”';
+    }});
     const booth=box([1.26,.055,.86],-2.08,.85,.45,0xe5ba7d);
     const serving=box([.42,.042,.29],.8,1.08,-1.77,0x75867c);
     mechanics.tag(serving.collider,{name:'Share a hot plate with June',action:()=>{

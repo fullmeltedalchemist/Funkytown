@@ -1902,3 +1902,91 @@ test('the runaway cooler enters the creek, can be restarted, and unlocks reusabl
     assert.match(quest.start(),/is back/);
   }finally{world.free();}
 });
+
+test('Ed’s wagon can be winched or towed through the real ditch, with a recoverable attempt and a lasting shortcut',async()=>{
+  const {WagonRecovery,recoveryNote,identifiedNote}=await import('../src/wagon-recovery.js');
+  const {Diner}=await import('../src/diner.js');
+  const {AssetPipeline}=await import('../src/assets.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker,STEP}=await import('../src/walker.js');
+  const {TowLine}=await import('../src/tow-line.js');
+  const {height,makeTerrain}=await import('../src/terrain.js');
+  await R.init();
+  for(const reel of [true,false]){
+    const world=new R.World({x:0,y:-9.81,z:0});
+    try{
+      const scene=new T.Scene();
+      const m=new Mechanics(world,new Walker(world,[2.6,height(2.6,-18.85)+.9,-18.85]),scene,new T.Scene());
+      const pipeline=new AssetPipeline(scene,world);
+      const models={archiveTruck:new T.Group(),fordRescueBracket:new T.Group(),receiver:new T.Group()};
+      makeTerrain(scene,world,{floor:null,normal:null});
+      m.makeCar([-1,height(-1,-22.6)+.51,-22.6]);
+      const records=new Map();
+      const bag={records,record:(id,name,description)=>records.set(id,{name,description})};
+      let unlocked=false;
+      const tow=new TowLine(m);
+      const quest=new WagonRecovery(m,bag,tow,()=>{},pipeline,models,()=>unlocked);
+      const barrier=quest.barrier.collider;
+      const camera=new T.PerspectiveCamera();
+      function aim(point,from){
+        camera.position.copy(from);
+        camera.lookAt(point);
+        camera.updateMatrixWorld(true);
+      }
+      function step(throttle=0){
+        m.before(camera,{x:0,z:throttle},{actions:new Set()});
+        world.step(m.events);
+        m.after();
+        tow.tick(STEP,{z:throttle});
+        quest.tick(STEP);
+      }
+      for(let i=0;i<90;i++)step();
+      aim(quest.driver.clone().add(new T.Vector3(0,1.1,0)),m.walker.current.clone().add(new T.Vector3(0,.61,0)));
+      assert.match(m.use(camera),/ford first/);
+      unlocked=true;
+      assert.match(m.use(camera),/Park south/);
+      assert.ok(quest.objective());
+      const loadPoint=()=>new T.Vector3().copy(quest.load.body.translation());
+      function rig(){
+        const p=loadPoint();
+        aim(p,new T.Vector3(.75,height(.75,p.z)+1.49,p.z));
+        assert.match(tow.select(camera),/First hook attached/);
+        const car=new T.Vector3().copy(m.car.body.translation());
+        aim(car,new T.Vector3(car.x+1.8,height(car.x+1.8,car.z)+1.49,car.z));
+        assert.match(tow.select(camera),/Tow line rigged/);
+        return car;
+      }
+      rig();
+      if(reel){
+        assert.match(tow.select(camera),/released/);
+        quest.load.body.setTranslation(quest.home.clone().add(new T.Vector3(0,0,-1)),true);
+        aim(quest.driver.clone().add(new T.Vector3(0,1.1,0)),m.walker.current.clone().add(new T.Vector3(0,.61,0)));
+        assert.match(m.use(camera),/another pull/);
+        assert.ok(loadPoint().distanceTo(quest.home)<.01);
+        rig();
+      }
+      assert.match(m.use(camera),/Wagon controls/);
+      if(reel)assert.match(tow.select(camera),/Winch reeling/);
+      let taut=false;
+      for(let i=0;i<480&&!records.has(recoveryNote);i++){
+        step(reel?0:.29);
+        taut ||= tow.taut;
+      }
+      assert.ok(taut,'the line takes up tension');
+      assert.ok(records.has(recoveryNote),
+        `${reel?'winch':'tow'} left the load at ${quest.load.visual.position.toArray()} with rope length ${tow.length}`);
+      assert.equal(barrier.isValid(),false);
+      assert.equal(quest.objective(),null);
+      assert.equal(tow.joint,null);
+      const reload=new WagonRecovery(m,bag,tow,()=>{},pipeline,models,()=>true);
+      assert.equal(reload.barrier,undefined);
+      assert.equal(reload.load,undefined);
+      const diner=new Diner(m,{story:{area:0},ending:''},bag,pipeline,models);
+      const note=[...m.fixed.values()].find(tag=>tag.name.includes('dispatch slip with June'));
+      assert.match(note.action(),/his own tracks/);
+      assert.ok(records.has(identifiedNote));
+      assert.match(note.action(),/tell the calls apart/);
+      assert.match(diner.counterStory(),/night shift/);
+    }finally{world.free();}
+  }
+});

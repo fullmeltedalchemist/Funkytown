@@ -36,6 +36,17 @@ export function basinInfluence(x,z){
   return (1-smoothstep(Math.abs(x-basin.x),11,15))*
     smoothstep(z,5,basin.back)*(1-smoothstep(z,basin.entry,39));
 }
+// A gravel cut bypasses the bend on the south road. Its low point held the road crew wagon.
+function recoveryCutX(z){
+  return lerp(trailX(z),-1,smoothstep(z,-26,-21)*(1-smoothstep(z,-13.5,-10.5)));
+}
+export function nearRecoveryCut(x,z,pad=0){
+  return z>-26-pad&&z<-10+pad&&Math.abs(x-recoveryCutX(z))<4+pad;
+}
+function recoveryRoad(x,z){
+  return (1-smoothstep(Math.abs(x-recoveryCutX(z)),1.65,3.25))*
+    smoothstep(z,-26,-22)*(1-smoothstep(z,-12,-10.5));
+}
 export function height(x,z){
   const yard=1-smoothstep(Math.max(Math.abs(x-cabinX)*.83,Math.abs(z-cabinZ)*.92),4.7,9);
   let result=lerp(rawHeight(x,z),cabinY-.035,yard);
@@ -48,7 +59,10 @@ export function height(x,z){
   result=lerp(result,rawHeight(trailX(z),z),road*.92*smoothstep(Math.abs(z),9,15));
   const weight=basinInfluence(x,z);
   const ramp=smoothstep(z,22,37);
-  return lerp(result,lerp(basin.floor,2.7,ramp),weight);
+  result=lerp(result,lerp(basin.floor,2.7,ramp),weight);
+  const ditch=.97*smoothstep(z,-20,-16.7)*(1-smoothstep(z,-14.65,-12.5));
+  const apron=rawHeight(trailX(z),z)+.25;
+  return lerp(result,apron-ditch,recoveryRoad(x,z));
 }
 export const spawn=[trailX(38),height(trailX(38),38)+1.1,38];
 export const inCreek=(x,z)=>Math.abs(z-creekZ(x))<creekWidth(x)*1.35&&height(x,z)<-1.71;
@@ -69,8 +83,9 @@ export function makeTerrain(scene,world,textures){
     const front=plots[0].x-4.4;
     const spur=x>trailX(26)-.4&&x<front+.65?Math.abs(z-26)*1.35:Infinity;
     const near=1-smoothstep(Math.min(trailDistance(x,z),spur)+.09*Math.sin(z*1.5),1.25,2.45);
+    const gravel=recoveryRoad(x,z);
     temp.copy(moss).lerp(needle,grain*.66);
-    temp.lerp(stone,creek(x,z)*.63).lerp(dirt,near*.85);
+    temp.lerp(stone,creek(x,z)*.63).lerp(dirt,near*.85).lerp(stone,gravel*.82);
     temp.multiplyScalar(.78+.24*grain).toArray(color,i*3);
   }
   geo.setAttribute('color',new T.BufferAttribute(color,3));

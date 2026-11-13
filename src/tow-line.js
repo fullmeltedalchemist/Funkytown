@@ -27,7 +27,7 @@ export class TowLine {
     const point=camera.position.clone().addScaledVector(camera.getWorldDirection(new T.Vector3()),hit.timeOfImpact);
     if(!this.first){
       if(!item||!['car','prop'].includes(item.kind)||item.name==='Burning signal flare')return 'Choose the wagon or a loose prop for the first hook.';
-      this.first={item,point:this.localPoint(item.body,point)};
+      this.first={item,point:item.towPoint??this.localPoint(item.body,point)};
       return 'First hook attached. Aim at a second object or fixed surface and press Rig again.';
     }
     const first=this.first;
@@ -36,11 +36,12 @@ export class TowLine {
     const targetBody=hit.collider.parent();
     if(!item&&targetBody&&!targetBody.isFixed())return 'Choose a loose prop or fixed surface. The parade float and archive truck move on their own.';
     const start=this.worldPoint(first.item.body,first.point);
-    const length=start.distanceTo(point);
+    const end=item?.towPoint?this.worldPoint(item.body,item.towPoint):point;
+    const length=start.distanceTo(end);
     if(length>12||length<.35)return 'Pick an anchor between half a meter and twelve meters away.';
     if(item&&item.name==='Burning signal flare')return 'The flare is too hot for a line.';
     const body=item?.body??m.world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(...point.toArray()));
-    this.second={body,item,point:this.localPoint(body,point)};
+    this.second={body,item,point:item?.towPoint??this.localPoint(body,point)};
     this.length=length+.18;
     this.joint=m.world.createImpulseJoint(R.JointData.rope(this.length,first.point,this.second.point),
       first.item.body,body,true);
@@ -53,15 +54,23 @@ export class TowLine {
   worldPoint(body,point){
     return point.clone().applyQuaternion(new T.Quaternion().copy(body.rotation())).add(vec(body.translation()));
   }
+  taut=false;
+  holdWinchBrake(active){
+    if(Boolean(this.brakedCar)===active)return;
+    const car=this.brakedCar??this.mechanics.car.body;
+    car.setEnabledTranslations(!active,true,!active,true);
+    this.brakedCar=active?car:null;
+  }
   clear(){
     const world=this.mechanics.world;
+    this.holdWinchBrake(false);
     if(this.joint?.isValid())world.removeImpulseJoint(this.joint,true);
     if(this.second&&!this.second.item)world.removeRigidBody(this.second.body);
     this.joint=this.first=this.second=null;
-    this.reeling=false;
+    this.reeling=this.taut=false;
     this.visual.visible=false;
   }
-  tick(dt=0){
+  tick(dt=0,movement){
     if(!this.first)return;
     const m=this.mechanics;
     if(m.area!==0||this.first.item===m.cargo||(m.cargo&&this.second?.item===m.cargo)||
@@ -71,7 +80,12 @@ export class TowLine {
       return;
     }
     if(!this.joint)return;
-    if(this.reeling&&m.driving){
+    const winding=this.reeling&&m.driving;
+    // A stationary driver can hold the wagon on its parking brake while the spool pulls.
+    const speed=m.car?.body.linvel();
+    const still=speed&&Math.hypot(speed.x,speed.z)<.35;
+    this.holdWinchBrake(Boolean(winding&&Math.abs(movement?.z??0)<.15&&(this.brakedCar||still)));
+    if(winding){
       this.reelTimer+=dt;
       if(this.reelTimer>=.1&&this.length>.68){
         this.reelTimer-=.1;
@@ -83,7 +97,10 @@ export class TowLine {
     }else this.reeling=false;
     const start=this.worldPoint(this.first.item.body,this.first.point);
     const end=this.worldPoint(this.second.body,this.second.point);
-    if(start.distanceTo(end)>this.length+1.15){this.clear();return;}
+    const distance=start.distanceTo(end);
+    if(distance>this.length+1.15){this.clear();return;}
+    this.taut=distance>=this.length-.12;
+    this.visual.material.color.setHex(this.taut?0xffe2a6:0xb3976e);
     const points=this.visual.geometry.attributes.position;
     points.setXYZ(0,start.x,start.y,start.z);points.setXYZ(1,end.x,end.y,end.z);
     points.needsUpdate=true;
