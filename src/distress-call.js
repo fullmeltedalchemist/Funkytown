@@ -1,6 +1,7 @@
 import {cabinX,cabinZ} from './terrain.js';
 import {groundPoint,station} from './field-stations.js';
 
+const trackingKey='bellwether-distress-tracking-v1';
 const call='distress-dispatch', shifted='distress-shifted';
 const quiet='distress-silent-relay', live='distress-live-relay', filed='distress-resolved';
 
@@ -8,6 +9,7 @@ export class DistressCall {
   constructor(mechanics,pipeline,model,bag,diner,ready,sound){
     Object.assign(this,{mechanics,bag,diner,ready,sound});
     this.tracked=bag.records.has(call)&&!bag.records.has(filed);
+    try{if(localStorage.getItem(trackingKey)==='off')this.tracked=false;}catch{}
     const addRadio=(base,name,action,contact)=>{
       const radio=station(mechanics,0,base,name,action,{color:0x536f63});
       radio.body.add(pipeline.prepare(model,{position:[0,.945,0],groundY:.945,scale:.57}));
@@ -22,15 +24,20 @@ export class DistressCall {
     diner.distressWitness=()=>this.compare();
   }
 
+  setTracking(tracked){
+    this.tracked=tracked;
+    try{localStorage.setItem(trackingKey,tracked?'on':'off');}catch{}
+  }
+
   answer(){
     const {records}=this.bag;
     if(!this.ready())return 'The emergency band is quiet. Finish reconstructing the ford rescue first.';
     if(records.has(filed))return 'June has logged the genuine call. Only the survey relay gets a reply now.';
     if(records.has(call)){
-      this.tracked=!this.tracked;
+      this.setTracking(!this.tracked);
       return this.tracked?'Distress call tracked again. Follow the bearing.':'Distress call untracked. Answer here again to resume.';
     }
-    this.tracked=true;
+    this.setTracking(true);
     this.bag.record(call,'Distress call on the west bank','A caller asks for a lamp at the west-bank relay. Check the marked location.');
     this.sound(this.dispatch);
     return '“West-bank relay. Bring a light.” You mark the bearing. Follow it before answering again.';
@@ -72,7 +79,7 @@ export class DistressCall {
     if(!records.has(quiet)||!records.has(live))return '';
     this.bag.record(filed,'The call that crossed the creek',
       'June recognized the survey relay’s two-pulse signal and loose spring. The west-bank voice had no transmitter. The real caller was the lamp crew on the east bank.');
-    this.tracked=false;
+    this.setTracking(false);
     return 'June taps the counter twice. “The survey relay had a broken spring. That rattle is real. The west-bank voice was a copy. I’ll tell dispatch to answer the lamp crew.”';
   }
 

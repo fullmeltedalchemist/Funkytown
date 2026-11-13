@@ -1794,7 +1794,11 @@ test('the midnight cook-off rewards two golden skillets and permits retries',asy
   }finally{world.free();}
 });
 
-test('the moving distress call survives reload and requires both recorded relay samples',async()=>{
+test('the moving distress call saves tracking across reload and requires both recorded relay samples',async t=>{
+  const previous=globalThis.localStorage;
+  const storage=new Map();
+  globalThis.localStorage={getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,String(value))};
+  t.after(()=>{globalThis.localStorage=previous;});
   const {DistressCall}=await import('../src/distress-call.js');
   const {Diner}=await import('../src/diner.js');
   const {FieldRecorder}=await import('../src/field-recorder.js');
@@ -1826,6 +1830,12 @@ test('the moving distress call survives reload and requires both recorded relay 
     assert.equal(first.quest.objective().target,first.quest.west);
     assert.match(first.quest.answer(),/untracked/);
     assert.equal(first.quest.objective(),null);
+    const untracked=create();
+    try{
+      assert.equal(untracked.quest.objective(),null);
+      assert.match(untracked.quest.answer(),/tracked again/);
+      assert.equal(untracked.quest.objective().target,untracked.quest.west);
+    }finally{untracked.world.free();}
     assert.match(first.quest.answer(),/tracked again/);
     assert.match(first.quest.answerWest(),/East survey relay/);
     assert.equal(first.quest.sample(false).strength,0);
