@@ -26,6 +26,7 @@ import {BaitCooler,coolerBank} from './bait-cooler.js';
 import {DistressCall} from './distress-call.js';
 import {MillYard} from './mill-yard.js';
 import {WagonRecovery} from './wagon-recovery.js';
+import {ArchiveWindow,nearArchiveWindow} from './archive-window.js';
 import {insideRescueCorridor} from './rigging.js';
 import {Gear} from './gear.js';
 import {Finale,MailRoute} from './finale.js';
@@ -73,7 +74,7 @@ function forest(pipeline,models){
   const rnd=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
   const grove={oak:[],birch:[],maple:[],underbrush:[],rocks:[]};
   function place(type,x,z,scale,sink=0){
-    if(nearRecoveryCut(x,z,type==='rocks'?scale*.48:1.2))return;
+    if(nearRecoveryCut(x,z,type==='rocks'?scale*.48:1.2)||nearArchiveWindow(x,z,type==='rocks'?scale*.48:1.2))return;
     if(basinInfluence(x,z)>.07||Math.hypot(x-coolerBank.x,z-coolerBank.z)<3.2||Math.hypot(x-15,z+16)<5.8||nearParadeStaging(x,z)||[secondAddress,diner].some(p=>Math.hypot(x-p.x,z-p.z)<7.5))return;
     if(insideRescueCorridor(x,z,type==='rocks'?scale*.48:1.2))return;
     const yaw=rnd()*Math.PI*2;
@@ -293,6 +294,7 @@ async function boot(){
     notice(recorder.record(target));
   }
   const towLine=new TowLine(mechanics);
+  const archiveWindow=new ArchiveWindow(mechanics,bag,towLine,pipeline,models,notice);
   const wagonRecovery=new WagonRecovery(mechanics,bag,towLine,notice,pipeline,models,()=>rescue.stage>=1);
   const baitCooler=new BaitCooler(mechanics,bag,notice,()=>rescue.stage>=1);
   bag.record('tow-line','Two-hook tow line','V or Rig · rig two anchors on foot. If attached to the wagon, use Rig from the driver seat to reel in.','Gear');
@@ -481,6 +483,7 @@ async function boot(){
         baitCooler.tick(STEP);
         towLine.tick(STEP,move);
         wagonRecovery.tick(STEP);
+        archiveWindow.tick(STEP);
         if(!mechanics.driving&&!mechanics.harnessSuspended){
           const transition=story.transition(walker.current,STEP);
           if(transition){
@@ -530,7 +533,7 @@ async function boot(){
     }
     story.animate(now*.001);
     const objective=fordRescue.objective()??loopRoad.objective()??salvage.objective()??
-      address.objective()??founders.objective()??extraction.objective()??wagonRecovery.objective()??baitCooler.objective()??distress.objective()??townDiner.objective()??chapters.objective()??
+      address.objective()??founders.objective()??extraction.objective()??archiveWindow.objective()??wagonRecovery.objective()??baitCooler.objective()??distress.objective()??townDiner.objective()??chapters.objective()??
       (rescue.showPractice?rescue.objective():null)??fieldProps.objective()??finale.objective()??rescue.objective();
     $('guide').textContent=workshop.active?workshop.hint():objective?.text??story.guide(player);
     const waypoint=objective?objective.target:story.waypoint();

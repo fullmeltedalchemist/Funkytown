@@ -1990,3 +1990,98 @@ test('Ed’s wagon can be winched or towed through the real ditch, with a recove
     }finally{world.free();}
   }
 });
+
+test('archive window lowers the authored dispatch case and preserves intact and damaged outcomes',async()=>{
+  const {ArchiveWindow,dispatchLog,dispatchDamage,dispatchReceipt}=await import('../src/archive-window.js');
+  const {Diner}=await import('../src/diner.js');
+  const {WagonRecovery,recoveryNote}=await import('../src/wagon-recovery.js');
+  const {AssetPipeline}=await import('../src/assets.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker,STEP}=await import('../src/walker.js');
+  const {TowLine}=await import('../src/tow-line.js');
+  const {height,makeTerrain}=await import('../src/terrain.js');
+  const {FoundersNight}=await import('../src/founders-night.js');
+  await R.init();
+  for(const safe of [true,false]){
+    const world=new R.World({x:0,y:-9.81,z:0});
+    try{
+      const scene=new T.Scene();
+      const m=new Mechanics(world,new Walker(world,[15,height(15,10)+.9,10]),scene,new T.Scene());
+      const pipeline=new AssetPipeline(scene,world);
+      const models={archiveTruck:new T.Group(),receiver:new T.Group()};
+      for(const [key,name] of [['archiveTapeCase','archive-tape-case'],['archiveLoadingBay','archive-loading-bay']]){
+        const bytes=await readFile(new URL('../assets/'+name+'.glb',import.meta.url));
+        models[key]=(await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'')).scene;
+      }
+      makeTerrain(scene,world,{floor:null,normal:null});
+      const records=new Map();
+      const bag={records,record:(id,name,description)=>records.set(id,{name,description})};
+      new FoundersNight(m,pipeline,models,bag,()=>{});
+      const tow=new TowLine(m);
+      const messages=[];
+      const job=new ArchiveWindow(m,bag,tow,pipeline,models,message=>messages.push(message));
+      const camera=new T.PerspectiveCamera();
+      const aim=(point,x,z)=>{
+        camera.position.set(x,height(x,z)+1.52,z);
+        camera.lookAt(point);
+        camera.updateMatrixWorld(true);
+      };
+      const step=(count=1)=>{
+        for(let i=0;i<count;i++){
+          m.before(camera,{}, {actions:new Set()});
+          world.step(m.events);
+          m.after();
+          tow.tick(STEP);
+          job.tick(STEP);
+        }
+      };
+      step(1);
+      aim(job.clerkPoint,15.45,8.7);
+      assert.match(m.use(camera),/evacuation tape/);
+      records.set('founders-original-tape',{});
+      assert.match(m.use(camera),/stairs gave out/);
+      step(30);
+      const vecForCase=item=>new T.Vector3().copy(item.body.translation()).add(new T.Vector3(0,.24,0));
+      aim(vecForCase(job.case),12.25,10.35);
+      assert.match(tow.select(camera),/First hook/);
+      aim(job.eye,12.25,10.35);
+      assert.match(tow.select(camera),/Tow line rigged/);
+      aim(job.control,14.65,10.48);
+      assert.match(m.use(camera),/Feeding line/);
+      if(safe){
+        step(70);
+        assert.match(m.use(camera),/brake holds/);
+        const length=tow.length;
+        step(25);
+        assert.equal(tow.length,length);
+        assert.match(m.use(camera),/Feeding line/);
+        step(480);
+        assert.ok(job.onCart(),JSON.stringify({p:job.case?.body.translation(),speed:job.case?.body.linvel(),length:tow.length,messages}));
+        assert.match(tow.select(camera),/released/);
+        aim(job.cart.clone().add(new T.Vector3(0,.13,0)),12.25,10.25);
+        assert.match(m.use(camera),/Mercer signed/);
+      }else{
+        assert.match(tow.select(camera),/released/);
+        step(280);
+        assert.ok(records.has(dispatchDamage),JSON.stringify(job.case?.body.translation()));
+        assert.equal(tow.joint,null);
+        aim(job.clerkPoint,15.45,8.7);
+        assert.match(m.use(camera),/zero-seven C/);
+      }
+      assert.equal(records.has(dispatchLog),safe);
+      assert.equal(records.has(dispatchReceipt),!safe);
+      const saved=new Map(JSON.parse(JSON.stringify([...records])));
+      const reloadedBag={...bag,records:saved,record:(id,name,description)=>saved.set(id,{name,description})};
+      const reloaded=new ArchiveWindow(m,reloadedBag,tow,pipeline,models,()=>{});
+      assert.ok(reloaded.finished());
+      assert.equal(reloaded.case,undefined);
+      assert.equal(reloaded.objective(),null);
+      saved.set(recoveryNote,{});
+      new Diner(m,{story:{area:0},ending:''},reloadedBag,pipeline,models);
+      const ledger=[...m.fixed.values()].find(tag=>tag.name.includes('dispatch slip with June'));
+      assert.match(ledger.action(),safe?/Mercer sent Ed/:/can’t tell who ordered him/);
+      const wagon=new WagonRecovery(m,reloadedBag,tow,()=>{},pipeline,models,()=>true);
+      assert.match(wagon.speak(),safe?/bridge crew/:/never saw who signed/);
+    }finally{world.free();}
+  }
+});

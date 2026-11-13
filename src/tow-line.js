@@ -32,6 +32,10 @@ export class TowLine {
     }
     const first=this.first;
     if(!m.items.has(first.item.collider.handle)){this.clear();return 'The first anchor is gone. Choose another.';}
+    if(first.item.towAnchor!=null&&hit.collider.handle!==first.item.towAnchor){
+      return 'Aim at the brass eye above the archive cart.';
+    }
+    if(item?.towAnchor!=null)return 'Hook the dispatch case first, then its brass eye.';
     if(item===first.item)return 'Choose a different anchor.';
     const targetBody=hit.collider.parent();
     if(!item&&targetBody&&!targetBody.isFixed())return 'Choose a loose prop or fixed surface. The parade float and archive truck move on their own.';
@@ -47,6 +51,13 @@ export class TowLine {
       first.item.body,body,true);
     this.visual.visible=true;
     return 'Tow line rigged. Pull a load or use it as a safety tether. Rig releases it.';
+  }
+  resize(length){
+    const world=this.mechanics.world;
+    this.length=length;
+    world.removeImpulseJoint(this.joint,true);
+    this.joint=world.createImpulseJoint(R.JointData.rope(length,this.first.point,this.second.point),
+      this.first.item.body,this.second.body,true);
   }
   localPoint(body,point){
     return point.clone().sub(vec(body.translation())).applyQuaternion(new T.Quaternion().copy(body.rotation()).invert());
@@ -89,10 +100,7 @@ export class TowLine {
       this.reelTimer+=dt;
       if(this.reelTimer>=.1&&this.length>.68){
         this.reelTimer-=.1;
-        this.length=Math.max(.68,this.length-.085);
-        m.world.removeImpulseJoint(this.joint,true);
-        this.joint=m.world.createImpulseJoint(R.JointData.rope(this.length,this.first.point,this.second.point),
-          this.first.item.body,this.second.body,true);
+        this.resize(Math.max(.68,this.length-.085));
       }
     }else this.reeling=false;
     const start=this.worldPoint(this.first.item.body,this.first.point);

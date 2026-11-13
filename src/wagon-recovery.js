@@ -1,5 +1,6 @@
 import * as T from 'three';
 import R from 'rapier';
+import {dispatchLog,dispatchReceipt} from './archive-window.js';
 import {groundPoint} from './field-stations.js';
 import {part,vec} from './mechanics.js';
 import {person} from './rescue.js';
@@ -77,6 +78,8 @@ export class WagonRecovery {
 
   speak(){
     if(this.bag.records.has(recoveryNote)){
+      if(this.bag.records.has(dispatchLog))return '“Mercer signed it? He told me the order came from the bridge crew. I’ll tell June what he said over the radio.”';
+      if(this.bag.records.has(dispatchReceipt))return '“Zero-seven C was my run. I heard the order on the radio. I never saw who signed it.”';
       if(this.bag.records.has(identifiedNote))return '“June told me she put the callout in her ledger. About time somebody wrote down which bell was which.”';
       return 'Ed points to the open cut. “That shaves a bend off the supply run. Show June my dispatch slip. She’ll want to see which bell they sent us out on.”';
     }

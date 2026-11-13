@@ -2,6 +2,7 @@ import {diner,height} from './terrain.js';
 import {person} from './rescue.js';
 import * as T from 'three';
 import {part} from './mechanics.js';
+import {dispatchLog,dispatchReceipt} from './archive-window.js';
 import {recoveryNote,identifiedNote} from './wagon-recovery.js';
 
 export class Diner {
@@ -78,6 +79,17 @@ export class Diner {
     });
     const ledger=box([.32,.05,.25],-1.15,1.085,-1.77,0x83613d);
     mechanics.tag(ledger.collider,{name:'Compare Ed’s dispatch slip with June’s ledger',action:()=>{
+      if(bag.records.has(dispatchLog)&&bag.records.has(recoveryNote)){
+        if(!bag.records.has('june-dispatch-comparison')){
+          bag.record('june-dispatch-comparison','June compared Mercer’s order with Ed’s slip',
+            'The two records agree on the second bell. Mercer ordered the cut closed first, then sent Ed through it after an unlogged wagon. Ed found only his own tire tracks.');
+          return 'June lines up the times. “I rang once to clear the road. Mercer sent Ed back through it on the second bell. He knew what he was asking.”';
+        }
+        return 'June has pinned the signed order and Ed’s callout side by side.';
+      }
+      if(bag.records.has(dispatchReceipt)&&bag.records.has(recoveryNote)){
+        return 'June holds the receipt beside Ed’s slip. “Same dispatch number. Without the signature page, I can’t tell who ordered him in.”';
+      }
       if(bag.records.has(identifiedNote))return 'June has penciled “road crew” beside the second bell so the next shift can tell the calls apart.';
       if(!bag.records.has(recoveryNote))return 'June’s ledger lists the coffee and sandwiches she sent out to the road crews.';
       bag.record(identifiedNote,'June confirmed Ed’s callout',
