@@ -16,6 +16,13 @@ export class CampLife {
       return 'Ingredients packed. Use the skillet on the cookstove.';
     });
     for(const x of [-.17,0,.17])part(rack.body,[.12,.17,.12],[x,1.02,0],0xd3ae60,.028);
+    const lure=station(mechanics,0,groundPoint(cabinX+4.1,cabinZ+8.75),'Check the pantry bait tin',()=>{
+      if(!bag.records.has('bait-cooler-returned'))return 'The bait crew is still waiting for their cooler.';
+      if(bag.records.has('cottontail-lure'))return 'You already have bait packed.';
+      bag.record('cottontail-lure','Cottontail trail bait','Use this at the cottontail track station. Refill the tin at camp.','Cargo');
+      return 'Bait packed. Use it at the cottontail tracks.';
+    },{color:0x645d3d});
+    part(lure.body,[.23,.13,.19],[0,1.01,0],0x6c8063,.025);
     const stove=station(mechanics,0,groundPoint(cabinX+6.6,cabinZ+7.1),'Use the camp skillet',()=>this.cook());
     const skillet=new T.Mesh(new T.CylinderGeometry(.25,.21,.09,22),new T.MeshStandardMaterial({color:0x2c2e2c,roughness:.77}));
     skillet.position.y=1;stove.body.add(skillet);

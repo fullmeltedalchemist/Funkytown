@@ -1846,3 +1846,49 @@ test('the moving distress call survives reload and requires both recorded relay 
     assert.match(resumed.quest.answer(),/genuine call/);
   }finally{resumed.world.free();}
 });
+
+test('the runaway cooler enters the creek, can be restarted, and unlocks reusable trail bait',async()=>{
+  const {BaitCooler}=await import('../src/bait-cooler.js');
+  const {CampLife}=await import('../src/camp-life.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {makeTerrain,inCreek}=await import('../src/terrain.js');
+  const {Walker,STEP}=await import('../src/walker.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  try{
+    const scene=new T.Scene();
+    makeTerrain(scene,world,{floor:null,normal:null});
+    const m=new Mechanics(world,new Walker(world,[15,2,7]),scene,new T.Scene());
+    const records=new Map();
+    const bag={records,record:(id,name)=>records.set(id,{name})};
+    let ready=false;
+    const quest=new BaitCooler(m,bag,()=>{},()=>ready);
+    new CampLife(m,bag,()=>{});
+    const pantry=[...m.fixed.values()].find(tag=>tag.name==='Check the pantry bait tin');
+    assert.match(pantry.action(),/still waiting/);
+    assert.match(quest.start(),/after the ford rescue/);
+    ready=true;
+    assert.match(quest.start(),/slips off the bank/);
+    const camera=new T.PerspectiveCamera();
+    let inWater=false;
+    for(let i=0;i<180;i++){
+      m.before(camera,{},{actions:new Set()});world.step(m.events);m.after();quest.tick(STEP);
+      const p=quest.cooler.body.translation();
+      inWater ||= p.y<quest.cooler.floatSurface&&inCreek(p.x,p.z);
+    }
+    assert.ok(inWater,'cooler should reach the water under normal physics');
+    const first=quest.cooler;
+    quest.tick(76);
+    assert.equal(quest.cooler,null);
+    assert.equal(m.items.has(first.collider.handle),false);
+    quest.start();
+    m.grab(quest.cooler);
+    quest.tick(76);
+    assert.equal(quest.objective().target,quest.drop);
+    assert.match(quest.deliver(m.carried),/Cooler back/);
+    assert.equal(m.carried,null);
+    assert.match(pantry.action(),/Bait packed/);
+    assert.match(pantry.action(),/already have bait/);
+    assert.match(quest.start(),/is back/);
+  }finally{world.free();}
+});

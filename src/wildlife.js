@@ -47,8 +47,9 @@ export class Wildlife {
     station(mechanics,0,trail,'Inspect cottontail tracks and set bait',()=>{
       if(ordinary.state!=='alive')return 'Fresh tracks lead to the brush. Check again after the rabbit returns.';
       if(ordinary.bait)return 'Bait is down. Back away from the station and watch the tracks.';
-      if(!bag.records.has('camp-ingredients'))return 'Paired prints lead into the brush. Bring camp ingredients to bait this spot.';
-      bag.forget('camp-ingredients');
+      const bait=bag.records.has('cottontail-lure')?'cottontail-lure':'camp-ingredients';
+      if(!bag.records.has(bait))return 'Paired prints lead into the brush. Bring camp ingredients to bait this spot.';
+      bag.forget(bait);
       ordinary.bait=trail;
       ordinary.baitTime=45;
       return 'Bait set. Give the cottontail room to follow the tracks.';

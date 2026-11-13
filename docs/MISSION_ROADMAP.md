@@ -1,5 +1,7 @@
 # Bellwether Hollow mission roadmap
 
+Before each release, audit new and changed features for a player goal, trigger, playable steps, failure and recovery, payoff, and a concrete acceptance check. Keep unimplemented ideas in the roadmap only when those details are specified. Record automated checks, rendered playtests, and live verification separately.
+
 A checked item means the feature is implemented. Playtest and deployment verification are tracked separately in [the implementation checklist](IMPLEMENTATION_CHECKLIST.md).
 
 The central question is who returned after the reservoir evacuation. People who came back remember private conversations they never heard. Mom kept the crossing open because some of the missing were still alive on the other side. The player learns the rules through objects, sounds and witnesses before deciding what to do about the arch.
@@ -84,21 +86,24 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] Add a portable stove, kettle and water filter for camp away from Foxglove.
 - [x] Lock the climbing harness mid-grapple to work a raised latch or attach a tow line. Earn bolt cutters from the crawler repair and use them as a ground-level alternative at the chained workshop gate.
 - [x] Add a movable mill brake sled that can be cleared by hand or rigged to the wagon. Identify the recovered time slip with June.
-- [ ] Verify the mill winch in a rendered playthrough and add wreck recovery, window lowering and cooler recovery scenarios.
+- [ ] Verify the mill winch in a rendered playthrough. Rig the sled to the wagon, reel until the rim clears, and carry the slip to June. Check the clue survives reload.
+- [ ] Wreck recovery. A stranded driver at the lower road asks you to tow their wagon onto firm ground. Rig to the tow eye and pull from the shoulder. If the line detaches or the wagon rolls back, reattach and retry. A successful pull clears the shortcut and earns a recovery note. Verify that both winch and wagon pull work and that the cleared road persists.
+- [ ] Window lowering. The archive clerk asks you to lower a fragile case from a loading window onto a padded cart. Rig above the window, lower until the cart supports the load, then release. A hard drop damages the case and leaves a receipt-based recovery route. Verify both the intact handoff and damage fallback.
 - [ ] Add mission-specific wagon packing, padding for fragile evidence and multi-item choices. Tune gravel drift, body lean, ditch bounce, prop impacts and forgiving recovery. Preserve optional foot routes where appropriate.
 - [ ] Add persistent quest-object recovery, and use sleeping bodies, nearby activation and bounded debris to keep mobile play responsive.
 - [x] Authored cottontails that flee, can be shot and yield meat for the existing skillet and sharing loop.
 - [x] Add creek birds that flush together when approached or distracted by a nearby sound.
 - [x] Add a boar that charges and knocks light props aside.
 - [x] Add ordinary cottontail tracks and a bait station that uses camp ingredients. Share a hot plate with June’s relief crew.
-- [ ] Add meat bait, more trackable animals, and additional recipes and sharing outcomes.
+- [ ] Expand tracking and food. Add distinct boar rooting marks that guide players away from its charge lane, and permit meat bait as an alternative to pantry bait. Add a stew using camp ingredients and meat, with a slower cooking window and a larger sharing reward. If the pan burns, allow a new batch. Verify signs lead to the animal, the recipe consumes its ingredients once, and sharing records its own outcome.
 - [x] First Echo cottontail. Observe it or shoot it to learn what it does. It yields a clue and no meat.
 - [x] Add separate evidence for photographing the Echo cottontail and flare-lit tracks.
 - [x] Add an Echo deer whose hoofprints stop while its call continues beyond the bend.
 - [ ] Expand track-following and Echo species.
 - [x] Add the midnight cook-off with two independently timed skillets, an adjustable draft and a meal stamina reward.
 - [x] Add a distress call that changes banks when answered. Compare two Mic samples with June and hear the corrected dispatch.
-- [ ] Add a runaway bait cooler.
+- [x] The runaway bait cooler unlocks after the ford rescue. Start it at the bait rack, catch it on foot or rig the tow line, then return it to the rack by hand or unload it from the wagon. If it drifts away, restart at the rack. Returning it unlocks dedicated cottontail bait at the pantry.
+- [ ] Confirm cooler drift, both recovery approaches, rack handoff and reward on desktop and touch.
 - [x] Build The Road That Loops. The wagon returns to the chalked mile marker until you compare the mark and find the eastern verge.
 - [x] Record the flooded-house knock by contact mic and unlock the dry-house resident’s account.
 - [x] Add a thrown-prop strike on the survey plate and a roof service ledge as alternate ways to discover the flooded-house knock.

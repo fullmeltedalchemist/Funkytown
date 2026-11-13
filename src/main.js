@@ -22,6 +22,7 @@ import {CreekEncounter} from './creek-encounter.js';
 import {CampLife} from './camp-life.js';
 import {Chapters} from './chapters.js';
 import {Diner} from './diner.js';
+import {BaitCooler,coolerBank} from './bait-cooler.js';
 import {DistressCall} from './distress-call.js';
 import {MillYard} from './mill-yard.js';
 import {insideRescueCorridor} from './rigging.js';
@@ -71,7 +72,7 @@ function forest(pipeline,models){
   const rnd=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
   const grove={oak:[],birch:[],maple:[],underbrush:[],rocks:[]};
   function place(type,x,z,scale,sink=0){
-    if(basinInfluence(x,z)>.07||Math.hypot(x-15,z+16)<5.8||nearParadeStaging(x,z)||[secondAddress,diner].some(p=>Math.hypot(x-p.x,z-p.z)<7.5))return;
+    if(basinInfluence(x,z)>.07||Math.hypot(x-coolerBank.x,z-coolerBank.z)<3.2||Math.hypot(x-15,z+16)<5.8||nearParadeStaging(x,z)||[secondAddress,diner].some(p=>Math.hypot(x-p.x,z-p.z)<7.5))return;
     if(insideRescueCorridor(x,z,type==='rocks'?scale*.48:1.2))return;
     const yaw=rnd()*Math.PI*2;
     if(nearFairground(x,z,type==='rocks'?scale*.48:.8)||nearWorkshop(x,z,type==='rocks'?scale*.48:.8))return;
@@ -290,6 +291,7 @@ async function boot(){
     notice(recorder.record(target));
   }
   const towLine=new TowLine(mechanics);
+  const baitCooler=new BaitCooler(mechanics,bag,notice,()=>rescue.stage>=1);
   bag.record('tow-line','Two-hook tow line','V or Rig · rig two anchors on foot. If attached to the wagon, use Rig from the driver seat to reel in.','Gear');
   let cableAudio;
   function soundCable(speed){
@@ -473,6 +475,7 @@ async function boot(){
         creekBirds.tick(STEP,wildlifeNoise);
         creekWildlife.tick(STEP);
         checkLookoutSignal(mechanics,finale.lookout,bag,notice,point=>playToolSound(620,860,.42,.2,point));
+        baitCooler.tick(STEP);
         towLine.tick(STEP);
         if(!mechanics.driving&&!mechanics.harnessSuspended){
           const transition=story.transition(walker.current,STEP);
@@ -523,7 +526,7 @@ async function boot(){
     }
     story.animate(now*.001);
     const objective=fordRescue.objective()??loopRoad.objective()??salvage.objective()??
-      address.objective()??founders.objective()??extraction.objective()??distress.objective()??townDiner.objective()??chapters.objective()??
+      address.objective()??founders.objective()??extraction.objective()??baitCooler.objective()??distress.objective()??townDiner.objective()??chapters.objective()??
       (rescue.showPractice?rescue.objective():null)??fieldProps.objective()??finale.objective()??rescue.objective();
     $('guide').textContent=workshop.active?workshop.hint():objective?.text??story.guide(player);
     const waypoint=objective?objective.target:story.waypoint();
