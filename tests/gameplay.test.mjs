@@ -2349,3 +2349,84 @@ test('the sheriff signs once after corroboration and honors the earlier disclosu
     }finally{world.free();}
   }
 });
+
+test('the arch aftermath delivers the family copy or mounts a recoverable lamp and compares the survivor’s evidence',async()=>{
+  const {CrossingAftermath}=await import('../src/crossing-aftermath.js');
+  const {CrossingReport}=await import('../src/crossing-report.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker,STEP}=await import('../src/walker.js');
+  const {AssetPipeline}=await import('../src/assets.js');
+  await R.init();
+  for(const ending of ['seal','hold']){
+    const world=new R.World({x:0,y:-9.81,z:0});
+    try{
+      const scene=new T.Scene(),realm=new T.Scene();
+      const walker=new Walker(world,[140,.84,7]);
+      const mechanics=new Mechanics(world,walker,scene,realm);
+      mechanics.staticBox([48,.55,51],[140,-.29,-4],0x271e49,1);
+      const pipeline=new AssetPipeline(scene,world);
+      const bytes=await readFile(new URL('../assets/camp-lantern.glb',import.meta.url));
+      const models={lantern:(await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'')).scene};
+      const chapters={ending,story:{area:0,gates:[new T.Vector3(),new T.Vector3(140,0,11)]},family:new T.Vector3()};
+      const records=new Map([['moms-original',true]]);
+      const bag={records,record:(id,name,description)=>records.set(id,{name,description})};
+      const report=new CrossingReport(chapters,bag,{objective:()=>null},{clockPoint:new T.Vector3()},{});
+      const tones=[];
+      const quest=new CrossingAftermath(mechanics,bag,report,pipeline,models,p=>tones.push(p));
+      assert.match(quest.restock(),/once both accounts are filed/);
+      report.collect('family');report.collect('resident');report.broadcast();
+      if(ending==='seal'){
+        assert.match(quest.radio(),/family copy/);
+        assert.match(quest.objective().text,/Deliver the report/);
+        assert.match(quest.family(),/folds the copy/);
+        assert.match(quest.radio(),/has their copy/);
+      }else{
+        assert.match(quest.radio(),/gear rack/);
+        assert.match(quest.objective().text,/Cross the arch/);
+        mechanics.changeArea(1);
+        assert.match(quest.restock(),/on the rack/);
+        const lost=quest.lamp;
+        mechanics.remove(lost);
+        assert.match(quest.restock(),/on the rack/);
+        world.step(mechanics.events);
+        const camera=new T.PerspectiveCamera();
+        const aim=(point,eye)=>{
+          camera.position.copy(eye);camera.lookAt(point);camera.updateMatrixWorld(true);
+        };
+        aim(new T.Box3().setFromObject(quest.lamp.visual).getCenter(new T.Vector3()),new T.Vector3(140,1.43,7));
+        assert.match(mechanics.use(camera),/Carrying/);
+        assert.match(quest.objective().text,/Mount/);
+        const move={x:0,z:0,actions:new Set()};
+        for(let i=0;i<20;i++){
+          mechanics.before(camera,move,{actions:move.actions});
+          world.step(mechanics.events);mechanics.after();
+        }
+        aim(quest.socket,quest.socket.clone().add(new T.Vector3(0,.6,1.5)));
+        assert.match(mechanics.use(camera),/Far bank confirmed/);
+        assert.equal(mechanics.carried,null);
+        assert.ok(quest.fixedLamp.visible);
+        assert.equal(tones.length,1);
+        mechanics.changeArea(0);
+        assert.match(quest.radio(),/lamp is lit/);
+      }
+      assert.match(quest.compare(),/can’t tell you who/);
+      assert.equal(quest.objective(),null);
+      records.set('extraction-return',true);
+      assert.equal(quest.interview(),'','the amended report is first');
+      report.collect('family');report.collect('resident');report.broadcast();
+      assert.match(quest.compare(),/draw his route/);
+      assert.match(quest.interview(),/broken board/);
+      assert.match(quest.compare(),/stopped clock/);
+      assert.match(quest.inspectClock(),/Take the sketch/);
+      assert.match(quest.compare(),/put him there/);
+      assert.equal(quest.objective(),null);
+      const persisted=new Map(JSON.parse(JSON.stringify([...records])));
+      const reloadedBag={...bag,records:persisted};
+      const reloadedReport=new CrossingReport(chapters,reloadedBag,report.diner,report.address,report.finale);
+      const reloaded=new CrossingAftermath(mechanics,reloadedBag,reloadedReport,pipeline,models,()=>{});
+      assert.equal(reloaded.fixedLamp.visible,ending==='hold');
+      assert.equal(reloaded.objective(),null);
+      assert.equal(chapters.ending,ending);
+    }finally{world.free();}
+  }
+});

@@ -80,7 +80,7 @@ export class Chapters {
       if(!this.released&&this.stage<4)return 'The latch holds the recorder under the porch beam. Grapple the brass ring above you.';
       if(this.stage!==3)return 'The recorder holds Mom’s original voice.';
       this.advance(4);
-      bag.record('moms-original','Mom’s original recording','Mom shut the inner spillway gate to stop the flood. She kept the survey crossing open because Cal was still answering from the other bank. The porch light was her signal that someone was waiting.');
+      bag.record('moms-original','Mom’s original recording','Mom shut the inner spillway gate to stop the flood. She kept the survey crossing open because Cal was still answering from the other bank. The porch light was her signal that someone was waiting. The tape also catches a warning about a plank that broke just inside the gate that morning.');
       return 'Mom shut the floodgate, but kept the crossing open for Cal. Head back to camp and compare her recording with the original evacuation tape.';
     });
     this.recordingPoint=recording.point;

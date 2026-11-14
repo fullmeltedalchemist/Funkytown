@@ -60,6 +60,8 @@ export class Extraction {
     const returned=mechanics.world.createCollider(R.ColliderDesc.ball(.42)
       .setTranslation(...position.toArray()).setSensor(true).setCollisionGroups((128<<16)|2));
     mechanics.tag(returned,{name:'Talk to the man brought back through the arch',action:()=>{
+      const sketch=this.crossingSketch?.();
+      if(sketch)return sketch;
       if(chapters.ending==='seal')return '“I heard the radio go quiet. Tell Cricket I remembered the way home.”';
       if(chapters.ending==='hold')return '“I’ll help mark the next crossing. I never heard the other man stop calling.”';
       return '“Does Cricket still hide the good mugs? I remember the kitchen. I can’t tell you whose voice was on that bank.”';

@@ -123,9 +123,9 @@ The central question is who returned after the reservoir evacuation. People who 
 
 - [x] Bring the restored reel and date discrepancy to the projectionist after the first disclosure choice. When the lamp is lit, view the dated frame. The public report lists the print or Cal’s family receives it privately. A missed screening can be retried next time the lamp lights.
 
-## Remaining story work
+## Crossing aftermath
 
-- [ ] Give the sealed and open crossing distinct follow-up play. After filing the crossing report, take a copy to Cal’s family on the sealed route or deliver a check-in lamp to the far-bank watch on the open route. Recover a dropped lamp from the ranger’s gear rack. Verify both handoffs and the different public reports after reload.
-- [ ] Resolve the missing identity question through a playable comparison. Bring the returned man’s crossing sketch and the stopped-clock observation to the ranger. Let the player check a detail against the original porch recording and acknowledge an inconclusive result when there is no survivor to interview. Verify that the result adds evidence without overwriting the chosen arch ending.
-
-- [ ] Prove desktop and touch controls, clean-save progression, failure recovery and alternate routes before marking any mission as release-verified.
+- [x] On the sealed route, the postmaster gives the player a family copy of the filed report. Deliver it to Cal’s sister at camp. Her handoff and the radio acknowledge the delivery.
+- [x] On the open route, collect the spare check-in lamp from the far-bank gear rack and carry it to the bracket. A lost or misplaced lamp can be reset or reissued. The lamp and updated radio report persist.
+- [x] After filing a report with no survivor, ask the ranger what the tape establishes and record that identity remains unresolved. If the survivor returns later, file the amended report, collect his sketch, inspect the dry-house clock, and compare the sketch against the original porch tape. Corroborate the crossing without equating private memories with identity.
+- [ ] Verify the postgame handoffs and lamp visibility in an uninterrupted rendered desktop and touch playthrough.

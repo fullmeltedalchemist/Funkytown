@@ -117,6 +117,8 @@ export class SecondAddress {
       .setSensor(true).setCollisionGroups((128<<16)|2));
     mechanics.tag(clockSensor,{name:'Inspect the stopped kitchen clock',action:()=>{
       if(!this.route)return 'The clock is inside the house.';
+      const observation=this.crossingClock?.();
+      if(observation)return observation;
       if(bag.records.has('second-address-clock'))return 'The hands still read 9:00. The owner remembers Mom saying it only stops when it rains.';
       bag.record('second-address-clock','The clock only stops when it rains',
         'The occupant repeats a private line Mom used about her kitchen clock. The cracked clock and the child’s chair with red tape match the kitchen at the flooded address.');
