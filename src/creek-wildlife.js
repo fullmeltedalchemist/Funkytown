@@ -59,7 +59,7 @@ export class CreekWildlife {
     scene.add(this.tracks);
     this.trackEnd=this.tracks.children.at(-1).position.clone();
     this.echoTime=0;
-    this.called=false;
+    this.called=bag.records?.has('echo-deer')??false;
   }
 
   installBoarTrail(){
@@ -105,6 +105,45 @@ export class CreekWildlife {
       }
       return 'The boar noses up a mat of roots. The trail behind the survey stake takes you around its feeding gully.';
     },{color:0x887447}).point;
+  }
+
+  installEchoTrail(){
+    const m=this.mechanics,bag=this.bag,end=this.trackEnd;
+    const last=station(m,0,groundPoint(end.x,end.z+.51),'Inspect the last Echo hoofprint',()=>{
+      if(bag.records.has('echo-deer-relay'))return 'The paired prints still stop before the relay.';
+      if(!bag.records.has('echo-deer'))return 'The tracks stop at this print. Hold still and listen toward the creek.';
+      if(!bag.records.has('echo-deer-last-print'))bag.record('echo-deer-last-print','The last paired hoofprint',
+        'The hoofprints stopped at the bend. The call came from the direction of the survey post east of the prints.');
+      return 'The call came from the rusted survey post to the east. Use Mic on its metal housing to compare it with what you heard.';
+    },{color:0x536358});
+    this.lastPrint=last.point;
+    const post=station(m,0,groundPoint(end.x+3.9,end.z-1.44),'Inspect the creek survey post',()=>{
+      if(bag.records.has('echo-deer-relay'))return 'The post stays still when the deer calls. The marks and the sound end in different places.';
+      return 'The old survey housing is bolted shut. Try the contact microphone after following the hoofprints.';
+    },{color:0x80624b});
+    this.echoPost=post.point;
+    m.fixed.get(post.collider.handle).contact=()=>{
+      if(!bag.records.has('echo-deer')||!bag.records.has('echo-deer-last-print')&&!bag.records.has('echo-deer-relay')){
+        return {strength:0,message:'The mount is still. Examine the last hoofprint before comparing the call here.'};
+      }
+      if(!bag.records.has('echo-deer-relay'))bag.record('echo-deer-relay','The call beyond the hoofprints',
+        'The deer’s call reached the survey post after the visible animal vanished. The contact microphone detected no vibration in the housing. Use the account to ask the ranger how he separates radio voices from physical signals.');
+      this.playCall(this.echoPost);
+      return {strength:0,message:'The call repeats in the air. The metal housing stays still. Ask the ranger what he listens for.'};
+    };
+  }
+
+  rangerAccount(){
+    if(!this.bag.records.has('echo-deer-relay'))return '';
+    if(this.bag.records.has('echo-deer-account'))return '';
+    this.bag.record('echo-deer-account','The ranger’s rule for a reply',
+      'The ranger lets a repeating voice finish, then asks for a new sound from the place the caller claims to be. At the flooded house he listens for the screws in the clock to move.');
+    return '“A voice can carry without moving a thing. Ask for a knock you can feel. At the flooded house, put the Mic on the clock mount.”';
+  }
+
+  objective(){
+    if(this.mechanics.area!==0||!this.bag.records.has('echo-deer-last-print')||this.bag.records.has('echo-deer-relay'))return null;
+    return {text:'Optional · Use Mic on the creek survey post',target:this.echoPost};
   }
 
   tick(dt){

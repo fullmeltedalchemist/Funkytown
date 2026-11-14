@@ -2251,3 +2251,101 @@ test('the storehouse relay can be reached through the flooded vent or from the g
     }finally{world.free();}
   }
 });
+
+test('crossing statements produce four saved reports and reopen after a later rescue',async()=>{
+  const {CrossingReport}=await import('../src/crossing-report.js');
+  for(const ending of ['seal','hold']){
+    const chapters={ending,story:{area:0},family:new T.Vector3()};
+    const records=new Map();
+    const bag={records,record:(id,name,description)=>records.set(id,{name,description})};
+    let boothRead=false;
+    const diner={objective:()=>boothRead?null:{text:'Check the booth'}};
+    const address={mailbox:new T.Vector3()};
+    const finale={choice:'public',bulletin:new T.Vector3()};
+    const report=new CrossingReport(chapters,bag,diner,address,finale);
+    assert.equal(report.objective(),null);
+    boothRead=true;
+    for(const returned of [false,true]){
+      if(returned)records.set('extraction-return',true);
+      assert.equal(report.broadcast(),'');
+      assert.equal(report.objective().target,chapters.family);
+      assert.match(report.collect('family'),returned?/Cricket/:/sister/);
+      assert.equal(report.broadcast(),'');
+      assert.equal(report.objective().target,address.mailbox);
+      assert.match(report.collect('resident'),returned?/chair/:/nine/);
+      assert.equal(report.objective().target,finale.bulletin);
+      const text=report.broadcast();
+      assert.match(text,returned?ending==='hold'?/unconfirmed/:/receiving him privately/:/remains (listed as )?missing/);
+      assert.equal(report.objective(),null);
+      const saved=new Map(JSON.parse(JSON.stringify([...records])));
+      const loaded=new CrossingReport(chapters,{...bag,records:saved},diner,address,finale);
+      assert.equal(loaded.objective(),null);
+      assert.match(loaded.broadcast(),/^Foxglove report/);
+    }
+  }
+});
+
+test('the last Echo hoofprint unlocks a repeatable survey comparison and a ranger follow-up',async()=>{
+  const {CreekWildlife}=await import('../src/creek-wildlife.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker}=await import('../src/walker.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  try{
+    const records=new Map();
+    const bag={records,record:(id,name,description)=>records.set(id,{name,description})};
+    const mechanics=new Mechanics(world,new Walker(world,[0,2,0]),new T.Scene(),new T.Scene());
+    let calls=0;
+    const wildlife=new CreekWildlife(mechanics,bag,()=>{},()=>calls++);
+    wildlife.installEchoTrail();
+    const tag=name=>[...mechanics.fixed.values()].find(x=>x.name===name);
+    const post=tag('Inspect the creek survey post');
+    assert.match(post.contact().message,/last hoofprint/);
+    mechanics.walker.current.copy(wildlife.trackEnd);
+    wildlife.tick(2);
+    assert.equal(calls,1);
+    assert.match(tag('Inspect the last Echo hoofprint').action(),/Use Mic/);
+    assert.equal(wildlife.objective().target,wildlife.echoPost);
+    assert.equal(post.contact().strength,0);
+    assert.equal(calls,2);
+    assert.ok(records.has('echo-deer-relay'));
+    assert.match(wildlife.rangerAccount(),/knock you can feel/);
+    assert.equal(wildlife.rangerAccount(),'');
+    assert.equal(wildlife.objective(),null);
+  }finally{world.free();}
+});
+
+test('the sheriff signs once after corroboration and honors the earlier disclosure choice',async()=>{
+  const {Finale}=await import('../src/finale.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker}=await import('../src/walker.js');
+  const {plots}=await import('../src/terrain.js');
+  await R.init();
+  for(const choice of ['public','private']){
+    const world=new R.World({x:0,y:-9.81,z:0});
+    try{
+      const scene=new T.Scene();
+      const mechanics=new Mechanics(world,new Walker(world,[0,2,0]),scene,new T.Scene());
+      const records=new Map();
+      let writes=0;
+      const bag={records,record:(id,name,description)=>{writes++;records.set(id,{name,description});}};
+      const finale=Object.assign(Object.create(Finale.prototype),
+        {mechanics,scene,bag,stage:3,choice,flood:0,lookout:new T.Vector3()});
+      finale.installTownRounds(plots[1]);
+      finale.updateTown(27);
+      const sheriff=[...mechanics.fixed.values()].find(x=>x.name==='Speak to the sheriff');
+      assert.match(sheriff.action(),/date mismatch/);
+      records.set('timeline-conflict',true);
+      assert.match(sheriff.action(),/used the tape cutoff/);
+      assert.match(sheriff.action(),choice==='public'?/public ledger/:/family gets to read it first/);
+      assert.equal(writes,1);
+      assert.match(records.get('sheriff-amended-report').description,choice==='public'?/public ledger/:/family the first copy/);
+      records.set('restored-reel',true);
+      const projectionist=[...mechanics.fixed.values()].find(x=>x.name==='Speak to the projectionist');
+      assert.match(projectionist.action(),/reel stays here/);
+      finale.updateTown(9);
+      assert.match(projectionist.action(),choice==='public'?/send a print/:/family see it first/);
+      assert.ok(records.has('projectionist-screening'));
+    }finally{world.free();}
+  }
+});

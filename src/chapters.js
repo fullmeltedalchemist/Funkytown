@@ -124,7 +124,7 @@ export class Chapters {
       .setTranslation(...this.family.toArray()).setSensor(true).setCollisionGroups((128<<16)|2));
     target.setEnabled(false);
     mechanics.tag(target,{name:'Hear Cal’s family out',action:()=>{
-      if(this.ending)return this.familyAftermath();
+      if(this.ending)return this.crossingFamily?.()||this.familyAftermath();
       if(!this.bag.records.has(familyBriefing)){
         this.bag.record(familyBriefing,'Cal’s family at Foxglove Camp',
           'Cal’s sister wants the arch closed to protect her child. Her child heard Cal use a private family nickname on the other bank and wants to leave the way open.');

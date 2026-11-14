@@ -108,7 +108,7 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] First Echo cottontail. Observe it or shoot it to learn what it does. It yields a clue and no meat.
 - [x] Add separate evidence for photographing the Echo cottontail and flare-lit tracks.
 - [x] Add an Echo deer whose hoofprints stop while its call continues beyond the bend.
-- [ ] Expand track-following and Echo species.
+- [x] Follow the Echo deer prints to the last impression, then use the contact mic on the east survey housing. Compare the audible call with the silent housing and ask the ranger how to verify a physical signal. The last print and the comparison persist on reload.'"
 - [x] Add the midnight cook-off with two independently timed skillets, an adjustable draft and a meal stamina reward.
 - [x] Add a distress call that changes banks when answered. Compare two Mic samples with June and hear the corrected dispatch.
 - [x] The runaway bait cooler unlocks after the ford rescue. Start it at the bait rack, catch it on foot or rig the tow line, then return it to the rack by hand or unload it from the wagon. If it drifts away, restart at the rack. Returning it unlocks dedicated cottontail bait at the pantry.
@@ -118,5 +118,14 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] Add a thrown-prop strike on the survey plate and a roof service ledge as alternate ways to discover the flooded-house knock.
 - [x] Add aim-based contact recording and a placeable speaker with spatial playback, a light cue and wildlife response.
 - [ ] Check spatial audio and visual cues on a phone.
-- [ ] Expand the playable Chapters 2–4 route beyond the current first pass. Connect the late rescue choice to relationships, original evacuation evidence, and different outcomes at the diner, houses and radio.
+- [x] After the arch decision, start at Cal’s diner booth, collect his family’s statement and the dry-house resident’s account, then file both at the post office radio. Four reports reflect both arch choices and whether a survivor returned. A later rescue on the hold route opens an amended report.
+- [x] Show the sheriff the date discrepancy after the Chapter 1 disclosure choice. He signs a correction for the public ledger or the ranger’s family file. The public correction also appears on the final radio report.
+
+- [x] Bring the restored reel and date discrepancy to the projectionist after the first disclosure choice. When the lamp is lit, view the dated frame. The public report lists the print or Cal’s family receives it privately. A missed screening can be retried next time the lamp lights.
+
+## Remaining story work
+
+- [ ] Give the sealed and open crossing distinct follow-up play. After filing the crossing report, take a copy to Cal’s family on the sealed route or deliver a check-in lamp to the far-bank watch on the open route. Recover a dropped lamp from the ranger’s gear rack. Verify both handoffs and the different public reports after reload.
+- [ ] Resolve the missing identity question through a playable comparison. Bring the returned man’s crossing sketch and the stopped-clock observation to the ranger. Let the player check a detail against the original porch recording and acknowledge an inconclusive result when there is no survivor to interview. Verify that the result adds evidence without overwriting the chosen arch ending.
+
 - [ ] Prove desktop and touch controls, clean-save progression, failure recovery and alternate routes before marking any mission as release-verified.

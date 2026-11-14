@@ -239,6 +239,8 @@ export class Finale {
     this.bulletin=bulletin;
     this.supportedModel(bulletin,pipeline,models.receiver,.55);
     this.station(bulletin,'Check the post office radio',()=>{
+      const crossing=this.crossingBroadcast?.();
+      if(crossing)return crossing;
       const echoEnding=this.echoEnding?.();
       const correction=bag.records.has('distress-resolved')?
         ' June confirmed the east-bank lamp crew. Disregard the repeat from the west bank.' : '';
@@ -444,15 +446,39 @@ export class Finale {
       if(this.flood>.24)return '“I’ve closed the ford. If you need the far bank, take the ridge path until the intake drains.”';
       if(!sheriffArrived&&this.stage>0)return '“The ford’s open again. I’ll check the turnout for anyone who got stranded.”';
       if(!sheriffArrived)return this.stage>=3?'“I’m heading to the lookout. We need to talk about that tape.”':'“Keep the creek crossing clear. I’m on patrol.”';
-      if(this.choice==='public')return '“The whole town heard it. Bring the ledger to my office tomorrow. I’ll explain why I changed the report.”';
-      if(this.choice==='private')return '“The ranger has your copy. Tell him to check the back page of the log before he calls me.”';
+      if(this.bag.records.has('timeline-conflict')&&this.choice){
+        if(this.bag.records.has('sheriff-amended-report')){
+          return this.choice==='public'?
+            '“The correction is in the public ledger. They can read my name at the bottom.”':
+            '“The ranger has my signed correction. The family gets to read it first.”';
+        }
+        const correction=this.choice==='public'?
+          'The sheriff signed a correction for the public ledger and asked the postmaster to read it alongside the original report.':
+          'The sheriff signed a correction for the ranger’s file and offered the family the first copy.';
+        this.bag.record('sheriff-amended-report','Sheriff’s signed correction',
+          'He used the dispatch cutoff as the rescue time because he had already signed a man in as Cal. The surviving tape and the postmark show that the search continued the following day. '+correction);
+        return 'The sheriff signs a correction. “I’d entered Cal as safe. I used the tape cutoff to close the search even though the calls kept coming.” '+
+          (this.choice==='public'?'“Put this beside what I wrote before.”':'“Give the family the first copy.”');
+      }
+      if(this.choice==='public')return '“Bring me the date mismatch from the lookout. I owe the town a correction they can read beside the original.”';
+      if(this.choice==='private')return '“The ranger has your copy. Bring me the date mismatch from the lookout and I’ll sign a correction for his file.”';
       return '“Yes, I changed the report. The voice on dispatch sounded like Cal, and Cal was standing right beside me.”';
     });
     const film=setup(projectionist,'Speak to the projectionist',()=>{
       if(this.bag.records.has('restored-reel')&&this.bag.records.has('timeline-conflict')){
-        this.bag.record('projectionist-timecode','Projectionist’s timecode',
+        if(this.bag.records.has('projectionist-screening')){
+          return this.choice==='public'?'“The postmaster has a print of the dated frame.”':'“I’ve saved the dated frame in its sleeve for Cal’s family.”';
+        }
+        if(!this.bag.records.has('projectionist-timecode'))this.bag.record('projectionist-timecode','Projectionist’s timecode',
           'The west-bank frame retains its original date stamp. It matches the postmark, one day after the official rescue date.');
-        return '“Look at the date in the corner. It matches Cal’s postmark. This reel can back up the letter.”';
+        if(!this.choice)return '“The date in the corner matches Cal’s postmark. Decide who gets the tape, then come to the projector when the lamp is on.”';
+        if(!showReady)return '“I’ll run that frame again when the lamp is on. The reel stays here between screenings.”';
+        const publicPrint=this.choice==='public';
+        this.bag.record('projectionist-screening','The date on the west-bank film',
+          'The dated frame shows the west-bank gate shut while the search was still active. '+(publicPrint?
+            'A print went to the post office for the public record.':'The projectionist saved a print in a sleeve for Cal’s family.'));
+        return publicPrint?'The projectionist holds the frame on the screen. “Everybody can read the date. I’ll send a print to the post office.”':
+          'The projectionist shows you the dated frame and slips a print into a sleeve. “Let Cal’s family see it first.”';
       }
       if(this.choice==='public')return '“People are coming to movie night to see the west-bank footage for themselves.”';
       if(this.choice==='private')return '“I’ll keep the original reel in its can until the ranger comes by.”';

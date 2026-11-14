@@ -1,3 +1,4 @@
+import {CrossingReport} from './crossing-report.js';
 import {ServiceGate} from './service-gate.js';
 import {PortableCamp} from './portable-camp.js';
 import {Workshop,nearWorkshop} from './workshop.js';
@@ -270,10 +271,16 @@ async function boot(){
   const address=new SecondAddress(mechanics,pipeline,models,bag,notice,chapters);
   installFairground(mechanics);
   const founders=new FoundersNight(mechanics,pipeline,models,bag,notice);
+  const crossingReport=new CrossingReport(chapters,bag,townDiner,address,finale);
+  chapters.crossingFamily=()=>crossingReport.collect('family');
+  address.crossingResident=()=>crossingReport.collect('resident');
+  finale.crossingBroadcast=()=>crossingReport.broadcast();
   const extraction=new Extraction(mechanics,chapters,bag,pipeline,models,notice);
   const creekBirds=new CreekBirds(mechanics);
   const creekWildlife=new CreekWildlife(mechanics,bag,notice,point=>playToolSound(610,290,.64,.18,point));
   creekWildlife.installBoarTrail();
+  creekWildlife.installEchoTrail();
+  rescue.echoTrackAccount=()=>creekWildlife.rangerAccount();
   const wildlife=new Wildlife(mechanics,pipeline,models.cottontail,bag,notice);
   bag.record('field-slingshot','Slingshot','Quiet pebbles arc and scatter nearby wildlife at the point of impact. Use it to break fragile props.','Gear');
   bag.record('field-rifle','Lever-action rifle','A faster, flatter shot for distant targets. Cycle with X or the weapon control.','Gear');
@@ -543,7 +550,7 @@ async function boot(){
     }
     story.animate(now*.001);
     const objective=fordRescue.objective()??loopRoad.objective()??salvage.objective()??
-      address.objective()??founders.objective()??extraction.objective()??storehouseRelay.objective()??archiveWindow.objective()??wagonRecovery.objective()??baitCooler.objective()??distress.objective()??townDiner.objective()??chapters.objective()??
+      address.objective()??founders.objective()??extraction.objective()??storehouseRelay.objective()??archiveWindow.objective()??wagonRecovery.objective()??baitCooler.objective()??distress.objective()??townDiner.objective()??crossingReport.objective()??creekWildlife.objective()??chapters.objective()??
       (rescue.showPractice?rescue.objective():null)??fieldProps.objective()??finale.objective()??rescue.objective();
     $('guide').textContent=activeCrawler()?.hint()??(objective?.text??story.guide(player));
     const waypoint=objective?objective.target:story.waypoint();
