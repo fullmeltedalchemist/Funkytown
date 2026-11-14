@@ -1,5 +1,6 @@
 import * as T from 'three';
 import R from 'rapier';
+import {relayRecording,relayCallSign} from './storehouse-relay.js';
 import {dispatchLog,dispatchReceipt} from './archive-window.js';
 import {groundPoint} from './field-stations.js';
 import {part,vec} from './mechanics.js';
@@ -77,6 +78,15 @@ export class WagonRecovery {
   }
 
   speak(){
+    const records=this.bag.records;
+    if(records.has(dispatchReceipt)&&records.has(relayRecording)&&!records.has(relayCallSign)){
+      this.bag.record(relayCallSign,'Ed identified Birch Seven',
+        'Birch Seven was Ed’s call sign. He recognizes Tower Two’s transmission and confirms he took the lower cut. The duplicate receipt carries no signature, so who authorized the order remains unresolved.');
+      return '“Birch Seven was me. Tower Two said to follow the lights. I never heard a name on the order.”';
+    }
+    if(records.has(relayCallSign)&&records.has(recoveryNote)){
+      return '“You can put Birch Seven in the ledger. That was my call sign. The name I need is whoever told Tower Two to send me.”';
+    }
     if(this.bag.records.has(recoveryNote)){
       if(this.bag.records.has(dispatchLog))return '“Mercer signed it? He told me the order came from the bridge crew. I’ll tell June what he said over the radio.”';
       if(this.bag.records.has(dispatchReceipt))return '“Zero-seven C was my run. I heard the order on the radio. I never saw who signed it.”';

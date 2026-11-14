@@ -3,6 +3,7 @@ import {person} from './rescue.js';
 import * as T from 'three';
 import {stewName,stewShared} from './field-stew.js';
 import {part} from './mechanics.js';
+import {relayRecording,relayComparison} from './storehouse-relay.js';
 import {dispatchLog,dispatchReceipt} from './archive-window.js';
 import {recoveryNote,identifiedNote} from './wagon-recovery.js';
 
@@ -80,6 +81,12 @@ export class Diner {
     });
     const ledger=box([.32,.05,.25],-1.15,1.085,-1.77,0x83613d);
     mechanics.tag(ledger.collider,{name:'Compare Ed’s dispatch slip with June’s ledger',action:()=>{
+      if(bag.records.has(dispatchLog)&&bag.records.has(relayRecording)){
+        if(bag.records.has(relayComparison))return 'June has filed the Tower Two transcript next to Mercer’s signed order.';
+        bag.record(relayComparison,'The signature and the relay',
+          'June matched Tower Two’s timestamp to Mercer’s signed dispatch. The relay said the order came from the bridge crew, while Mercer’s handwritten exception authorized the trip. The operator repeated a different attribution.');
+        return 'June compares the times. “That’s Tower Two. They called it bridge instructions on the air. Mercer signed the exception himself.”';
+      }
       if(bag.records.has(dispatchLog)&&bag.records.has(recoveryNote)){
         if(!bag.records.has('june-dispatch-comparison')){
           bag.record('june-dispatch-comparison','June compared Mercer’s order with Ed’s slip',

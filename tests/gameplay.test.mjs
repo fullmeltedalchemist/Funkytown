@@ -2159,3 +2159,95 @@ test('boar signs lead to a safe lookout and creek stew supports bait, a retry an
     assert.equal(camp.energy,260);
   }finally{world.free();}
 });
+
+test('the storehouse relay can be reached through the flooded vent or from the grapple ledge',async()=>{
+  const {StorehouseRelay,relayRecording,relayComparison,relayCallSign}=await import('../src/storehouse-relay.js');
+  const {ArchiveWindow,dispatchLog,dispatchReceipt}=await import('../src/archive-window.js');
+  const {Diner}=await import('../src/diner.js');
+  const {WagonRecovery}=await import('../src/wagon-recovery.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker,STEP}=await import('../src/walker.js');
+  const {Workshop}=await import('../src/workshop.js');
+  const {AssetPipeline}=await import('../src/assets.js');
+  const {height,makeTerrain}=await import('../src/terrain.js');
+  await R.init();
+  for(const vent of [true,false]){
+    const world=new R.World({x:0,y:-9.81,z:0});
+    try{
+      const scene=new T.Scene(),walker=new Walker(world,[10.22,height(10.22,5.68)+.85,5.68]);
+      const m=new Mechanics(world,walker,scene,new T.Scene());
+      const pipeline=new AssetPipeline(scene,world),receiver=new T.Group();
+      makeTerrain(scene,world,{floor:null,normal:null});
+      const records=new Map();
+      const bag={records,record:(id,name,description)=>records.set(id,{name,description})};
+      const crawler=new Workshop(m,bag);
+      const sounds=[];
+      const room=new StorehouseRelay(m,bag,crawler.robot,pipeline,receiver,p=>sounds.push(p));
+      const archive=new ArchiveWindow(m,bag,{},pipeline,{receiver},()=>{});
+      archive.relayBrief=()=>room.brief();
+      assert.match(archive.clerk(),/evacuation tape/);
+      records.set(vent?dispatchLog:dispatchReceipt,{});
+      assert.match(archive.clerk(),/downhill behind the bay/);
+      const camera=new T.PerspectiveCamera();
+      const aim=point=>{
+        camera.position.copy(walker.current).add(new T.Vector3(0,.58,0));
+        camera.lookAt(point);
+        camera.updateMatrixWorld(true);
+      };
+      const walk=(z,pull=null)=>walker.step({x:0,z,pull},0,m.events);
+      assert.match(room.listen(),/Free the service door/);
+      if(vent){
+        walker.teleport(room.control.toArray());
+        assert.match(room.toggle(),/Crawler connected/);
+        room.step({x:0,z:1},.94);
+        assert.match(room.step({x:-1,z:1},.3),/hit floodwater/);
+        assert.equal(crawler.robot.visible,false);
+        assert.match(room.toggle(),/Crawler connected/);
+        assert.equal(room.z,2.24);
+        assert.match(room.toggle(),/recalled/);
+        room.toggle();
+        for(let i=0;i<116;i++)room.step({x:0,z:1},STEP);
+        for(let i=0;i<95;i++)room.step({x:-1,z:0},STEP);
+        assert.match(room.use(),/pulls the latch/);
+        assert.equal(room.pullLine.visible,true);
+        assert.equal(crawler.robot.visible,false);
+      }else{
+        walk(0);
+        aim(room.ring);
+        assert.match(m.grapple(camera),/Land on the ledge/);
+        for(let i=0;i<95;i++)walk(0,m.anchor);
+        assert.ok(walker.current.y>room.ledge.y+.48,JSON.stringify(walker.current));
+        aim(room.ring);
+        assert.match(m.use(camera),/roof release frees/);
+        m.grapple(camera);
+      }
+      assert.equal(room.door.collider.isEnabled(),false);
+      assert.match(room.objective().text,/Play the storehouse/);
+      walker.teleport([10.18,height(10.18,5.5)+.87,5.5]);
+      for(let i=0;i<73;i++)walk(1);
+      assert.ok(walker.current.z<4.4,JSON.stringify(walker.current));
+      aim(room.cabinet);
+      assert.match(m.use(camera),/Tower Two to Birch Seven/);
+      assert.equal(sounds.length,1);
+      assert.equal(room.pullLine.visible,false);
+      assert.ok(records.has(relayRecording));
+      assert.equal(room.objective(),null);
+
+      const diner=new Diner(m,{story:{area:0},ending:''},bag,pipeline,{receiver});
+      assert.ok(diner);
+      const ledger=[...m.fixed.values()].find(tag=>tag.name.startsWith('Compare Ed'));
+      if(vent){
+        assert.match(ledger.action(),/Mercer signed the exception/);
+        assert.ok(records.has(relayComparison));
+      }else{
+        const ed=new WagonRecovery(m,bag,{},()=>{},pipeline,{archiveTruck:new T.Group(),fordRescueBracket:new T.Group()},()=>true);
+        assert.match(ed.speak(),/Birch Seven was me/);
+        assert.ok(records.has(relayCallSign)&&!records.has(relayComparison));
+      }
+      const saved=new Map(JSON.parse(JSON.stringify([...records])));
+      const reloaded=new StorehouseRelay(m,{...bag,records:saved},crawler.robot,pipeline,receiver,()=>{});
+      assert.equal(reloaded.door.collider.isEnabled(),false);
+      assert.equal(reloaded.objective(),null);
+    }finally{world.free();}
+  }
+});

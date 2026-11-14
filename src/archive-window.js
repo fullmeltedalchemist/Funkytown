@@ -82,6 +82,8 @@ export class ArchiveWindow {
 
   clerk(){
     const records=this.bag.records;
+    const relay=this.relayBrief?.();
+    if(relay)return relay;
     if(records.has(dispatchLog))return '“You saved the signed log. June can compare its closure order with Ed’s callout.”';
     if(records.has(dispatchReceipt))return '“The duplicate gives us the case number and destination. The signature page was only in the original.”';
     if(records.has(dispatchDamage)){

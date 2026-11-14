@@ -26,6 +26,7 @@ import {BaitCooler,coolerBank} from './bait-cooler.js';
 import {DistressCall} from './distress-call.js';
 import {MillYard} from './mill-yard.js';
 import {WagonRecovery} from './wagon-recovery.js';
+import {StorehouseRelay,nearStorehouseRelay} from './storehouse-relay.js';
 import {ArchiveWindow,nearArchiveWindow} from './archive-window.js';
 import {insideRescueCorridor} from './rigging.js';
 import {Gear} from './gear.js';
@@ -78,7 +79,8 @@ function forest(pipeline,models){
     if(basinInfluence(x,z)>.07||Math.hypot(x-coolerBank.x,z-coolerBank.z)<3.2||Math.hypot(x-15,z+16)<5.8||nearParadeStaging(x,z)||[secondAddress,diner].some(p=>Math.hypot(x-p.x,z-p.z)<7.5))return;
     if(insideRescueCorridor(x,z,type==='rocks'?scale*.48:1.2))return;
     const yaw=rnd()*Math.PI*2;
-    if(nearBoarTrail(x,z,type==='rocks'?scale*.48:.8))return;
+    const padding=type==='rocks'?scale*.48:.8;
+    if(nearBoarTrail(x,z,padding)||nearStorehouseRelay(x,z,padding))return;
     if(nearFairground(x,z,type==='rocks'?scale*.48:.8)||nearWorkshop(x,z,type==='rocks'?scale*.48:.8))return;
     grove[type].push({x,y:height(x,z)-sink,z,scale,yaw});
   }
@@ -283,7 +285,7 @@ async function boot(){
   const workshop=new Workshop(mechanics,bag);
   const serviceGate=new ServiceGate(mechanics,bag);
   bag.record('climbing-harness','Climbing harness','Y or Harness · lock in place while attached to the grapple. Use it again to resume pulling.','Gear');
-  bag.record('field-crawler','Workshop crawler','H or Crawler · connect near the workshop. Steer through its camera and use the latch or pull line.','Gear');
+  bag.record('field-crawler','Workshop crawler','H or Crawler · connect at the workshop or storehouse vent. Steer through its camera and use the latch or pull line.','Gear');
   const magnet=new FieldMagnet(mechanics,bag,notice);
   bag.record('field-magnet','Field magnet','N or Magnet · recover dropped metal around camp, the archive bay and the supply shop.','Gear');
   const recorder=new FieldRecorder(mechanics,pipeline,models.receiver,bag,playToolSound);
@@ -297,6 +299,12 @@ async function boot(){
   }
   const towLine=new TowLine(mechanics);
   const archiveWindow=new ArchiveWindow(mechanics,bag,towLine,pipeline,models,notice);
+  const storehouseRelay=new StorehouseRelay(mechanics,bag,workshop.robot,pipeline,models.receiver,
+    point=>playToolSound(270,103,.66,.21,point));
+  archiveWindow.relayBrief=()=>storehouseRelay.brief();
+  const activeCrawler=()=>storehouseRelay.active?storehouseRelay:workshop.active?workshop:null;
+  const toggleCrawler=()=>activeCrawler()?.toggle()??(walker.current.distanceTo(storehouseRelay.control)<4?
+    storehouseRelay.toggle():workshop.toggle());
   const wagonRecovery=new WagonRecovery(mechanics,bag,towLine,notice,pipeline,models,()=>rescue.stage>=1);
   const baitCooler=new BaitCooler(mechanics,bag,notice,()=>rescue.stage>=1);
   bag.record('tow-line','Two-hook tow line','V or Rig · rig two anchors on foot. If attached to the wagon, use Rig from the driver seat to reel in.','Gear');
@@ -322,7 +330,7 @@ async function boot(){
   bag.record('grapple-hook','Grappling hook','Right click, press G, or tap Hook. Aim at trees, roofs, walls, or the brass spillway ring.','Gear');
   bag.record('signal-lantern','Signal lantern','K or Lantern · leave a warm light beside you. Use again to recall.','Gear');
   const input=new Input(renderer.domElement,()=>{
-    if(workshop.active)return notice(workshop.use());
+    if(activeCrawler())return notice(activeCrawler().use());
     if(rescue.zipline.active)return notice(rescue.zipline.use());
     notice(mechanics.use(camera));
     if(rescue.zipline.active){
@@ -343,10 +351,10 @@ async function boot(){
     ()=>{if(!rescue.zipline.active)notice(mechanics.toggleStrap());},sampleContact,()=>{if(!rescue.zipline.active)notice(towLine.select(camera));},
     ()=>{if(!rescue.zipline.active)notice(recorder.deploy(camera));},
     ()=>{if(!rescue.zipline.active)notice(magnet.use(camera));},
-    ()=>{if(!rescue.zipline.active)notice(workshop.toggle());},
-    ()=>{if(!rescue.zipline.active&&!workshop.active)notice(portableCamp.toggle(camera));},
-    ()=>{if(!rescue.zipline.active&&!workshop.active)notice(mechanics.toggleHarness());},
-    ()=>{if(!rescue.zipline.active&&!workshop.active)notice(serviceGate.cut(camera));});
+    ()=>{if(!rescue.zipline.active)notice(toggleCrawler());},
+    ()=>{if(!rescue.zipline.active&&!activeCrawler())notice(portableCamp.toggle(camera));},
+    ()=>{if(!rescue.zipline.active&&!activeCrawler())notice(mechanics.toggleHarness());},
+    ()=>{if(!rescue.zipline.active&&!activeCrawler())notice(serviceGate.cut(camera));});
   $('start').disabled=false;
   $('start').textContent='Walk the ridge';
   $('touch-mode').disabled=false;
@@ -393,7 +401,7 @@ async function boot(){
     }
     if(input.active&&!input.toolsOpen&&!document.querySelector('dialog[open]')){
       const sensitivity=input.touch?.0048:.00235;
-      if(!mechanics.driving&&!workshop.active){
+      if(!mechanics.driving&&!activeCrawler()){
         yaw-=input.look[0]*sensitivity;
         pitch=T.MathUtils.clamp(pitch-input.look[1]*sensitivity,-1.52,1.52);
       }
@@ -402,8 +410,8 @@ async function boot(){
       while(accumulator>=STEP){
         const move=input.movement();
         move.drift ||= move.jump && mechanics.driving;
-        if(workshop.active){
-          workshop.step(move,STEP);
+        if(activeCrawler()){
+          notice(activeCrawler().step(move,STEP));
           world.step(mechanics.events);
           mechanics.after();
           input.actions.clear();
@@ -515,12 +523,12 @@ async function boot(){
     }
     const riding=input.active&&rescue.zipline.active==='ride';
     soundCable(riding?rescue.zipline.speed:0);
-    if(workshop.active)workshop.view(camera);
+    activeCrawler()?.view(camera);
     if(riding)camera.rotation.z=Math.sin(now*.008)*Math.min(.042,rescue.zipline.speed*.003);
     camera.updateMatrixWorld();
     const tool=weapons[weapon];
     for(const model of weapons)model.visible=false;
-    tool.visible=!workshop.active&&!mechanics.driving&&!mechanics.carried&&!rescue.zipline.active;
+    tool.visible=!activeCrawler()&&!mechanics.driving&&!mechanics.carried&&!rescue.zipline.active;
     const stride=mechanics.driving?0:Math.min(1,Math.hypot(walker.velocity.x,walker.velocity.z)/5);
     const recoil=Math.min(.15,Math.max(0,mechanics.cooldown-([.065,.45,.67,.33,.67][weapon])));
     tool.position.set(.173+Math.sin(now*.008)*.009*stride,-.19+Math.cos(now*.016)*.006*stride,-.49+recoil*.58);
@@ -535,12 +543,12 @@ async function boot(){
     }
     story.animate(now*.001);
     const objective=fordRescue.objective()??loopRoad.objective()??salvage.objective()??
-      address.objective()??founders.objective()??extraction.objective()??archiveWindow.objective()??wagonRecovery.objective()??baitCooler.objective()??distress.objective()??townDiner.objective()??chapters.objective()??
+      address.objective()??founders.objective()??extraction.objective()??storehouseRelay.objective()??archiveWindow.objective()??wagonRecovery.objective()??baitCooler.objective()??distress.objective()??townDiner.objective()??chapters.objective()??
       (rescue.showPractice?rescue.objective():null)??fieldProps.objective()??finale.objective()??rescue.objective();
-    $('guide').textContent=workshop.active?workshop.hint():objective?.text??story.guide(player);
+    $('guide').textContent=activeCrawler()?.hint()??(objective?.text??story.guide(player));
     const waypoint=objective?objective.target:story.waypoint();
     const arrow=$('bearing');
-    arrow.hidden=workshop.active||!waypoint;
+    arrow.hidden=Boolean(activeCrawler())||!waypoint;
     if(waypoint){
       const forward=camera.getWorldDirection(new T.Vector3());
       const heading=Math.atan2(waypoint.x-player.x,-(waypoint.z-player.z))-Math.atan2(forward.x,-forward.z);
@@ -550,7 +558,7 @@ async function boot(){
     if(now>noticeUntil)$('notice').textContent='';
     const target=input.active&&!input.toolsOpen&&!mechanics.driving?mechanics.target(camera):null;
     const use=input.touch?'Use':'E';
-    const hint=input.active&&!input.toolsOpen?(workshop.active?use+' · Operate crawler':rescue.zipline.active?rescue.zipline.readout(input.touch):
+    const hint=input.active&&!input.toolsOpen?(activeCrawler()?use+' · Operate crawler':rescue.zipline.active?rescue.zipline.readout(input.touch):
       mechanics.driving?use+' · Exit wagon':mechanics.carried?(target?.acceptName?use+' · '+target.acceptName:
         target===mechanics.car&&mechanics.carried.size?use+' · Load the wagon':use+' · Set down'):
       target===mechanics.car&&mechanics.canUnloadCargo()?use+' · Unload cargo':target?.name?use+' · '+target.name:''):'';

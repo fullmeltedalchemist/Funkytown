@@ -80,7 +80,9 @@ The central question is who returned after the reservoir evacuation. People who 
 - [ ] Add diner tablecloth physics and surfaces that preserve physical footprints or marks.
 - [x] Recover a dropped spanner, gate key, truck plate and fishing lure with the Field Kit magnet.
 - [x] Drive the workshop crawler under a door, climb a steel ramp, lift the latch, and thread a pull line through the pipe.
-- [ ] Expand crawler navigation to additional steel surfaces and locations.
+- [x] After the archive log or receipt is recovered, ask the clerk about dispatch 07-C. Drive the crawler through the storehouse floor vent, keep right on the dry strip and follow the cable left to pull the latch. Floodwater stops the crawler and returns control to the player. Reconnect at the vent to retry. A roof ring and manual release provide a second route.
+- [x] Enter the service door and play the relay recording. June matches its timestamp with Mercer’s signed order if the original survived. With the receipt, Ed identifies his call sign and confirms the dispatch, while the authorization remains unresolved. Verify both entry routes, power loss and recall, testimony, and the open door after reload.
+- [ ] Verify the crawler camera, vent clearance and roof landing in rendered desktop and touch playthroughs.
 - [x] Give flares a lookout acknowledgement, a drifting light on water and the ability to reveal Echo tracks.
 - [x] Add quiet pebble distractions and breakable targets. The lever rifle can ring the distant bell, drop a counterweight and hit existing hunting targets. Preserve the scattergun’s close-range spread.
 - [x] Add a portable stove, kettle and water filter for camp away from Foxglove.
