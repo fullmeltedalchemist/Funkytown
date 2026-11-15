@@ -38,6 +38,7 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] First playable route from the post office dispatch board to the south-road archive truck and creek storehouse. Track the truck in the wagon or read the backup receipt and retrieve the original tape.
 - [x] Load a Blender-authored archive truck through the GLB pipeline. The first pass uses a scripted truck path.
 - [x] Stage a walkable parade float, spectator barriers and spectators. Give the moving archive truck physical collision.
+- [x] Carry the bell float and two witnesses to the upper ford approach for a memorial stop. Stop for a player or parked wagon and ring the bell once when the stop begins.
 - [x] Build an open-front, collidable archive loading bay around the grapple shutter and tape case.
 - [x] Add the memorial bell float and a program that reveals why Cal’s name was omitted.
 - [x] Move the memorial float in its staging lane with attached collision and spectators that turn to watch.

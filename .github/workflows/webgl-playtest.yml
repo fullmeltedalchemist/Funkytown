@@ -120,20 +120,24 @@ jobs:
                     const marker='renderer.setAnimationLoop(now=>{';
                     assert(code.includes(marker));
                     const fixture=`
-                      let brakePad=null;
+                      let brakePad=null, cameraWall=null;
                       window.__setWagonDriving=driving=>{
                         if(driving){
                           // A test pad clears trees and road grade from the throttle/brake comparison.
                           brakePad=mechanics.staticBox([7,.2,30],[0,18,39],0x695747);
                           mechanics.resetProp(mechanics.car,new T.Vector3(0,18.62,45));
+                          cameraWall=mechanics.staticBox([5,4,.2],[0,18.62,46.75],0x665746);
                         }else{
-                          world.removeCollider(brakePad.collider,false);
-                          brakePad.visual.removeFromParent();
+                          for(const fixture of [brakePad,cameraWall]){
+                            world.removeCollider(fixture.collider,false);
+                            fixture.visual.removeFromParent();
+                          }
                           mechanics.resetProp(mechanics.car,new T.Vector3(...mechanics.carHome));
                         }
                         mechanics.driving=driving;
                         walker.body.setEnabled(!driving);
                       };
+                      window.__wagonCameraClear=()=>camera.position.y-mechanics.car.body.translation().y>4;
                       window.__wagonSpeed=()=>Math.hypot(mechanics.car.body.linvel().x,mechanics.car.body.linvel().z);
                       window.__wagonControls=()=>({throttle:input.stick[1],brake:input.drivePointers.has('brake')});
                       window.__poseSecondAddress=(stop,target)=>{
@@ -155,6 +159,15 @@ jobs:
                         yaw=Math.atan2(-aim.x,-aim.z);
                         pitch=Math.atan2(aim.y,Math.hypot(aim.x,aim.z));
                       };
+                      window.__poseMemorial=()=>{
+                        founders.bellTime=18.9;
+                        const x=founders.bellBase.x+4,z=founders.bellBase.z-8.7;
+                        walker.teleport([x,height(x,z)+.87,z]);
+                        yaw=Math.PI/2;
+                        pitch=-.12;
+                      };
+                      window.__memorialStopped=()=>founders.atMemorial&&
+                        founders.bellBase.z-founders.bellSpectators[0].root.position.z>8;
                       window.__poseFounders=stop=>{
                         const point=stop==='float'?founders.recorder:stop==='receipt'?founders.receipt:
                           stop==='ring'?founders.ringPoint:
@@ -240,6 +253,7 @@ jobs:
                   await page.evaluate(()=>window.__setWagonDriving(true));
                   const brake=page.getByRole('button',{name:'Brake',exact:true});
                   await brake.waitFor({state:'visible'});
+                  await page.waitForFunction(()=>window.__wagonCameraClear());
                   const box=await page.locator('#pad').boundingBox();
                   const pedal=await brake.boundingBox();
                   const throttle={id:1,x:box.x+box.width/2,y:box.y+box.height*.18};
@@ -286,6 +300,10 @@ jobs:
                   await page.locator('#hint').filter({hasText:'Read the backup delivery receipt'}).waitFor();
                   await page.locator('#use').tap();
                   await page.locator('#guide').filter({hasText:'Grapple the brass ring'}).waitFor();
+                  await page.evaluate(()=>window.__poseMemorial());
+                  await page.waitForFunction(()=>window.__memorialStopped());
+                  await capture(page,'memorial');
+                  console.log('touch memorial stop, moving witnesses, and raised wagon camera passed');
                   await page.evaluate(()=>window.__poseFounders('float'));
                   await page.locator('#hint').filter({hasText:'Listen to the recorder aboard the parade float'}).waitFor();
                   await page.locator('#use').tap();

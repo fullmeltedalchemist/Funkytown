@@ -43,6 +43,7 @@ export class Extraction {
     this.beacon=pipeline.prepare(models.crossingMarker);
     const signal=new T.PointLight(0x7ff0bc,3.8,5,2);
     signal.position.y=1;
+    this.signal=signal;
     this.beacon.add(signal);
     this.beacon.visible=false;
     realm.add(this.beacon);
@@ -95,7 +96,7 @@ export class Extraction {
       'Bring the transfer pump up from Submerged Street to open this approach.':
       'The crew needs the evidence for this approach.';
     this.bag.record(planKey,'Echo crossing plan',route.id);
-    return route.description+' Cross into the grid and find Cal outside the reflected house.';
+    return route.description+' You have '+route.seconds+' seconds and '+route.checkpoints.length+' markers to pass. Find Cal outside the reflected house.';
   }
   plan(){
     return approaches.find(route=>route.id===this.bag.records.get(planKey)?.description);
@@ -114,6 +115,8 @@ export class Extraction {
       size:[.75,.45,2],area:1,name:'Occupied extraction harness',impactLimit:Infinity});
     this.load.body.setEnabledRotations(false,true,false,true);
     this.remaining=plan.seconds;
+    this.warned=false;
+    this.signal.color.setHex(0x7ff0bc);
     this.checkpoint=0;
     this.updateBeacon();
     this.survivor.visible=false;
@@ -158,14 +161,22 @@ export class Extraction {
     const lost=!this.mechanics.items.has(this.load.collider.handle)||vec(this.load.body.translation()).y<-3;
     if(!active||this.mechanics.area!==1||this.remaining<=0||lost){
       this.reset();
-      if(active)this.notice('The crossing shifted. Cal is back at the shelter. Set another plan at camp or retry the carry.');
+      if(active)this.notice(lost?
+        'The harness slipped out of reach. Cal is back at the shelter. Follow the marker to retry.':
+        'The crossing shifted. Cal is back at the shelter. Set another plan at camp or retry the carry.');
       return;
+    }
+    if(this.remaining<=10&&!this.warned){
+      this.warned=true;
+      this.signal.color.setHex(0xffbd72);
+      this.notice('Ten seconds left. Head for the next marker. If the crossing closes, Cal will be back at the shelter.');
     }
     const marker=this.crossingMarker();
     const player=this.mechanics.walker.current;
     if(marker&&this.mechanics.carried===this.load&&Math.hypot(marker.x-player.x,marker.z-player.z)<2){
       this.checkpoint++;
       this.updateBeacon();
+      if(!this.crossingMarker())this.notice('Route clear. Bring the harness to the ranger at the return marker.');
     }
   }
   objective(){
@@ -181,7 +192,7 @@ export class Extraction {
     if(this.mechanics.carried!==this.load)return {text:'Extraction · Pick up the harness · '+Math.ceil(this.remaining)+' s',
       target:vec(this.load.body.translation())};
     const marker=this.crossingMarker();
-    if(marker)return {text:'Extraction · Carry Cal through the lit marker · '+Math.ceil(this.remaining)+' s',target:marker};
+    if(marker)return {text:'Extraction · Lit marker '+(this.checkpoint+1)+'/'+this.plan().checkpoints.length+' · '+Math.ceil(this.remaining)+' s',target:marker};
     return {text:'Extraction · Carry Cal to the return marker · '+Math.ceil(this.remaining)+' s',target:this.exit.point};
   }
 }

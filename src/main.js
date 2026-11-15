@@ -326,7 +326,9 @@ async function boot(){
     ()=>playToolSound(540,330,.68,.23));
   const address=new SecondAddress(mechanics,pipeline,models,bag,notice,chapters);
   installFairground(mechanics);
-  const founders=new FoundersNight(mechanics,pipeline,models,bag,notice);
+  const founders=new FoundersNight(mechanics,pipeline,models,bag,notice,point=>{
+    if(camera.position.distanceToSquared(point)<625)playToolSound(694,683,1.25,.3,point);
+  });
   const crossingReport=new CrossingReport(chapters,bag,townDiner,address,finale);
   const aftermath=new CrossingAftermath(mechanics,bag,crossingReport,pipeline,models,
     point=>playToolSound(570,190,.37,.18,point));
@@ -593,13 +595,7 @@ async function boot(){
       }
     }else accumulator=0;
     if(mechanics.driving){
-      const center=vec(mechanics.car.body.translation());
-      const rotation=new T.Quaternion().copy(mechanics.car.body.rotation());
-      const offset=new T.Vector3(0,2.15,4.7).applyQuaternion(rotation);
-      const hit=mechanics.ray(center,offset.clone().normalize(),offset.length(),mechanics.car);
-      if(hit)offset.setLength(Math.max(1,hit.timeOfImpact-.25));
-      camera.position.copy(center).add(offset);
-      camera.lookAt(center.add(new T.Vector3(0,.44,0)));
+      mechanics.wagonView(camera);
     }else{
       camera.position.lerpVectors(walker.previous,walker.current,input.active?accumulator/STEP:1);
       camera.position.y+=.58;

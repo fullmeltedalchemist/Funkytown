@@ -380,6 +380,26 @@ export class Mechanics {
     body.applyImpulse(impulse,true);
     body.setAngvel({x:0,y:-movement.x*Math.min(1,Math.abs(along)*.45)*(along<0?-1:1)*(!braking&&movement.drift?2.1:1.55),z:0},true);
   }
+  wagonView(camera){
+    const body=this.car.body;
+    const center=vec(body.translation());
+    const roof=center.clone().add(new T.Vector3(0,1.10,0));
+    const rotation=new T.Quaternion().copy(body.rotation());
+    const clearance=offset=>{
+      const distance=offset.length();
+      const hit=this.world.castRay(new R.Ray(roof,offset.clone().normalize()),distance,true,
+        R.QueryFilterFlags.EXCLUDE_SENSORS,undefined,this.car.collider,this.walker.body);
+      return offset.setLength(hit?Math.max(0,hit.timeOfImpact-.20):distance);
+    };
+    let offset=clearance(new T.Vector3(0,1.38,4.7).applyQuaternion(rotation));
+    // If a wall or tree closes in behind the wagon, raise the view above the roof.
+    if(offset.length()<2.25){
+      const raised=clearance(new T.Vector3(0,3.8,1.45).applyQuaternion(rotation));
+      if(raised.length()>offset.length())offset=raised;
+    }
+    camera.position.copy(roof).add(offset);
+    camera.lookAt(center.add(new T.Vector3(0,.44,0)));
+  }
   exitCar(){
     const car=this.car;
     if(vec(car.body.linvel()).length()>2.5)return 'Slow down before exiting.';

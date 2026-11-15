@@ -845,7 +845,8 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   }
   const records=new Map();
   const bag={records,record:(id,name,description)=>records.set(id,{name,description})};
-  const mission=new FoundersNight(mechanics,pipeline,models,bag,()=>{});
+  const bells=[];
+  const mission=new FoundersNight(mechanics,pipeline,models,bag,()=>{},point=>bells.push(point.clone()));
   const interact=name=>[...mechanics.fixed.values()].find(item=>item.name===name).action();
   const dispatch=()=>interact('Read the archive dispatch board');
   const receipt=()=>interact('Read the backup delivery receipt');
@@ -996,6 +997,28 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   assert.match(interact('Talk to Wes'),/stopped the float/);
   mission.advanceParade(STEP,new T.Vector3(30,0,30));
   assert.ok(mission.bellTime>time);
+  const shoulder=new T.Vector3(30,0,30);
+  const parked=mechanics.car.body.translation();
+  mechanics.car.body.setTranslation(bellPosition,true);
+  const paused=mission.bellTime;
+  mission.advanceParade(STEP,shoulder);
+  assert.equal(mission.bellTime,paused,'the float must also stop for an empty parked wagon');
+  mechanics.car.body.setTranslation(shoulder,true);
+  mission.bellTime=0;
+  bells.length=0;
+  mission.advanceParade(0,shoulder);
+  const spectatorStart=mission.bellSpectators[0].root.position.z;
+  for(let i=0;i<1300&&!mission.atMemorial;i++)mission.advanceParade(STEP,shoulder);
+  assert.equal(mission.atMemorial,true);
+  assert.ok(mission.bellBase.z-mission.bellFloat.position.z>8);
+  assert.ok(spectatorStart-mission.bellSpectators[0].root.position.z>7);
+  assert.equal(bells.length,1);
+  assert.match(interact('Talk to Wes'),/Quiet for the names/);
+  const memorialZ=mission.bellFloat.position.z;
+  mission.advanceParade(.5,shoulder);
+  assert.equal(mission.bellFloat.position.z,memorialZ);
+  assert.equal(bells.length,1);
+  mechanics.car.body.setTranslation(parked,true);
   records.set('founders-original-tape',true);
   assert.match(interact('Talk to Inez'),/voice we left behind/);
   records.delete('founders-original-tape');
@@ -1238,7 +1261,10 @@ test('the Echo extraction opens three plans and recovers a timed-out harness bef
     assert.match(useAt(extraction.aid),/strapped in/);
     if(index===2){
       const missed=extraction.load;
-      extraction.tick(46);
+      extraction.tick(35);
+      assert.match(messages.at(-1),/Ten seconds/);
+      assert.equal(extraction.signal.color.getHex(),0xffbd72);
+      extraction.tick(11);
       assert.equal(extraction.load,null);
       assert.equal(m.items.has(missed.collider.handle),false);
       assert.match(messages.at(-1),/retry/);
@@ -1248,7 +1274,11 @@ test('the Echo extraction opens three plans and recovers a timed-out harness bef
     aim(new T.Vector3().copy(extraction.load.body.translation()).add(new T.Vector3(0,.22,0)));
     assert.match(m.use(camera),/Carrying Occupied extraction harness/);
     assert.match(accept(extraction.load),/lit crossing marker first/);
-    for(let i=0;i<2;i++)walkTo(extraction.crossingMarker());
+    assert.match(extraction.objective().text,/1\/2/);
+    walkTo(extraction.crossingMarker());
+    assert.match(extraction.objective().text,/2\/2/);
+    walkTo(extraction.crossingMarker());
+    assert.match(messages.at(-1),/Route clear/);
     walkTo(extraction.exit.point.clone().add(new T.Vector3(0,0,-1.6)));
     aim(extraction.exit.point);
     assert.match(m.use(camera),/ranger catches the harness/);
@@ -2621,4 +2651,24 @@ test('the rescue winch recovers from a shelf strike, hauls the stretcher, and la
   for(let frame=0;frame<600&&line.active;frame++)line.step({x:0,z:1},STEP);
   assert.match(messages.at(-1),/Clipped off at the landing/);
   assert.ok(walker.current.distanceTo(line.bank(line.landing.x,line.landing.z+1.3,.88))<.001);
+});
+
+
+test('the chase camera clears the wagon roof and ignores interaction triggers near its boom',async t=>{
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker}=await import('../src/walker.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  t.after(()=>world.free());
+  const mechanics=new Mechanics(world,new Walker(world,[8,5,8]),new T.Scene(),new T.Scene());
+  mechanics.makeCar([0,4,0]);
+  const camera=new T.PerspectiveCamera();
+  world.createCollider(R.ColliderDesc.ball(1).setTranslation(0,5.6,1.2).setSensor(true));
+  world.step(mechanics.events);
+  mechanics.wagonView(camera);
+  assert.ok(camera.position.z>4);
+  mechanics.staticBox([5,4,.2],[0,4,1.75],0x554436);
+  world.step(mechanics.events);
+  mechanics.wagonView(camera);
+  assert.ok(camera.position.y>7 && camera.position.z<1.7);
 });

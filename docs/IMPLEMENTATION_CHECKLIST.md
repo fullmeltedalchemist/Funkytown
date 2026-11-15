@@ -180,6 +180,7 @@ A completed row below means its implementation and automated checks are in the r
 - [x] Fit one bulky load or two compact loads in a padded rack. Strap both loads together. Unload one at a time. Keep salvage and tow checks aware of both slots.
 - [x] Add low-speed traction on steep slopes, stronger lateral grip under braking, and separate buoyancy for boards, tires, and lanterns. Limit temporary solid debris to 60 active pieces.
 - [x] Add separate touch brake and drift controls. Braking takes priority over held throttle, and wagon exits ignore non-solid triggers.
+- [x] Raise the wagon chase camera above the roof when a solid obstacle closes in behind it. Non-solid prompts do not shorten the camera view.
 - [ ] Verify lodging at gates, loaded body lean, gravel and ditch recovery on touch, and persistence or task-specific replacement for recoverable key props across a continuous playthrough.
 
 ### Town and story
@@ -188,6 +189,8 @@ A completed row below means its implementation and automated checks are in the r
 - [x] Fit the diner shelves, counter and booth with hollow ceramic mugs authored in Blender. Let the player flick the hanging booth runner and see it settle.
 - [x] Recover a lost mill time slip at the wheel. After June identifies it, ask Inez which bell she rang and record the answer alongside her evacuation statement.
 - [x] Keep the east-marker observation across reload, prioritize the opening rescue in the guide, and distinguish releasing the Second Address test ball from watching it roll.
+- [x] Walk Inez and Wes alongside the memorial float to a longer route and a bell stop on the upper ford approach. Pause and resume for foot traffic or a parked wagon, and update Wes’s memorial dialogue after the tape is filed.
+- [x] Show each extraction plan’s time and marker count, warn once near expiry, and point the player to the ranger after the last marker.
 - [ ] Finish the remaining diner art, verify the crowd along the full procession, and add follow-ups for villagers who still repeat earlier dialogue.
 
 ### Verification

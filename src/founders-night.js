@@ -11,13 +11,14 @@ const leadKey='founders-depot';
 const latchKey='founders-latch-open';
 const routePoint=z=>groundPoint(trailX(z)+.6,z);
 const bellFloatSite={x:-6.3,z:24.4};
-const bellRouteLength=6.2;
+const bellRouteLength=8.7;
+const memorialArrival=19, memorialDeparture=25, paradeCycle=47;
 export const nearParadeStaging=(x,z)=>Math.abs(x-bellFloatSite.x)<4.5&&
   z>bellFloatSite.z-bellRouteLength-4.5&&z<bellFloatSite.z+4.5;
 
 export class FoundersNight {
-  constructor(mechanics,pipeline,models,bag,notice){
-    Object.assign(this,{mechanics,bag,notice,pipeline,models});
+  constructor(mechanics,pipeline,models,bag,notice,sound){
+    Object.assign(this,{mechanics,bag,notice,pipeline,models,sound});
     const post=plots[2];
     const dispatch=station(mechanics,0,groundPoint(post.x+3.55,post.z+6.1),'Read the archive dispatch board',()=>{
       if(!this.unlocked())return 'The dispatch board is covered. Finish comparing the two addresses first.';
@@ -134,6 +135,7 @@ export class FoundersNight {
     this.bellBase=bellBase;
     this.bellTime=0;
     this.bellPaused=false;
+    this.atMemorial=false;
     this.bellBody=m.world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(...bellBase.toArray()));
     const bellFloat=this.bellFloat=this.pipeline.place(this.models.paradeFloat,{
       position:bellBase.toArray(),yaw:0,scale:.8,collider:'authored',body:this.bellBody
@@ -148,28 +150,29 @@ export class FoundersNight {
     ],20),new T.MeshStandardMaterial({color:0xc49a51,metalness:.55,roughness:.35,side:T.DoubleSide}));
     bell.position.set(0,.71,0);
     bellFloat.add(bell);
+    this.memorialBell=bell;
     this.bellSpectators=[
       {name:'Inez',x:bellBase.x-1.75,z:bellBase.z-1.65,coat:0x816643,
         listen:()=>this.memorialWitness()},
       {name:'Wes',x:bellBase.x+1.95,z:bellBase.z-2.1,coat:0x596a66,
         listen:()=>this.routeMarshal()}
     ].map(({name,x,z,coat,listen})=>{
-      const {root:spectator,arms}=person(coat);
+      const {root:spectator,arms,legs}=person(coat);
       spectator.position.copy(groundPoint(x,z));
       m.scenes[0].add(spectator);
       const sensor=m.world.createCollider(R.ColliderDesc.capsule(.28,.34)
         .setTranslation(x,spectator.position.y+1,z).setSensor(true).setCollisionGroups((128<<16)|2));
       m.tag(sensor,{name:'Talk to '+name,action:listen});
-      return {root:spectator,arm:arms[1]};
+      return {root:spectator,arm:arms[1],legs,sensor,x,z};
     });
     station(m,0,groundPoint(bellBase.x+2.35,bellBase.z+1.6),'Read the memorial float program',()=>{
       const corrected=this.bag.records.has(tapeKey);
       this.bag.record('founders-memorial-program','Founders’ Night memorial program',corrected?
         'The postmaster added Cal to the memorial program after hearing the original tape.' :
-        'The bell float stops at the ford to read the missing names. The printed list leaves Cal off because the official roll call marked him safe.');
+        'The bell float stops on the upper ford approach to read the missing names. The printed list leaves Cal off because the official roll call marked him safe.');
       return corrected?
         'Cal’s name is penciled into the margin. The postmaster has written “two replies, one name” beside it.' :
-        'The bell float will stop at the ford to read the missing names. Cal is absent from the list. The program says he answered the roll call from the safe bank.';
+        'The bell float will stop on the upper ford approach to read the missing names. Cal is absent from the list. The program says he answered the roll call from the safe bank.';
     },{color:0x756c48});
     const worker=person(0x594946);
     const base=groundPoint(-4.7,19.6);
@@ -207,29 +210,47 @@ export class FoundersNight {
   }
 
   routeMarshal(){
+    if(this.atMemorial)return this.bag.records.has(tapeKey)?
+      '“Quiet for the names. The clerk added Cal after hearing the original tape.”':
+      '“Quiet for the names. We read what’s printed tonight. Bring the record to the clerk if somebody’s missing.”';
     if(this.bag.records.has(tapeKey))return 'Wes lowers the route flag. “The clerk says the tape’s safe. We can read the names without hurrying now.”';
     return this.bellPaused?
-      '“Hold there. I stopped the float because someone’s in the lane. Walk along the shoulder and I’ll wave it through.”':
+      '“Hold there. I stopped the float because someone or a wagon is in the lane. Walk along the shoulder and I’ll wave it through.”':
       '“The bell crew uses this lane. The archive truck takes the main road. If you lose it, the clerk has the delivery receipt beside the dispatch board.”';
   }
 
   advanceParade(dt,player){
     const {x,z}=this.bellBase;
     const nextTime=this.bellTime+dt;
-    // Hold at the memorial stop before returning to the staging lane.
-    const phase=nextTime%34;
-    const progress=phase<14?phase/14:phase<18?1:phase<32?1-(phase-18)/14:0;
+    const phase=nextTime%paradeCycle;
+    const progress=phase<memorialArrival?phase/memorialArrival:phase<memorialDeparture?
+      1:Math.max(0,1-(phase-memorialDeparture)/memorialArrival);
     const nextZ=z-progress*bellRouteLength;
-    this.bellPaused=Math.abs(player.x-x)<1.22&&Math.abs(player.z-nextZ)<2.85;
+    const comingToStop=phase>=memorialArrival&&phase<memorialDeparture;
+    const playerInLane=Math.abs(player.x-x)<1.22&&Math.abs(player.z-nextZ)<2.85;
+    const parkedWagon=this.mechanics.car?.body.translation();
+    const wagonInLane=parkedWagon&&Math.abs(parkedWagon.x-x)<1.65&&Math.abs(parkedWagon.z-nextZ)<3.4;
+    this.bellPaused=Boolean(playerInLane||wagonInLane);
     if(!this.bellPaused){
       this.bellTime=nextTime;
       const position=this.bellFloat.position.set(x,height(x,nextZ),nextZ);
       this.bellBody.setNextKinematicTranslation(position);
+      if(comingToStop&&!this.atMemorial)this.sound?.(position);
+      this.atMemorial=comingToStop;
     }
     const float=this.bellFloat.position;
-    for(const {root,arm} of this.bellSpectators){
-      root.rotation.y=Math.atan2(float.x-root.position.x,float.z-root.position.z);
-      arm.rotation.x=this.bellPaused||phase>=14&&phase<18?-.85+Math.sin(this.bellTime*7)*.12:0;
+    const distance=z-float.z;
+    const moving=!this.bellPaused&&!this.atMemorial&&progress>0;
+    const tending=this.bellPaused||this.atMemorial;
+    this.memorialBell.rotation.x=this.atMemorial?Math.sin((this.bellTime%paradeCycle-memorialArrival)*8)*.16:0;
+    for(const witness of this.bellSpectators){
+      const {root,arm,legs,sensor}=witness;
+      const next=witness.z-distance;
+      root.position.set(witness.x,height(witness.x,next),next);
+      sensor.setTranslation({x:root.position.x,y:root.position.y+1,z:root.position.z});
+      root.rotation.y=moving?(phase<memorialArrival?Math.PI:0):Math.atan2(float.x-root.position.x,float.z-root.position.z);
+      legs.forEach((leg,i)=>{leg.rotation.x=moving?Math.sin(distance*8+(i?Math.PI:0))*.29:0;});
+      arm.rotation.x=tending?-.85+Math.sin(this.bellTime*7)*.12:0;
     }
   }
 
