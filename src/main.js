@@ -189,7 +189,8 @@ async function boot(){
   let audio=null,ambient=null,master=null,engine=null,foreground=true;
   let audioWanted=false,footstepTime=0;
   const effects=new Set();
-  let voice=null,voiceRequest=0,towerClip;
+  let voice=null,voiceRequest=0;
+  const voiceClips=new Map();
   const syncAudio=()=>{
     if(!audio)return;
     const enabled=foreground&&audioWanted;
@@ -206,7 +207,7 @@ async function boot(){
     if(!Audio||!foreground)return null;
     try{
       if(!audio){
-        towerClip=null;
+        voiceClips.clear();
         audio=new Audio();
         master=audio.createGain();
         master.gain.value=0;
@@ -257,15 +258,18 @@ async function boot(){
       status.textContent='Test chime played. Check your media volume if you didn’t hear it.';
     }catch{status.textContent='Couldn’t start audio. Tap Test sound to retry.';}
   });
-  const playTowerVoice=async()=>{
+  const playVoice=async(cue,fallback)=>{
     if(!audio||audio.state!=='running'||!foreground)return;
     const context=audio,request=++voiceRequest;
     try{
-      towerClip??=fetch('./assets/voice/tower-two.mp3').then(response=>{
-        if(!response.ok)throw Error('Tower Two voice unavailable');
-        return response.arrayBuffer();
-      }).then(bytes=>context.decodeAudioData(bytes)).catch(error=>{towerClip=null;throw error;});
-      const buffer=await towerClip;
+      if(!voiceClips.has(cue)){
+        const loading=fetch('./assets/voice/'+cue+'.mp3').then(response=>{
+          if(!response.ok)throw Error('Voice cue unavailable');
+          return response.arrayBuffer();
+        }).then(bytes=>context.decodeAudioData(bytes));
+        voiceClips.set(cue,loading);
+      }
+      const buffer=await voiceClips.get(cue);
       if(request!==voiceRequest||!foreground||audio!==context||context.state!=='running')return;
       if(voice)voice.stop();
       const source=context.createBufferSource(),gain=context.createGain();
@@ -275,7 +279,10 @@ async function boot(){
       voice=source;
       source.onended=()=>{if(voice===source)voice=null;source.disconnect();gain.disconnect();};
       source.start();
-    }catch{if(request===voiceRequest&&foreground)playToolSound(270,103,.66,.21);}
+    }catch{
+      if(audio===context)voiceClips.delete(cue);
+      if(request===voiceRequest&&foreground)fallback?.();
+    }
   };
   const playToolSound=(from,to,duration,volume,position)=>{
     if(!foreground||!audioWanted||audio?.state!=='running')return;
@@ -302,8 +309,10 @@ async function boot(){
   };
   installFieldRange(mechanics,bag,notice,playToolSound);
   mechanics.onPebble=point=>playToolSound(560,190,.16,.12,point);
+  chapters.playVoice=playVoice;
+  finale.playVoice=playVoice;
   const fordRescue=new FordRescue(mechanics,pipeline,models,story,rescue,bag,notice,
-    point=>playToolSound(480,140,.44,.21,point));
+    (point,cue)=>cue?playVoice(cue,()=>playToolSound(480,140,.44,.21,point)):playToolSound(480,140,.44,.21,point));
   const fieldProps=new FieldProps(mechanics,pipeline,models,rescue,bag,notice,(event,position)=>{
     if(event==='glass')playToolSound(1750,460,.22,.16);
     if(event==='blast')playToolSound(110,28,.37,.30);
@@ -358,7 +367,7 @@ async function boot(){
   const towLine=new TowLine(mechanics);
   const archiveWindow=new ArchiveWindow(mechanics,bag,towLine,pipeline,models,notice);
   const storehouseRelay=new StorehouseRelay(mechanics,bag,workshop.robot,pipeline,models.receiver,
-    playTowerVoice);
+    () => playVoice('tower-two',()=>playToolSound(270,103,.66,.21)));
   archiveWindow.relayBrief=()=>storehouseRelay.brief();
   const activeCrawler=()=>storehouseRelay.active?storehouseRelay:workshop.active?workshop:null;
   const toggleCrawler=()=>activeCrawler()?.toggle()??(walker.current.distanceTo(storehouseRelay.control)<4?
@@ -452,7 +461,7 @@ async function boot(){
   renderer.setAnimationLoop(now=>{
     const dt=Math.min(.1,(now-last)/1000);last=now;
     if(ambient&&foreground){
-      ambient.gain.setTargetAtTime(input.active?(story.area?.14:.34):0,audio.currentTime,.18);
+      ambient.gain.setTargetAtTime(input.active?(story.area?(voice?.085:.16):(voice?.17:.46)):0,audio.currentTime,.18);
       const driving=input.active&&mechanics.driving;
       const speed=driving?vec(mechanics.car.body.linvel()).length():0;
       engine.motor.frequency.setTargetAtTime(31+speed*3.7,audio.currentTime,.12);

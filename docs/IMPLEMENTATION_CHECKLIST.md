@@ -155,3 +155,34 @@ A checked item is confirmed live. Live source verification, automated gameplay c
 - [ ] Verify portable camp placement, stove timing, packing and creek filtration on desktop and touch. Automated tests cover cooking at the portable stove, packing, and the filter condition.
 
 - [ ] Verify the climbing harness and both service-gate approaches on desktop and touch. Automated tests cover lock and release, latch height, cutter unlock, and the gate state after reload.
+
+
+## Grouped closeout
+
+A completed row below means its implementation and automated checks are in the release source. Rendered and device checks stay open until exercised.
+
+### World and collision
+
+- [x] Align the spillway post, valve, and flow emitter to one terrain reference. Ground the camp lanterns from their model bounds.
+- [x] Add diner footings where the floor clears the terrain. Fit wall shelves with collision and visible brackets, and add the counter coffee urn.
+- [ ] Check the visible feet, floors, and collision through Vale House, Foxglove, the dry house, creek racks, loading bay and Submerged Street in one rendered route. Fix any remaining gaps and replace prominent placeholder art with authored models.
+
+### Audio
+
+- [x] Generate and wire the ford exchange, porch tape, ranger and family briefing, both arch bulletins and Tower Two using the offline clip pipeline. Keep captions and foreground cancellation.
+- [ ] Check audible startup, relative levels, phone lock, navigation, and reactivation. Compare voice and subtitles in a rendered session.
+
+### Wagon and prop physics
+
+- [x] Fit one bulky load or two compact loads in a padded rack. Strap both loads together. Unload one at a time. Keep salvage and tow checks aware of both slots.
+- [x] Add low-speed traction on steep slopes, stronger lateral grip under braking, and separate buoyancy for boards, tires, and lanterns. Limit temporary solid debris to 60 active pieces.
+- [ ] Verify lodging at gates, loaded body lean, gravel and ditch recovery on touch, and persistence or task-specific replacement for recoverable key props across a continuous playthrough.
+
+### Town and story
+
+- [x] Add June’s coffee-urn conversation with relay and arch-choice reactions.
+- [ ] Finish the diner’s remaining authored art and curtain or tablecloth motion, verify the crowd along the full procession, and add evidence-specific follow-up conversations where villagers currently repeat their earlier dialogue.
+
+### Verification
+
+- [ ] Reach both arch endings continuously from fresh saves. Exercise retries and alternate routes for the ford, zip line, Second Address, procession, crawler, archive winch, cooler, and far-bank lamp. Verify in portrait and landscape, including the audio lifecycle.

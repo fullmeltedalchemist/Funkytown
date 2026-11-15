@@ -141,14 +141,14 @@ export class SalvageStreet {
     if(this.chapters.stage<4)return 'The drain motor is locked. The old survey crossing notes explain how to open it.';
     if(this.clock.running)return 'The street is draining. One load per run. Follow the curb back up the ramp.';
     const remaining=this.cargo.filter(item=>this.mechanics.items.has(item.collider.handle));
-    if(remaining.some(item=>item===this.mechanics.cargo||item===this.mechanics.carried||!underWater(item.body.translation()))){
+    if(remaining.some(item=>this.mechanics.isCargo(item)||item===this.mechanics.carried||!underWater(item.body.translation()))){
       return 'Turn in the salvage you already brought uphill before starting another run.';
     }
     for(const item of remaining)this.mechanics.remove(item);
     this.cargo.length=0;
     const picks=loads.filter(load=>!this.bag.records.has('pond-'+load.id));
     for(const load of picks)this.stock(load);
-    if(this.surveyMarker&&this.mechanics.carried!==this.surveyMarker&&this.mechanics.cargo!==this.surveyMarker){
+    if(this.surveyMarker&&this.mechanics.carried!==this.surveyMarker&&!this.mechanics.isCargo(this.surveyMarker)){
       this.mechanics.resetProp(this.surveyMarker,this.surveyMarker.home);
     }
     this.clock.start(this.bag.records.has('pond-pump'));
@@ -181,7 +181,7 @@ export class SalvageStreet {
     const m=this.mechanics;
     for(const item of this.cargo){
       if(!m.items.has(item.collider.handle))continue;
-      const location=item===m.cargo?m.car.body.translation():item===m.carried?m.walker.current:item.body.translation();
+      const location=m.isCargo(item)?m.car.body.translation():item===m.carried?m.walker.current:item.body.translation();
       if(underWater(location))m.remove(item);
     }
     const player=m.driving?m.car.body.translation():m.walker.current;
@@ -214,7 +214,7 @@ export class SalvageStreet {
   objective(){
     if(this.mechanics.area!==0)return null;
     if(this.clock.running){
-      const item=this.mechanics.cargo??this.mechanics.carried;
+      const item=this.mechanics.cargoItems().find(load=>load.salvage)??this.mechanics.carried;
       return {text:'Submerged Street · '+Math.ceil(this.clock.remaining)+'s · '+
         (item?.salvage?'Get the salvage up the ramp': 'Choose one load and get uphill'),
         target:item?.salvage?this.drop:null};

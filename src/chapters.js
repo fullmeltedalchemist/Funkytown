@@ -78,6 +78,7 @@ export class Chapters {
     hit.visual.visible=false;
     const recording=station(mechanics,1,echo(150,-14.65),'Recover Mom’s original recording',()=>{
       if(!this.released&&this.stage<4)return 'The latch holds the recorder under the porch beam. Grapple the brass ring above you.';
+      this.playVoice?.('porch-tape');
       if(this.stage!==3)return 'The recorder holds Mom’s original voice.';
       this.advance(4);
       bag.record('moms-original','Mom’s original recording','Mom shut the inner spillway gate to stop the flood. She kept the survey crossing open because Cal was still answering from the other bank. The porch light was her signal that someone was waiting. The tape also catches a warning about a plank that broke just inside the gate that morning.');
@@ -104,6 +105,7 @@ export class Chapters {
       if(!this.briefingAvailable())return '';
       if(this.bag.records.has(rangerBriefing)&&this.bag.records.has(familyBriefing))return '';
       if(this.bag.records.has(rangerBriefing))return '“I heard two men answer to Cal. Before you decide, hear what the family needs from you.”';
+      this.playVoice?.('ranger-briefing');
       this.bag.record(rangerBriefing,'The ranger’s eyewitness account',
         'The ranger watched one Cal climb the bank. The original radio kept answering from across the water. He wants another crossing before anyone shuts the arch.');
       return '“I pulled one man out. Then the other Cal called my name from the far bank. I left him there. We can go back, but first hear the family out.”';
@@ -125,6 +127,7 @@ export class Chapters {
     target.setEnabled(false);
     mechanics.tag(target,{name:'Hear Cal’s family out',action:()=>{
       if(this.ending)return this.crossingFamily?.()||this.familyAftermath();
+      this.playVoice?.('family-briefing');
       if(!this.bag.records.has(familyBriefing)){
         this.bag.record(familyBriefing,'Cal’s family at Foxglove Camp',
           'Cal’s sister wants the arch closed to protect her child. Her child heard Cal use a private family nickname on the other bank and wants to leave the way open.');

@@ -241,7 +241,7 @@ export function buildCampEquipment(mechanics,pipeline,models){
   const {scenes}=mechanics;
   const wagonZ=30,wagonX=4.45;
   mechanics.makeCar([wagonX,height(wagonX,wagonZ)+.63,wagonZ]);
-  const x=cabinX+5.5,z=cabinZ+1.7,y=height(x,z);
+  const x=cabinX+5.5,z=cabinZ+1.7;
   for(let i=0;i<3;i++){
     const posX=x+i*.91;
     mechanics.crate([posX,height(posX,z)+.35,z]);
@@ -251,18 +251,21 @@ export function buildCampEquipment(mechanics,pipeline,models){
     mechanics.crate([cx+dx,height(cx+dx,cz+dz+1.1)+.35,cz+dz+1.1]);
   }
   for(const [lx,lz] of [[cabinX+2,cabinZ+4.2],[plots[0].x-3.6,plots[0].z+1.35]]){
-    mechanics.dynamic({position:[lx,height(lx,lz)+.43,lz],...pipeline.loose(models.lantern,1),
+    const loose=pipeline.loose(models.lantern,1);
+    const bottom=new T.Box3().setFromObject(loose.visual).min.y;
+    const lantern=mechanics.dynamic({position:[lx,height(lx,lz)-bottom+.025,lz],...loose,
       name:'Camp lantern'});
+    lantern.floatLift=6;
+    lantern.body.setAngularDamping(1.4);
   }
-  const post=mechanics.staticBox([.20,2.18,.20],[x,y+1.1,z+2.15],0x654c40);
-  post.visual.position.y=height(x,z+2.15)+1.09;
-  post.collider.setTranslation(post.visual.position);
-  const valve=mechanics.staticBox([.39,.33,.29],[x,y+1.45,z+2.33],0x759794);
+  const base=height(x,z+2.15);
+  const post=mechanics.staticBox([.20,2.18,.20],[x,base+1.09,z+2.15],0x654c40);
+  const valve=mechanics.staticBox([.39,.33,.29],[x,base+1.45,z+2.33],0x759794);
   valve.visual.visible=false;
-  const hardware=pipeline.prepare(models.valve,{position:[x,y+1.45,z+2.33],scale:1.16});
+  const hardware=pipeline.prepare(models.valve,{position:[x,base+1.45,z+2.33],scale:1.16});
   scenes[0].add(hardware);
-  const flow=()=>{mechanics.spawnFluid([x,y+1.38,z+2.67]);return 'The spillway is running.';};
+  const flow=()=>{mechanics.spawnFluid([x,base+1.38,z+2.67]);return 'The spillway is running.';};
   mechanics.tag(valve.collider,{name:'Open spillway valve',action:flow});
   mechanics.tag(post.collider,{name:'Open spillway valve',action:flow});
-  sign(scenes[0],'SPILLWAY',new T.Vector3(x,y+2.2,z+2.27),0,1.5);
+  sign(scenes[0],'SPILLWAY',new T.Vector3(x,base+2.2,z+2.27),0,1.5);
 }

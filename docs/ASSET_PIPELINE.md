@@ -55,9 +55,11 @@ and suspended objects.
 
 Edit `tools/voice-lines.json` and run `python3 tools/build_voice.py` on a machine
 with FFmpeg built with libflite and libmp3lame. The generator writes mono MP3s
-to `assets/voice/` and applies a radio filter. Keep the subtitle and clip text
-in sync. The Tower Two relay is the first voiced cue. Mobile browsers fetch
-the finished clip when the player uses the relay. Playback uses the same
+to `assets/voice/`. Add `radio: true` for a radio filter and `segments` for
+multiple speakers in one cue. Keep the subtitle and clip text in sync. The
+opening ford exchange, porch tape, ranger and family briefing, arch
+bulletins and Tower Two relay are bundled. Browsers fetch each clip on
+first use. Playback uses the same
 master audio bus as the game effects.
 
 Compare new clips against the script, verify they decode, and exercise their

@@ -84,7 +84,7 @@ export class TowLine {
   tick(dt=0,movement){
     if(!this.first)return;
     const m=this.mechanics;
-    if(m.area!==0||this.first.item===m.cargo||(m.cargo&&this.second?.item===m.cargo)||
+    if(m.area!==0||m.isCargo(this.first.item)||m.isCargo(this.second?.item)||
       !m.items.has(this.first.item.collider.handle)||
       (this.second?.item&&!m.items.has(this.second.item.collider.handle))){
       this.clear();

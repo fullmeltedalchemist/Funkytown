@@ -188,7 +188,7 @@ export class CreekWildlife {
       position.addScaledVector(this.heading,dt*5.5);
       if(!this.chargeTime)this.rest=6;
       for(const item of this.mechanics.items.values()){
-        if(item.area!==0||item.kind!=='prop'||item===this.mechanics.carried||item===this.mechanics.cargo||
+        if(item.area!==0||item.kind!=='prop'||item===this.mechanics.carried||this.mechanics.isCargo?.(item)||
           this.struck.has(item)||item.body.mass()>18)continue;
         const p=item.body.translation();
         if(Math.hypot(p.x-position.x,p.z-position.z)>.85||Math.abs(p.y-position.y-.4)>.65)continue;

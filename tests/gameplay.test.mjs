@@ -365,7 +365,7 @@ test('submerged street warns once, recovers stranded players, and saves salvage 
   const removed=[],records=new Map(),site=Object.create(SalvageStreet.prototype);
   const location=new T.Vector3(basin.x,0,13);
   const walker={current:location,spawn:[1,1,1],teleport(position){this.current.set(...position);this.spawn=position;}};
-  const mechanics={walker,area:0,items:new Map(),remove(item){removed.push(item);this.items.delete(item.collider.handle);}};
+  const mechanics={walker,area:0,items:new Map(),isCargo(){return false;},remove(item){removed.push(item);this.items.delete(item.collider.handle);}};
   Object.assign(site,{mechanics,clock,cargo:[],bag:{record:(id,name,result)=>records.set(id,{name,result})},notice(){}});
   const wet={collider:{handle:1},body:{translation:()=>location.clone()}};
   const dry={collider:{handle:2},body:{translation:()=>new T.Vector3(basin.x,1,34)},
@@ -2429,4 +2429,47 @@ test('the arch aftermath delivers the family copy or mounts a recoverable lamp a
       assert.equal(chapters.ending,ending);
     }finally{world.free();}
   }
+});
+
+test('wagon rack fits two compact loads, rejects bulk, straps both and unloads either safely',async()=>{
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker}=await import('../src/walker.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  try{
+    const scene=new T.Scene();
+    const m=new Mechanics(world,new Walker(world,[0,1,2]),scene,new T.Scene());
+    m.makeCar([0,1,0]);
+    const pack=()=>m.dynamic({position:[0,1,2],name:'Small tin',size:[.4,.28,.4],
+      visual:new T.Mesh(new T.BoxGeometry(.4,.28,.4),new T.MeshBasicMaterial()),
+      shape:R.ColliderDesc.cuboid(.2,.14,.2)});
+    const one=pack(),two=pack();
+    m.grab(one);
+    assert.match(m.loadCargo(one),/loaded/);
+    m.grab(two);
+    assert.match(m.loadCargo(two),/loaded/);
+    assert.ok(m.isCargo(one)&&m.isCargo(two));
+    assert.ok(two.visual.position.x-one.visual.position.x>.4);
+    assert.ok(!one.body.isEnabled()&&!two.body.isEnabled());
+    const bulky=m.crate([0,1,2]);
+    m.grab(bulky);
+    assert.match(m.loadCargo(bulky),/one bulky load or two compact/);
+    m.release();
+    assert.match(m.toggleStrap(),/padded rack/);
+    m.driving=true;
+    m.cargoSpeed=12;
+    m.shiftCargo();
+    assert.equal(m.cargoItems().length,2);
+    m.driving=false;
+    assert.match(m.unloadCargo(),/Carrying/);
+    assert.equal(m.carried,one);
+    assert.equal(m.cargo,two);
+    assert.ok(one.body.isEnabled()&&!two.body.isEnabled());
+    m.release();
+    m.remove(two);
+    assert.equal(m.cargoItems().length,0);
+    for(let i=0;i<64;i++)m.dynamic({position:[0,2,2],life:2,shape:R.ColliderDesc.ball(.04)});
+    assert.equal(m.debris.length,60);
+    assert.ok(m.items.has(bulky.collider.handle));
+  }finally{world.free();}
 });

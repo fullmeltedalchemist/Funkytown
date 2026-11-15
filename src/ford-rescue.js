@@ -77,7 +77,7 @@ export class FordRescue {
     this.load.visual.position.set(0,.72,1.03);
     this.woman.visible=true;
     this.womanTarget.setEnabled(true);
-    this.sound(this.radio);
+    this.sound(this.radio,'ford-call');
     return 'The wagon starts to slip. The woman yells, “Cut the rope!” On the radio, her voice insists, “Pull it harder.”';
   }
 

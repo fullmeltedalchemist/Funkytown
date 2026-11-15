@@ -23,6 +23,7 @@ export class FieldProps {
     this.rack(supply.x-4.9,supply.z-2.7,'fuel');
     this.rack(cabinX+6.7,cabinZ-1.8,'fuel');
     this.rack(-3.1,10.2,'empty');
+    this.installCreekScrap();
 
     const ranger=mechanics.fixed.get(rescue.rangerSensor.handle);
     ranger.acceptName='Give the ranger the water jug';
@@ -74,6 +75,27 @@ export class FieldProps {
       bag.record('creek-pump-fueled','Creek pump primed','Use the pump again to compare its start with the sound from across the bank.');
       return 'Fuel delivered. Use the pump again to listen.';
     };
+  }
+
+  installCreekScrap(){
+    const m=this.mechanics;
+    const board=new T.Group();
+    part(board,[.34,.085,1.15],[0,0,0],0x876247,.022);
+    for(const z of [-.34,.32])part(board,[.33,.023,.075],[0,.044,z],0x5e6157,.006);
+    this.board=m.dynamic({visual:board,position:[-5.65,height(-5.65,5.6)+.11,5.6],name:'Creek repair board',
+      size:[.34,.11,1.15],shape:R.ColliderDesc.cuboid(.17,.052,.575).setDensity(.56).setFriction(.73)});
+    this.board.floatLift=46;
+    this.board.floatSurface=-1.51;
+    this.board.body.setAngularDamping(2.2);
+
+    const tire=new T.Mesh(new T.TorusGeometry(.25,.085,10,28),
+      new T.MeshStandardMaterial({color:0x302c2c,roughness:.95}));
+    tire.castShadow=tire.receiveShadow=true;
+    this.tire=m.dynamic({visual:tire,position:[-6.8,height(-6.8,5.7)+.345,5.7],name:'Discarded wagon tire',
+      shape:R.ColliderDesc.cylinder(.085,.335).setRotation(new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),Math.PI/2))
+        .setDensity(1.9).setFriction(.91)});
+    this.tire.floatLift=13;
+    this.tire.body.setAngularDamping(.65);
   }
 
   rack(x,z,type){
@@ -139,7 +161,7 @@ export class FieldProps {
     this.pulse(origin,0xffa43d,.51);
     this.playSound('blast');
     for(const item of [...m.items.values()]){
-      if(item.area!==0||item.kind!=='prop'||item===m.cargo||item===m.carried)continue;
+      if(item.area!==0||item.kind!=='prop'||m.isCargo(item)||item===m.carried)continue;
       const direction=vec(item.body.translation()).sub(origin);
       const distance=direction.length();
       if(distance>3.7||distance<.04)continue;

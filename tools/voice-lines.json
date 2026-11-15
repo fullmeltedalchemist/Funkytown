@@ -1,6 +1,15 @@
 {
-  "tower-two": {
-    "voice": "slt",
-    "text": "Tower Two to Birch Seven. Bridge instructions. Follow the lights into the lower cut."
-  }
+  "tower-two": {"voice":"slt","radio":true,"text":"Tower Two to Birch Seven. Bridge instructions. Follow the lights into the lower cut."},
+  "ford-call": {"segments":[
+    {"voice":"slt","text":"Cut the rope!"},
+    {"voice":"slt","radio":true,"text":"Pull it harder."}
+  ]},
+  "porch-tape": {"voice":"slt","radio":true,"text":"I shut the inner gate. Cal is still answering from the far bank, so I left the crossing open. Follow the porch light. Mind the board just inside the gate. It split this morning."},
+  "ranger-briefing": {"voice":"rms","text":"I pulled one man out. Then the other Cal called my name from the far bank. I left him there. We can go back, but first hear the family out."},
+  "family-briefing": {"segments":[
+    {"voice":"slt","text":"Close it before another one walks into our kitchen."},
+    {"voice":"awb","text":"The voice across the water called me Cricket. Only Uncle Cal calls me that."}
+  ]},
+  "arch-sealed": {"voice":"rms","radio":true,"text":"Foxglove to all stations. The crossing is sealed. All further crossings are cancelled."},
+  "arch-open": {"voice":"rms","radio":true,"text":"Foxglove to both banks. The crossing remains open. Search crews, check in at the diner."}
 }

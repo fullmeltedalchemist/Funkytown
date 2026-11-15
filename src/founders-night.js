@@ -59,7 +59,7 @@ export class FoundersNight {
       if(!bag.records.has(leadKey))return 'The cage is tagged with an archive delivery number. Find the matching dispatch first.';
       if(!bag.records.has(latchKey))return 'The cage is jammed. Grapple the brass ring to lift the shutter.';
       const item=this.case;
-      if(item&&mechanics.items.has(item.collider.handle)&&mechanics.cargo!==item&&mechanics.carried!==item&&
+      if(item&&mechanics.items.has(item.collider.handle)&&!mechanics.isCargo(item)&&mechanics.carried!==item&&
         this.caseHome.distanceToSquared(item.body.translation())>16){
         mechanics.resetProp(item,this.caseHome);
         return 'The storehouse attendant puts the lost tape case back on the shelf.';
@@ -303,7 +303,7 @@ export class FoundersNight {
   objective(){
     if(this.mechanics.area!==0||!this.unlocked()||this.bag.records.has(tapeKey))return null;
     if(this.bag.records.has(latchKey)){
-      const carrying=this.case&&(this.mechanics.carried===this.case||this.mechanics.cargo===this.case);
+      const carrying=this.case&&(this.mechanics.carried===this.case||this.mechanics.isCargo(this.case));
       if(carrying)return {text:'Founders’ Night · Take the tape case to the clerk',target:this.dispatch};
       return {text:'Founders’ Night · Pick up the archive tape case',
         target:this.case?vec(this.case.body.translation()):this.caseHome};

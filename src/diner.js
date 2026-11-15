@@ -15,6 +15,11 @@ export class Diner {
     const box=(size,dx,y,dz,color)=>mechanics.staticBox(size,[x+dx,floor+y,z+dz],color);
     const cream=0xe3cfab, red=0x944936, wood=0x5f4334;
     box([6.6,.24,5.8],0,-.12,0,wood);
+    for(const dx of [-2.93,2.93])for(const dz of [-2.54,2.54]){
+      const foot=height(x+dx,z+dz)-.055;
+      const depth=floor-.19-foot;
+      if(depth>.01)box([.32,depth,.32],dx,foot-floor+depth/2,dz,0x71655a);
+    }
     const apron=height(x,z+3.15);
     const stepHeight=floor-apron;
     if(stepHeight>.06){
@@ -60,13 +65,28 @@ export class Diner {
       scene.add(mug);
     }
     for(const shelfY of [1.33,1.75]){
-      part(scene,[2.8,.07,.25],[x,floor+shelfY,z-2.56],wood,.015);
+      box([2.8,.07,.38],0,shelfY,-2.65,wood);
+      for(const dx of [-1.05,1.05]){
+        const brace=part(scene,[.09,.27,.065],[x+dx,floor+shelfY-.10,z-2.59],wood,.01);
+        brace.rotation.x=-.58;
+      }
       for(const dx of [-1.17,-.71,-.25,.21,.67,1.13]){
         const cup=new T.Mesh(mugs,ceramic);
         cup.position.set(x+dx,floor+shelfY+.09,z-2.55);
         scene.add(cup);
       }
     }
+    const urn=new T.Mesh(new T.CylinderGeometry(.152,.17,.42,20),
+      new T.MeshStandardMaterial({color:0x777f7b,metalness:.65,roughness:.4}));
+    urn.position.set(x-1.36,floor+1.27,z-2.05);urn.castShadow=true;scene.add(urn);
+    part(scene,[.08,.047,.115],[x-1.36,floor+1.15,z-1.86],0x414e49,.014);
+    const coffee=box([.23,.055,.18],-1.36,1.088,-1.82,0x59685f);
+    mechanics.tag(coffee.collider,{name:'Ask June about the coffee urn',action:()=>{
+      if(chapters.ending==='hold')return 'June keeps a fresh pot ready for the bank watch. “I pour two thermoses before every check-in.”';
+      if(chapters.ending==='seal')return '“I shut the urn off at nine now. If Cricket comes by, I’ll make another pot.”';
+      if(bag.records.has(relayRecording))return '“Ed came in after the Tower Two call. He held that cup with both hands and still couldn’t keep it still.”';
+      return '“Cal always paid for the late pot. He said the crew on the far bank would smell it before they saw our lights.”';
+    }});
     mechanics.tag(counter.collider,{
       name:'Talk to June at the diner counter',
       action:()=>this.counterStory(),

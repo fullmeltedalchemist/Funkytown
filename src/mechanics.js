@@ -26,6 +26,7 @@ export class Mechanics {
   onImpact=new Map();
   fixed=new Map();
   drops=[];
+  debris=[];
   carried=null;
   anchor=null;
   harnessLocked=false;
@@ -61,6 +62,13 @@ export class Mechanics {
     const collider=this.world.createCollider(shape,body);
     const item={body,collider,visual,kind,name,size,life,area,mask,home,breakEffect,impactLimit,speed:0};
     this.items.set(collider.handle,item);
+    if(kind==='prop'&&Number.isFinite(life)){
+      while(this.debris.length>=60){
+        const oldest=this.debris.shift();
+        if(this.items.has(oldest.collider.handle))this.remove(oldest);
+      }
+      this.debris.push(item);
+    }
     if(visual){visual.position.set(...position);this.scenes[area].add(visual);}
     return item;
   }
@@ -78,8 +86,10 @@ export class Mechanics {
     return this.dynamic({position,size,visual,area,name:'Supply crate',shape:R.ColliderDesc.cuboid(.325,.295,.305)});
   }
   remove(item){
+    const debrisIndex=this.debris.indexOf(item);
+    if(debrisIndex>=0)this.debris.splice(debrisIndex,1);
     if(this.carried===item)this.carried=null;
-    if(this.cargo===item)this.cargo=null;
+    if(this.isCargo(item))this.removeCargo(item);
     this.fixed.delete(item.collider.handle);
     this.items.delete(item.collider.handle);this.world.removeRigidBody(item.body);
     if(!item.visual)return;
@@ -122,22 +132,7 @@ export class Mechanics {
     if(this.carried){
       if(target?.accept)return target.accept(this.carried);
       if(target===this.car&&this.carried.size&&this.carried.area===0){
-        if(this.cargo)return 'The wagon rack is full. Take out the current load first.';
-        this.cargo=this.carried;
-        this.release();
-        this.cargo.body.setEnabled(false);
-        const model=this.cargo.visual;
-        // Fit the actual model to the rack floor, including assets with a foot-level origin.
-        model.removeFromParent();
-        model.position.set(0,0,0);
-        model.rotation.set(0,0,0);
-        const bounds=new T.Box3().setFromObject(model);
-        model.position.set(0,.43-bounds.min.y,1.02);
-        this.car.visual.add(model);
-        this.cargoSecured=false;
-        this.cargoSlide=0;
-        this.cargoSpeed=0;
-        return this.cargo.name+' loaded on the wagon rack. Use Strap before a hard turn.';
+        return this.loadCargo(this.carried);
       }
       this.release();return 'Set down.';
     }
@@ -150,15 +145,56 @@ export class Mechanics {
     if(target?.kind==='prop')return this.grab(target);
     return '';
   }
+  isCargo(item){
+    return Boolean(item)&&(item===this.cargo||item===this.sideCargo);
+  }
+  cargoItems(){
+    return [this.cargo,this.sideCargo].filter(Boolean);
+  }
+  removeCargo(item){
+    if(item===this.cargo){this.cargo=this.sideCargo??null;this.sideCargo=null;}
+    else this.sideCargo=null;
+    this.layoutCargo();
+  }
+  layoutCargo(){
+    const pair=Boolean(this.sideCargo);
+    this.cargoItems().forEach((item,index)=>{
+      item.visual.position.x=(pair?(index===0?-.255:.255):0)+(this.cargoSlide||0);
+    });
+  }
+  loadCargo(item){
+    const model=item.visual;
+    // Use the item's declared size so carrying rotation cannot change rack capacity.
+    const compact=item.size[0]<=.49&&item.size[2]<=.70;
+    if(this.sideCargo||this.cargo&&(!compact||!this.cargo.compactCargo)){
+      return 'The rack takes one bulky load or two compact loads. Unload a slot first.';
+    }
+    this.release();
+    item.compactCargo=compact;
+    item.body.setEnabled(false);
+    model.position.set(0,0,0);
+    model.rotation.set(0,0,0);
+    model.removeFromParent();
+    const bounds=new T.Box3().setFromObject(model);
+    model.position.set(0,.4475-bounds.min.y,1.02);
+    this.car.visual.add(model);
+    if(this.cargo)this.sideCargo=item;
+    else this.cargo=item;
+    this.cargoSecured=false;
+    this.cargoSlide=0;
+    this.cargoSpeed=0;
+    this.layoutCargo();
+    return item.name+' loaded on the wagon rack. Use Strap to secure the whole load.';
+  }
   toggleStrap(){
     if(!this.cargo||this.driving)return 'Park beside a loaded wagon to work the straps.';
     if(this.walker.current.distanceTo(vec(this.car.body.translation()))>3.6)return 'Stand beside the wagon rack first.';
     this.cargoSecured=!this.cargoSecured;
     if(this.cargoSecured){
       this.cargoSlide=0;
-      this.cargo.visual.position.x=0;
+      this.layoutCargo();
     }
-    return this.cargoSecured?'Ratchet straps tightened. Cargo secured.':'Ratchet straps loosened.';
+    return this.cargoSecured?'Ratchet straps tightened against the padded rack. Cargo secured.':'Ratchet straps loosened.';
   }
   shiftCargo(){
     if(!this.cargo||!this.driving)return;
@@ -167,21 +203,27 @@ export class Mechanics {
     this.cargoSpeed=speed;
     if(this.cargoSecured)return;
     const side=this.car.body.angvel().y*speed;
-    this.cargoSlide=T.MathUtils.clamp(this.cargoSlide+(-side*.17-this.cargoSlide)*.11,-.29,.29);
-    this.cargo.visual.position.x=this.cargoSlide;
+    const max=this.sideCargo ? .065 : .29;
+    this.cargoSlide=T.MathUtils.clamp(this.cargoSlide+(-side*.17-this.cargoSlide)*.11,-max,max);
+    this.layoutCargo();
     if(brake>6.1)this.dropLooseCargo();
   }
   dropLooseCargo(){
-    const item=this.cargo;
-    const position=item.visual.getWorldPosition(new T.Vector3());
-    const rotation=item.visual.getWorldQuaternion(new T.Quaternion());
-    const velocity=vec(this.car.body.linvel()).add(new T.Vector3(this.cargoSlide*6,1.8,0));
-    this.cargo=null;
-    this.scenes[0].add(item.visual);
-    item.body.setTranslation(position,true);
-    item.body.setRotation(rotation,true);
-    item.body.setEnabled(true);
-    item.body.setLinvel(velocity,true);
+    const loads=this.cargoItems().map(item=>({
+      item,position:item.visual.getWorldPosition(new T.Vector3()),
+      rotation:item.visual.getWorldQuaternion(new T.Quaternion())
+    }));
+    this.cargo=this.sideCargo=null;
+    const turn=new T.Quaternion().copy(this.car.body.rotation());
+    for(const [index,{item,position,rotation}] of loads.entries()){
+      const lateral=loads.length>1?(index===0?-1.2:1.2):this.cargoSlide*6;
+      const velocity=vec(this.car.body.linvel()).add(new T.Vector3(lateral,1.8,0).applyQuaternion(turn));
+      this.scenes[0].add(item.visual);
+      item.body.setTranslation(position,true);
+      item.body.setRotation(rotation,true);
+      item.body.setEnabled(true);
+      item.body.setLinvel(velocity,true);
+    }
   }
   canUnloadCargo(){
     if(!this.cargo||this.driving)return false;
@@ -195,7 +237,7 @@ export class Mechanics {
     const center=vec(this.car.body.translation());
     if(center.distanceTo(this.walker.current)>3.6)return 'Stand by the wagon to unload its rack.';
     const position=this.walker.current.clone().lerp(center,.35).add(new T.Vector3(0,.38,0));
-    this.cargo=null;
+    this.removeCargo(item);
     this.scenes[0].add(item.visual);
     item.body.setTranslation(position,true);
     item.body.setRotation({x:0,y:0,z:0,w:1},true);
@@ -302,8 +344,9 @@ export class Mechanics {
     part(visual,[1.63,.53,2.98],[0,.05,0],0x8c4936,.19);
     part(visual,[1.39,.63,1.51],[0,.57,.25],0x304c50,.21);
     part(visual,[1.53,.15,1.72],[0,.94,.25],0xe0c393,.073);
-    for(const x of [-.47,.47])part(visual,[.06,.19,.72],[x,.47,1.01],0x454543,.022);
-    part(visual,[.98,.08,.7],[0,.39,1.01],0x575350,.025);
+    for(const x of [-.56,.56])part(visual,[.06,.19,.76],[x,.47,1.01],0x454543,.022);
+    part(visual,[1.15,.08,.74],[0,.39,1.01],0x575350,.025);
+    part(visual,[1.08,.035,.71],[0,.43,1.01],0x827558,.014);
     for(const x of [-.58,.58])part(visual,[.3,.15,.1],[x,.17,-1.53],0xffe298,.045);
     for(const x of [-.81,.81])for(const z of [-.97,.97]){
       const wheel=new T.Mesh(new T.CylinderGeometry(.34,.34,.23,16),material(0x211d20));
@@ -327,8 +370,13 @@ export class Mechanics {
     const braking=movement.drift&&Math.abs(movement.z)<.15;
     const accel=braking?T.MathUtils.clamp(-along*8,-25,25):
       T.MathUtils.clamp((target-along)*(movement.z<0?4.8:3),-18,13);
-    const grip=movement.drift&&!braking?1.55:15;
-    const impulse=front.multiplyScalar(accel).addScaledVector(right,-side*grip).multiplyScalar(STEP*body.mass());
+    const p=body.translation();
+    const ground=this.ray(p,{x:0,y:-1,z:0},.78,this.car);
+    const slope=ground?.normal.y??1;
+    const grip=braking?19:movement.drift?1.55:slope<.91?18:15;
+    // Recover traction when crawling uphill instead of spinning into the ditch.
+    const driveForce=!braking&&Math.abs(movement.z)>.2&&Math.abs(along)<2&&slope<.91?accel*1.17:accel;
+    const impulse=front.multiplyScalar(driveForce).addScaledVector(right,-side*grip).multiplyScalar(STEP*body.mass());
     body.applyImpulse(impulse,true);
     body.setAngvel({x:0,y:-movement.x*Math.min(1,Math.abs(along)*.45)*(along<0?-1:1)*(movement.drift?2.1:1.55),z:0},true);
   }
@@ -370,7 +418,7 @@ export class Mechanics {
     if(this.pebbleNoise&&(this.pebbleNoise.remaining-=STEP)<=0)this.pebbleNoise=null;
     for(const item of this.items.values())if(item.size)item.speed=vec(item.body.linvel()).length();
     for(const item of this.items.values()){
-      if(item===this.cargo||item.area!==0||item.kind!=='prop'||item===this.carried)continue;
+      if(this.isCargo(item)||item.area!==0||item.kind!=='prop'||item===this.carried)continue;
       const p=item.body.translation();
       const surface=item.floatSurface??-1.49;
       if(p.y>surface||!inCreek(p.x,p.z))continue;
@@ -387,7 +435,7 @@ export class Mechanics {
       if(input.actions.has('throw'))this.release(dir.multiplyScalar(13).add(new T.Vector3(0,1.4,0)));
       else{
         const hit=this.ray(camera.position,dir,1.55,this.carried);
-        const target=camera.position.clone().addScaledVector(dir,hit?Math.max(.55,hit.timeOfImpact-.37):1.55);
+        const target=camera.position.clone().addScaledVector(dir,hit?Math.max(.62,hit.timeOfImpact-.37):1.55);
         const body=this.carried.body;
         if(target.distanceTo(body.translation())>4)this.release();
         else body.setLinvel(target.sub(body.translation()).multiplyScalar(13).clampLength(0,14),true);
@@ -416,18 +464,19 @@ export class Mechanics {
       }
       if(one?.kind==='round'&&!spent.has(one))this.roundImpact(one,b,spent);
       if(two?.kind==='round'&&!spent.has(two))this.roundImpact(two,a,spent);
-      if(solid&&one?.size&&one!==this.cargo&&one!==this.carried&&(one.speed>one.impactLimit||two?.kind==='round'))broken.add(one);
-      if(solid&&two?.size&&two!==this.cargo&&two!==this.carried&&(two.speed>two.impactLimit||one?.kind==='round'))broken.add(two);
+      if(solid&&one?.size&&!this.isCargo(one)&&one!==this.carried&&(one.speed>one.impactLimit||two?.kind==='round'))broken.add(one);
+      if(solid&&two?.size&&!this.isCargo(two)&&two!==this.carried&&(two.speed>two.impactLimit||one?.kind==='round'))broken.add(two);
     });
     for(const item of spent)this.remove(item);
     for(const item of broken)if(this.items.has(item.collider.handle))this.fracture(item);
     for(const item of this.items.values()){
-      if(item===this.cargo)continue;
+      if(this.isCargo(item))continue;
       item.life-=STEP;
       const p=item.body.translation();
       if(item===this.car&&(p.y<-10||Math.abs(p.x)>57||Math.abs(p.z)>57)){
         this.resetProp(item,new T.Vector3(...this.carHome));
       }else if(item.home&&(p.y<-10||(item.area===0&&(Math.abs(p.x)>58||Math.abs(p.z)>58)))){
+        if(item===this.carried)this.release();
         this.resetProp(item,item.home);
       }else if(item.life<=0||p.y<-18)this.remove(item);
       else if(item.visual){item.visual.position.copy(p);item.visual.quaternion.copy(item.body.rotation());}

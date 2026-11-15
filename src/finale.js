@@ -239,9 +239,10 @@ export class Finale {
     this.bulletin=bulletin;
     this.supportedModel(bulletin,pipeline,models.receiver,.55);
     this.station(bulletin,'Check the post office radio',()=>{
+      const echoEnding=this.echoEnding?.();
+      if(echoEnding)this.playVoice?.(echoEnding==='seal'?'arch-sealed':'arch-open');
       const crossing=this.crossingBroadcast?.();
       if(crossing)return crossing;
-      const echoEnding=this.echoEnding?.();
       const correction=bag.records.has('distress-resolved')?
         ' June confirmed the east-bank lamp crew. Disregard the repeat from the west bank.' : '';
       if(bag.records.has('extraction-return')&&echoEnding){

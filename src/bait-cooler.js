@@ -51,7 +51,7 @@ export class BaitCooler {
 
   tick(dt){
     const item=this.cooler;
-    if(!item||this.mechanics.area!==0||item===this.mechanics.carried||item===this.mechanics.cargo)return;
+    if(!item||this.mechanics.area!==0||item===this.mechanics.carried||this.mechanics.isCargo(item))return;
     this.elapsed+=dt;
     const present=this.mechanics.items.has(item.collider.handle);
     const p=present?item.body.translation():null;
@@ -64,7 +64,7 @@ export class BaitCooler {
   objective(){
     const {cooler,mechanics:m}=this;
     if(m.area!==0||!cooler||!m.items.has(cooler.collider.handle))return null;
-    if(cooler===m.carried||cooler===m.cargo)return {text:'Optional · Return the cooler to the bait rack',target:this.drop};
+    if(cooler===m.carried||m.isCargo(cooler))return {text:'Optional · Return the cooler to the bait rack',target:this.drop};
     return {text:'Optional · Catch or tow the runaway cooler',target:vec(cooler.body.translation())};
   }
 }
