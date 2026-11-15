@@ -37,7 +37,15 @@ export class MillYard {
     mechanics.staticBox([.56,.88,.46],[shelf.x,shelf.y+.44,shelf.z],0x65513f);
     this.slipHome=shelf.add(new T.Vector3(0,.906,0));
     station(mechanics,0,groundPoint(originX+2.4,originZ+2.05),'Inspect the old mill wheel',()=>{
-      if(bag.records.has(repaired))return 'The wheel is turning. Take the time slip from the shelf beside the dial to June at the diner. She used to keep the mill crew’s coffee tabs.';
+      if(bag.records.has(repaired)){
+        if(bag.records.has('mill-slip-identified'))return 'The mill wheel turns freely. June has already identified the time slip.';
+        if(this.slip&&mechanics.items.has(this.slip.collider.handle)&&mechanics.carried!==this.slip&&
+          !mechanics.isCargo(this.slip)&&this.slipHome.distanceToSquared(this.slip.body.translation())>9){
+          mechanics.resetProp(this.slip,this.slipHome);
+          return 'The mill keeper has returned the missing time slip to the shelf. Take it to June at the diner.';
+        }
+        return 'The wheel is turning. Take the time slip from the shelf beside the dial to June at the diner. She used to keep the mill crew’s coffee tabs.';
+      }
       if(!unlocked())return 'The brake sled is tagged with the same survey marks as the spillway. Find the old crossing notes first.';
       return 'The brake sled has wedged against the rim. Drag it clear or rig it to the wagon and reel it out from the driver’s seat.';
     },{color:0x697365});

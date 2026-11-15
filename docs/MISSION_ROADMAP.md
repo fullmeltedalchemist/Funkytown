@@ -77,7 +77,8 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] Give full and empty jugs different mass, flotation and break effects. Both drift in the current.
 - [ ] Extend buoyancy, balance, friction and break thresholds across boards, tires and lanterns. Verify lodging against gates.
 - [x] Build the Foxglove workbench and raised inspection channel with a movable tray and stool.
-- [ ] Add diner tablecloth physics and surfaces that preserve physical footprints or marks.
+- [x] Add an interactive hanging runner at Cal’s booth and persistent wet bootprints on level surfaces.
+- [ ] Verify the booth runner interaction and wet-to-dry prints in the rendered game.
 - [x] Recover a dropped spanner, gate key, truck plate and fishing lure with the Field Kit magnet.
 - [x] Drive the workshop crawler under a door, climb a steel ramp, lift the latch, and thread a pull line through the pipe.
 - [x] After the archive log or receipt is recovered, ask the clerk about dispatch 07-C. Drive the crawler through the storehouse floor vent, keep right on the dry strip and follow the cable left to pull the latch. Floodwater stops the crawler and returns control to the player. Reconnect at the vent to retry. A roof ring and manual release provide a second route.

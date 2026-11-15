@@ -997,6 +997,11 @@ test('Founders’ Night unlocks from the filed case and preserves a receipt fall
   records.delete('founders-original-tape');
   mission.stockCase();
   assert.match(mission.fileTape(mission.case),/Inez’s bell/);
+  records.delete('founders-bell-witness');
+  records.set('mill-slip-identified',true);
+  assert.match(interact('Talk to Inez'),/warning by hand/);
+  assert.ok(records.has('founders-bell-witness'));
+  assert.ok(records.has('inez-second-bell'));
 
 
 });
@@ -1623,12 +1628,31 @@ test('the diner epilogue follows both arch choices and updates after a later res
     const records=new Map();
     const bag={records,record:(key,name,description)=>records.set(key,{name,description})};
     const chapters={ending:'',story:{area:0}};
-    const location=new Diner(mechanics,chapters,bag,new AssetPipeline(scene,world),{receiver:new T.Group()});
+    const pipeline=new AssetPipeline(scene,world);
+    const bytes=await readFile(new URL('../assets/diner-ceramic-mug.glb',import.meta.url));
+    const {scene:dinerMug}=await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
+    const location=new Diner(mechanics,chapters,bag,pipeline,{receiver:new T.Group(),dinerMug});
+    const placedMugs=scene.children.filter(root=>root.children[0]?.children.some(child=>child.name==='Unglazed_foot'));
+    assert.equal(placedMugs.length,16);
+    assert.ok(Math.abs(new T.Box3().setFromObject(placedMugs[0]).min.y-location.booth.y-.03)<.002);
     const interact=name=>[...mechanics.fixed.values()].find(tag=>tag.name===name).action();
     const booth=()=>interact('Check Cal’s booth at the diner');
     const radio=()=>interact('Talk to June at the diner counter');
     assert.equal(location.objective(),null);
     assert.match(booth(),/night shift/);
+    const cloth=location.cloth;
+    const runnerEdge=cloth.base.findIndex((value,index)=>index%3===1&&value<-.15);
+    assert.ok(runnerEdge>0);
+    const camera=new T.PerspectiveCamera();
+    camera.position.copy(location.booth).add(new T.Vector3(1.25,.6,0));
+    camera.lookAt(location.booth.clone().add(new T.Vector3(.64,-.078,0)));
+    camera.updateMatrixWorld(true);
+    world.step(mechanics.events);
+    assert.match(mechanics.use(camera),/settles/);
+    location.tick(1/60);
+    assert.ok(cloth.geometry.attributes.position.array[runnerEdge]>cloth.base[runnerEdge]);
+    for(let i=0;i<300;i++)location.tick(1/60);
+    assert.deepEqual(cloth.geometry.attributes.position.array,cloth.base);
     assert.equal(records.size,0);
     assert.match(radio(),/leave the lights on/);
     records.set('founders-original-tape',true);
@@ -1716,7 +1740,7 @@ test('clearing the mill brake yields a recoverable time slip June can identify',
     let open=false;
     const mill=new MillYard(m,bag,()=>{},()=>open);
     const chapters={story:{area:0},ending:''};
-    new Diner(m,chapters,bag,new AssetPipeline(scene,world),{receiver:new T.Group()});
+    new Diner(m,chapters,bag,new AssetPipeline(scene,world),{receiver:new T.Group(),dinerMug:new T.Group()});
     const june=[...m.fixed.values()].find(tag=>tag.name==='Talk to June at the diner counter');
     assert.match(june.accept(mill.brake),/time slip/);
     mill.brake.body.setTranslation(mill.brakeHome.clone().add(new T.Vector3(2,0,0)),true);
@@ -1757,6 +1781,16 @@ test('clearing the mill brake yields a recoverable time slip June can identify',
     m.remove(mill.slip);
     mill.tick(.2);
     assert.ok(m.items.has(mill.slip.collider.handle));
+    const wheel=[...m.fixed.values()].find(tag=>tag.name==='Inspect the old mill wheel');
+    const misplaced=mill.slipHome.clone().add(new T.Vector3(4,0,0));
+    m.resetProp(mill.slip,misplaced);
+    m.grab(mill.slip);
+    assert.match(wheel.action(),/Take the time slip/);
+    assert.ok(m.carried===mill.slip);
+    m.release();
+    m.resetProp(mill.slip,misplaced);
+    assert.match(wheel.action(),/returned the missing time slip/);
+    assert.ok(mill.slipHome.distanceTo(mill.slip.body.translation())<.001);
     m.grab(mill.slip);
     assert.match(june.accept(mill.slip),/whole shift/);
     assert.equal(m.carried,null);
@@ -1816,7 +1850,7 @@ test('the moving distress call saves tracking across reload and requires both re
     const mechanics=new Mechanics(world,new Walker(world,[0,2,0]),scene,new T.Scene());
     const pipeline=new AssetPipeline(scene,world);
     const receiver=new T.Group();
-    const diner=new Diner(mechanics,chapters,bag,pipeline,{receiver});
+    const diner=new Diner(mechanics,chapters,bag,pipeline,{receiver,dinerMug:new T.Group()});
     const quest=new DistressCall(mechanics,pipeline,receiver,bag,diner,()=>ready,()=>{});
     const recorder=new FieldRecorder(mechanics,pipeline,receiver,bag,()=>{});
     const target=name=>[...mechanics.fixed.values()].find(tag=>tag.name===name);
@@ -1918,7 +1952,7 @@ test('Ed’s wagon can be winched or towed through the real ditch, with a recove
       const scene=new T.Scene();
       const m=new Mechanics(world,new Walker(world,[2.6,height(2.6,-18.85)+.9,-18.85]),scene,new T.Scene());
       const pipeline=new AssetPipeline(scene,world);
-      const models={archiveTruck:new T.Group(),fordRescueBracket:new T.Group(),receiver:new T.Group()};
+      const models={archiveTruck:new T.Group(),fordRescueBracket:new T.Group(),receiver:new T.Group(),dinerMug:new T.Group()};
       makeTerrain(scene,world,{floor:null,normal:null});
       m.makeCar([-1,height(-1,-22.6)+.51,-22.6]);
       const records=new Map();
@@ -2008,7 +2042,7 @@ test('archive window lowers the authored dispatch case and preserves intact and 
       const scene=new T.Scene();
       const m=new Mechanics(world,new Walker(world,[15,height(15,10)+.9,10]),scene,new T.Scene());
       const pipeline=new AssetPipeline(scene,world);
-      const models={archiveTruck:new T.Group(),receiver:new T.Group()};
+      const models={archiveTruck:new T.Group(),receiver:new T.Group(),dinerMug:new T.Group()};
       for(const [key,name] of [['archiveTapeCase','archive-tape-case'],['archiveLoadingBay','archive-loading-bay']]){
         const bytes=await readFile(new URL('../assets/'+name+'.glb',import.meta.url));
         models[key]=(await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'')).scene;
@@ -2106,7 +2140,7 @@ test('boar signs lead to a safe lookout and creek stew supports bait, a retry an
     const creek=new CreekWildlife(m,bag,()=>{},()=>{});
     creek.installBoarTrail();
     const wildlife=new Wildlife(m,pipeline,new T.Group(),bag,()=>{});
-    new Diner(m,{story:{area:0},ending:''},bag,pipeline,{receiver:new T.Group()});
+    new Diner(m,{story:{area:0},ending:''},bag,pipeline,{receiver:new T.Group(),dinerMug:new T.Group()});
     const act=name=>[...m.fixed.values()].find(tag=>tag.name===name).action();
     const sod=[...m.fixed.values()].filter(tag=>tag.name==='Inspect the torn sod');
     assert.match(sod[0].action(),/Follow the marks/);
@@ -2233,7 +2267,7 @@ test('the storehouse relay can be reached through the flooded vent or from the g
       assert.ok(records.has(relayRecording));
       assert.equal(room.objective(),null);
 
-      const diner=new Diner(m,{story:{area:0},ending:''},bag,pipeline,{receiver});
+      const diner=new Diner(m,{story:{area:0},ending:''},bag,pipeline,{receiver,dinerMug:new T.Group()});
       assert.ok(diner);
       const ledger=[...m.fixed.values()].find(tag=>tag.name.startsWith('Compare Ed'));
       if(vent){
@@ -2472,4 +2506,49 @@ test('wagon rack fits two compact loads, rejects bulk, straps both and unloads e
     assert.equal(m.debris.length,60);
     assert.ok(m.items.has(bulky.collider.handle));
   }finally{world.free();}
+});
+
+
+test('raised cabin porch supports meet the grade and use the same yaw for visible and solid faces',async()=>{
+  const {supportCabin}=await import('../src/cabin-supports.js');
+  const {cabinX,cabinY,cabinZ,height}=await import('../src/terrain.js');
+  const supports=[];
+  const mechanics={staticBox(size,position){
+    const support={size,position,visual:{rotation:{}},collider:{setRotation(q){support.quaternion=q;}}};
+    supports.push(support);
+    return support;
+  }};
+  const yaw=Math.PI/2;
+  supportCabin(mechanics,[cabinX,cabinY,cabinZ],1,yaw);
+  assert.equal(supports.length,5);
+  for(const {size:[,depth],position:[x,y,z],visual,quaternion} of supports){
+    assert.ok(Math.abs(y-depth/2-(height(x,z)-.085))<1e-6);
+    assert.equal(visual.rotation.y,yaw);
+    assert.ok(Math.abs(quaternion.y-Math.SQRT1_2)<1e-6);
+  }
+  assert.ok(supports.some(({position:[x,,z]})=>Math.abs(x-cabinX-4.49)<1e-6&&Math.abs(z-cabinZ)<1e-6));
+});
+
+test('wet boots leave alternating marks on walkable surfaces and keep a bounded trail after reload',async()=>{
+  const {Bootprints}=await import('../src/bootprints.js');
+  let saved=null;
+  const storage={getItem:()=>saved,setItem:(key,value)=>{saved=value;}};
+  const prints=new Bootprints(new T.Scene(),storage);
+  const position=new T.Vector3(2,.1,4);
+  prints.step(position,0,false,true);
+  prints.step(position,0,true,true);
+  assert.equal(prints.mesh.count,0);
+  prints.step(position,0,false,true);
+  prints.step(position,0,false,true);
+  assert.deepEqual(prints.prints.map(print=>print[0]),[2.1,1.9]);
+  prints.step(position,0,false,false);
+  assert.equal(prints.mesh.count,2);
+  for(let i=0;i<8;i++){
+    prints.step(position,0,true,true);
+    for(let step=0;step<10;step++)prints.step(position,0,false,true);
+  }
+  assert.equal(prints.mesh.count,48);
+  const restored=new Bootprints(new T.Scene(),storage);
+  assert.deepEqual(restored.prints,prints.prints);
+  assert.equal(restored.mesh.count,48);
 });

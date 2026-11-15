@@ -1,3 +1,4 @@
+import {supportCabin} from './cabin-supports.js';
 import {Missions} from './missions.js';
 import {documentProp} from './props.js';
 import {part} from './mechanics.js';
@@ -88,6 +89,7 @@ export class Story {
       new T.Vector3(cabinX,0,cabinZ-11),new T.Vector3(140,0,-11)];
     for(const plot of plots){
       const building=pipeline.place(models.cabin,{position:[plot.x,plot.y,plot.z],scale:plot.scale,yaw:plot.yaw,collider:'authored'});
+      supportCabin(mechanics,[plot.x,plot.y,plot.z],plot.scale,plot.yaw);
       if(plot!==vale)building.traverse(mesh=>{
         if(!mesh.isMesh||!mesh.visible)return;
         const tint=plot.name==='Post Office'?0xddaaa0:0xbcd7bd;

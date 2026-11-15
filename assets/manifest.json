@@ -8,6 +8,7 @@
     "underbrush": "./assets/bush.glb",
     "rocks": "./assets/rocks.glb",
     "receiver": "./assets/field-receiver.glb",
+    "dinerMug": "./assets/diner-ceramic-mug.glb",
     "valve": "./assets/sluice-valve.glb",
     "lantern": "./assets/camp-lantern.glb",
     "dish": "./assets/echo-dish.glb",

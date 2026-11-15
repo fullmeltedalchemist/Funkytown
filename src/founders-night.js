@@ -183,10 +183,21 @@ export class FoundersNight {
   }
 
   memorialWitness(){
+    const known=this.bag.records.has('founders-bell-witness');
+    const slip=this.bag.records.has('mill-slip-identified');
+    if(!known&&(slip||!this.bag.records.has(tapeKey))){
+      this.bag.record('founders-bell-witness','Inez’s evacuation account',
+        'Inez used to signal the mill shift with the bell. She was on the near bank when Cal answered from across the creek, after dispatch marked him safe.');
+    }
+    if(slip){
+      if(!this.bag.records.has('inez-second-bell')){
+        this.bag.record('inez-second-bell','Inez identified the high-water bell',
+          'Inez confirmed she rang the high-water warning after the mill’s shift bell. Cal’s answer came from the far bank after that second bell.');
+      }
+      return '“June showed you the time slip? The shift bell was over. I rang the warning by hand when the gauge went red. Cal answered from the far bank, after dispatch had already marked him safe.”';
+    }
     if(this.bag.records.has(tapeKey))return 'Inez folds her program around the pencil marks. “When they read his name, I’ll ring once for the man who came back and once for the voice we left behind.”';
-    if(this.bag.records.has('founders-bell-witness'))return '“Look at the program. I rang the bell from the bank. The man calling for me was still across the creek.”';
-    this.bag.record('founders-bell-witness','Inez’s evacuation account',
-      'Inez used to signal the mill shift with the bell. She was on the near bank when Cal answered from across the creek, after dispatch marked him safe.');
+    if(known)return '“Look at the program. I rang the bell from the bank. The man calling for me was still across the creek.”';
     return '“I rang that bell at the mill for thirty years. On flood night I rang it from this bank. Cal answered from the other side after dispatch had already marked him safe.”';
   }
 

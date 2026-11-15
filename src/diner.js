@@ -1,6 +1,7 @@
 import {diner,height} from './terrain.js';
 import {person} from './rescue.js';
 import * as T from 'three';
+import R from 'rapier';
 import {stewName,stewShared} from './field-stew.js';
 import {part} from './mechanics.js';
 import {relayRecording,relayComparison} from './storehouse-relay.js';
@@ -57,12 +58,10 @@ export class Diner {
     }
     tiles.receiveShadow=true;
     scene.add(tiles);
-    const mugs=new T.CylinderGeometry(.073,.056,.11,12);
-    const ceramic=new T.MeshStandardMaterial({color:0xc7dbd0,roughness:.42});
-    for(const [dx,y,dz] of [[-2.3,.88,.1],[-1.89,.88,.75],[.33,1.06,-1.83],[-.17,1.06,-1.91]]){
-      const mug=new T.Mesh(mugs,ceramic);
-      mug.position.set(x+dx,floor+y+.055,z+dz);
-      scene.add(mug);
+    const placeMug=(dx,y,dz,yaw)=>pipeline.place(models.dinerMug,{
+      position:[x+dx,floor+y,z+dz],groundY:floor+y,yaw});
+    for(const [dx,y,dz,yaw] of [[-2.3,.88,.1,.4],[-1.89,.88,.75,2.8],[.33,1.06,-1.83,1.1],[-.17,1.06,-1.91,3.3]]){
+      placeMug(dx,y,dz,yaw);
     }
     for(const shelfY of [1.33,1.75]){
       box([2.8,.07,.38],0,shelfY,-2.65,wood);
@@ -70,11 +69,7 @@ export class Diner {
         const brace=part(scene,[.09,.27,.065],[x+dx,floor+shelfY-.10,z-2.59],wood,.01);
         brace.rotation.x=-.58;
       }
-      for(const dx of [-1.17,-.71,-.25,.21,.67,1.13]){
-        const cup=new T.Mesh(mugs,ceramic);
-        cup.position.set(x+dx,floor+shelfY+.09,z-2.55);
-        scene.add(cup);
-      }
+      for(const dx of [-1.17,-.71,-.25,.21,.67,1.13])placeMug(dx,shelfY+.035,-2.55,dx+.6);
     }
     const urn=new T.Mesh(new T.CylinderGeometry(.152,.17,.42,20),
       new T.MeshStandardMaterial({color:0x777f7b,metalness:.65,roughness:.4}));
@@ -125,6 +120,7 @@ export class Diner {
       return 'June folds the slip beside the ledger. “Ed went out on the second bell. He told me he followed two wagon lamps into the cut. Come morning, his own tracks were the only ones in the mud.”';
     }});
     const booth=box([1.26,.055,.86],-2.08,.85,.45,0xe5ba7d);
+    this.installBoothCloth(mechanics,booth.visual.position);
     const serving=box([.42,.042,.29],.8,1.08,-1.77,0x75867c);
     mechanics.tag(serving.collider,{name:'Share a hot plate with June',action:()=>{
       if(bag.records.get('camp-meal')?.name===stewName){
@@ -143,6 +139,51 @@ export class Diner {
     }});
     this.booth=booth.visual.position;
     mechanics.tag(booth.collider,{name:'Check Cal’s booth at the diner',action:()=>this.boothStory()});
+  }
+
+  installBoothCloth(mechanics,center){
+    const geometry=new T.PlaneGeometry(.84,.60,14,14).rotateX(-Math.PI/2);
+    const pos=geometry.attributes.position;
+    for(let i=0;i<pos.count;i++){
+      const x=pos.getX(i),overhang=Math.max(0,(x-.30)/.12);
+      pos.setXYZ(i,Math.min(x,.34),-.17*overhang, pos.getZ(i));
+    }
+    geometry.computeVertexNormals();
+    const runner=new T.Mesh(geometry,new T.MeshStandardMaterial({color:0x87473d,roughness:1,side:T.DoubleSide}));
+    runner.position.copy(center).add(new T.Vector3(.32,.032,0));
+    runner.frustumCulled=false;
+    runner.receiveShadow=true;
+    mechanics.scenes[0].add(runner);
+    this.cloth={geometry,base:pos.array.slice(),displacement:0,velocity:0};
+    const edge=runner.position.clone().add(new T.Vector3(.32,-.11,0));
+    const sensor=mechanics.world.createCollider(R.ColliderDesc.ball(.10)
+      .setTranslation(...edge.toArray()).setSensor(true).setCollisionGroups((128<<16)|2));
+    mechanics.tag(sensor,{name:'Flick the edge of the diner runner',action:()=>{
+      this.cloth.velocity=.75;
+      return 'The runner lifts at the edge and settles against the table.';
+    }});
+  }
+
+  tick(dt){
+    const cloth=this.cloth;
+    const pos=cloth.geometry.attributes.position;
+    if(Math.abs(cloth.velocity)<.001&&Math.abs(cloth.displacement)<.001){
+      if(!cloth.velocity&&!cloth.displacement)return;
+      cloth.velocity=cloth.displacement=0;
+      pos.array.set(cloth.base);
+      pos.needsUpdate=true;
+      cloth.geometry.computeVertexNormals();
+      return;
+    }
+    cloth.velocity+=(-cloth.displacement*43-cloth.velocity*6)*dt;
+    cloth.displacement+=cloth.velocity*dt;
+    for(let i=0;i<pos.count;i++){
+      const x=cloth.base[i*3],y=cloth.base[i*3+1],z=cloth.base[i*3+2];
+      const weight=x>.30?Math.min(1,-y/.17):0;
+      pos.setXYZ(i,x+cloth.displacement*weight,y+Math.abs(cloth.displacement)*weight*.53,z);
+    }
+    pos.needsUpdate=true;
+    cloth.geometry.computeVertexNormals();
   }
 
   counterStory(){

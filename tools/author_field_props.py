@@ -1,6 +1,7 @@
 """Run with blender -b -t 2 --python tools/author_field_props.py."""
 from pathlib import Path
-from math import cos, sin, tau
+from math import cos, pi, sin, tau
+import sys
 import bpy
 
 OUT = Path(__file__).resolve().parents[1] / "assets"
@@ -80,6 +81,31 @@ def export(filename):
         bpy.ops.object.join()
         objects[0].name = name
     bpy.ops.export_scene.gltf(filepath=str(OUT / filename), export_format="GLB", export_yup=True)
+
+
+def author_diner_mug():
+    reset()
+    glaze = material("Juniper glazed stoneware", (.50,.66,.59), roughness=.3)
+    clay = material("Unglazed foot", (.31,.23,.17), roughness=.88)
+    lathe("Hollow glazed cup", [
+        (.048,.005),(.056,.011),(.064,.031),(.071,.099),(.071,.108),
+        (.068,.111),(.064,.109),(.063,.103),(.058,.040),(.053,.022),(.047,.017)
+    ], glaze, segments=32)
+    lathe("Unglazed foot",[(.047,0),(.054,.002),(.055,.009),(.05,.012)],clay,segments=32)
+    bpy.ops.mesh.primitive_torus_add(major_segments=24,minor_segments=10,
+        location=(.074,0,.060),rotation=(pi/2,0,0),major_radius=.029,minor_radius=.008)
+    handle = bpy.context.object
+    handle.scale = (1.11,1.19,1)
+    finish(handle,"Loop handle",glaze)
+    for face in handle.data.polygons:
+        face.use_smooth = True
+    export("diner-ceramic-mug.glb")
+
+
+# A targeted export leaves existing checked-in GLBs untouched.
+if sys.argv[-2:] == ["--", "diner-mug"]:
+    author_diner_mug()
+    sys.exit(0)
 
 
 reset()
@@ -578,3 +604,6 @@ for side,label in ((-1,"L"),(1,"R")):
     shoe.parent=legPivot
 # Blender local Z down maps to glTF local Y down.
 bpy.ops.export_scene.gltf(filepath=str(OUT / "villager-fieldworker.glb"),export_format="GLB",export_yup=True)
+
+
+author_diner_mug()

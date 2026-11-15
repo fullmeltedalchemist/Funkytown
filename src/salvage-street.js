@@ -1,3 +1,4 @@
+import {supportCabin} from './cabin-supports.js';
 import {documentProp} from './props.js';
 import * as T from 'three';
 import R from 'rapier';
@@ -42,6 +43,7 @@ export class SalvageStreet {
     for(const [dx,z,yaw] of [[-7.3,12.9,Math.PI/2],[7.4,17,-Math.PI/2]]){
       const y=height(x+dx,z);
       pipeline.place(models.cabin,{position:[x+dx,y,z],scale:houseScale,yaw,collider:'authored'});
+      supportCabin(mechanics,[x+dx,y,z],houseScale,yaw);
       if(dx<0){
         pipeline.place(models.pairedKitchen,{
           position:[x+dx,y+.3*houseScale,z],scale:houseScale,yaw,collider:'authored'

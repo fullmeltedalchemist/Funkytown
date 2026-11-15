@@ -1,3 +1,5 @@
+import {Bootprints} from './bootprints.js';
+import {supportCabin} from './cabin-supports.js';
 import {CrossingAftermath} from './crossing-aftermath.js';
 import {CrossingReport} from './crossing-report.js';
 import {ServiceGate} from './service-gate.js';
@@ -148,6 +150,7 @@ async function boot(){
   const models=Object.fromEntries(entries);
   configureVillagerModel(models.villager);
   const water=makeTerrain(scene,world,terrainTextures);
+  const bootprints=new Bootprints(scene);
   const anchors={rangerCabin:[cabinX,cabinY,cabinZ]};
   for(const placement of manifest.placements){
     if(!models[placement.model])throw Error('Unknown model '+placement.model);
@@ -159,6 +162,7 @@ async function boot(){
   lighting(scene,mobile);
   const walker=new Walker(world,spawn);
   const mechanics=new Mechanics(world,walker,scene,realm);
+  supportCabin(mechanics,[cabinX,cabinY,cabinZ]);
   const story=new Story(mechanics,pipeline,models);
   buildCampEquipment(mechanics,pipeline,models);
   const bag=new Bag(mechanics);
@@ -530,6 +534,17 @@ async function boot(){
             if(footstepTime<=0){
               const wet=story.area===0&&inCreek(walker.current.x,walker.current.z)&&walker.current.y<-.62;
               playToolSound(wet?275:113,wet?95:49,wet?.16:.095,wet?.14:.09);
+              if(story.area===0){
+                const foot=walker.current;
+                const hit=world.castRayAndGetNormal(new R.Ray(foot,{x:0,y:-1,z:0}),1.12,true,
+                  R.QueryFilterFlags.ONLY_FIXED|R.QueryFilterFlags.EXCLUDE_SENSORS);
+                if(hit){
+                  const y=foot.y-hit.timeOfImpact;
+                  const basinWet=basinInfluence(foot.x,foot.z)>.7&&y<salvage.surface-.025;
+                  bootprints.step(new T.Vector3(foot.x,y,foot.z),Math.atan2(-walker.velocity.x,-walker.velocity.z),
+                    wet||basinWet,hit.normal.y>.96);
+                }
+              }
               footstepTime=Math.max(.26,.59-pace*.043);
             }
           }else footstepTime=Math.min(.11,footstepTime);
@@ -547,6 +562,7 @@ async function boot(){
         address.tick(STEP);
         founders.tick(STEP);
         millYard.tick(STEP);
+        townDiner.tick(STEP);
         chapters.tick();
         extraction.tick(STEP);
         loopRoad.tick(STEP);

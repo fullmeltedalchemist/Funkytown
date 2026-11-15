@@ -165,6 +165,8 @@ A completed row below means its implementation and automated checks are in the r
 
 - [x] Align the spillway post, valve, and flow emitter to one terrain reference. Ground the camp lanterns from their model bounds.
 - [x] Add diner footings where the floor clears the terrain. Fit wall shelves with collision and visible brackets, and add the counter coffee urn.
+- [x] Add terrain-derived, colliding plinths beneath raised porch posts and stairs on the ranger cabin and reused town and salvage house models.
+- [x] Leave a bounded trail of bootprints when walking from creek or floodwater onto level ground. Marks persist after reload.
 - [ ] Check the visible feet, floors, and collision through Vale House, Foxglove, the dry house, creek racks, loading bay and Submerged Street in one rendered route. Fix any remaining gaps and replace prominent placeholder art with authored models.
 
 ### Audio
@@ -181,7 +183,9 @@ A completed row below means its implementation and automated checks are in the r
 ### Town and story
 
 - [x] Add June’s coffee-urn conversation with relay and arch-choice reactions.
-- [ ] Finish the diner’s remaining authored art and curtain or tablecloth motion, verify the crowd along the full procession, and add evidence-specific follow-up conversations where villagers currently repeat their earlier dialogue.
+- [x] Fit the diner shelves, counter and booth with hollow ceramic mugs authored in Blender. Let the player flick the hanging booth runner and see it settle.
+- [x] Recover a lost mill time slip at the wheel. After June identifies it, ask Inez which bell she rang and record the answer alongside her evacuation statement.
+- [ ] Finish the remaining diner art, verify the crowd along the full procession, and add follow-ups for villagers who still repeat earlier dialogue.
 
 ### Verification
 

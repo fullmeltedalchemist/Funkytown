@@ -1,3 +1,4 @@
+import {supportCabin} from './cabin-supports.js';
 import * as T from 'three';
 import R from 'rapier';
 import {part,vec} from './mechanics.js';
@@ -29,6 +30,7 @@ export class SecondAddress {
     const scene=mechanics.scenes[0];
     const at=(x,y,z)=>new T.Vector3(lot.x+x,lot.y+y,lot.z+z);
     const house=pipeline.place(models.cabin,{position:at(0,0,0).toArray(),scale:1,collider:'authored'});
+    supportCabin(mechanics,at(0,0,0).toArray());
     house.traverse(node=>{
       if(!node.isMesh||!node.visible||!node.material.color)return;
       node.material=node.material.clone();
