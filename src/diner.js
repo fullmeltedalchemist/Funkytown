@@ -189,6 +189,8 @@ export class Diner {
   counterStory(){
     const distress=this.distressWitness?.();
     if(distress)return distress;
+    const floodReport=this.floodReport?.(this.chapters.ending);
+    if(floodReport)return floodReport;
     if(!this.chapters.ending){
       if(this.bag.records.has('extraction-return'))return 'June sets out two cups. “He remembered how I used to burn the first pot. If he wants to tell us more, we can listen over coffee.”';
       if(this.bag.records.has('mill-slip-identified'))return 'June folds the slip into her ledger. “Inez and I were both telling the truth. I just remembered the wrong part of the night.”';

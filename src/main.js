@@ -1,3 +1,4 @@
+import {FloodedHouse} from './flooded-house.js';
 import {Bootprints} from './bootprints.js';
 import {supportCabin} from './cabin-supports.js';
 import {CrossingAftermath} from './crossing-aftermath.js';
@@ -375,8 +376,15 @@ async function boot(){
   const storehouseRelay=new StorehouseRelay(mechanics,bag,workshop.robot,pipeline,models.receiver,
     () => playVoice('tower-two',()=>playToolSound(270,103,.66,.21)));
   archiveWindow.relayBrief=()=>storehouseRelay.brief();
-  const activeCrawler=()=>storehouseRelay.active?storehouseRelay:workshop.active?workshop:null;
-  const toggleCrawler=()=>activeCrawler()?.toggle()??(walker.current.distanceTo(storehouseRelay.control)<4?
+  const floodedHouse=new FloodedHouse(mechanics,bag,salvage,towLine,workshop.robot,pipeline,models,notice);
+  address.floodWitness=()=>floodedHouse.speak();
+  const resident=mechanics.fixed.get(address.personSensor.handle);
+  resident.acceptName='Show the resident the cork key';
+  resident.accept=item=>floodedHouse.identify(item);
+  townDiner.floodReport=ending=>floodedHouse.compare(ending);
+  const activeCrawler=()=>floodedHouse.active?floodedHouse:storehouseRelay.active?storehouseRelay:workshop.active?workshop:null;
+  const toggleCrawler=()=>activeCrawler()?.toggle()??(walker.current.distanceTo(floodedHouse.control)<4?
+    floodedHouse.toggle():walker.current.distanceTo(storehouseRelay.control)<4?
     storehouseRelay.toggle():workshop.toggle());
   const wagonRecovery=new WagonRecovery(mechanics,bag,towLine,notice,pipeline,models,()=>rescue.stage>=1);
   const baitCooler=new BaitCooler(mechanics,bag,notice,()=>rescue.stage>=1);
@@ -486,6 +494,8 @@ async function boot(){
         move.drift ||= move.jump && mechanics.driving;
         if(activeCrawler()){
           notice(activeCrawler().step(move,STEP));
+          salvage.tick(STEP);
+          floodedHouse.tick();
           world.step(mechanics.events);
           mechanics.after();
           input.actions.clear();
@@ -578,6 +588,7 @@ async function boot(){
         checkLookoutSignal(mechanics,finale.lookout,bag,notice,point=>playToolSound(620,860,.42,.2,point));
         baitCooler.tick(STEP);
         towLine.tick(STEP,move);
+        floodedHouse.tick();
         wagonRecovery.tick(STEP);
         archiveWindow.tick(STEP);
         if(!mechanics.driving&&!mechanics.harnessSuspended){
@@ -623,7 +634,7 @@ async function boot(){
     }
     story.animate(now*.001);
     const objective=fordRescue.objective()??(rescue.stage<4&&!salvage.clock.running?rescue.objective():null)??
-      loopRoad.objective()??salvage.objective()??
+      loopRoad.objective()??floodedHouse.objective(address.resident.root.position,townDiner.counterPoint)??salvage.objective()??
       address.objective()??founders.objective()??extraction.objective()??storehouseRelay.objective()??archiveWindow.objective()??wagonRecovery.objective()??baitCooler.objective()??distress.objective()??townDiner.objective()??crossingReport.objective()??aftermath.objective()??creekWildlife.objective()??chapters.objective()??
       (rescue.showPractice?rescue.objective():null)??fieldProps.objective()??finale.objective()??rescue.objective();
     $('guide').textContent=activeCrawler()?.hint()??(objective?.text??story.guide(player));

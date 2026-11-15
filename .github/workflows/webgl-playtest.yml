@@ -168,6 +168,25 @@ jobs:
                       };
                       window.__memorialStopped=()=>founders.atMemorial&&
                         founders.bellBase.z-founders.bellSpectators[0].root.position.z>8;
+                      window.__poseStorm=stop=>{
+                        const quest=floodedHouse;
+                        const targets={
+                          drain:salvage.control,vent:quest.control,
+                          key:quest.key?new T.Vector3().copy(quest.key.body.translation()).add(new T.Vector3(0,.063,0)):null,
+                          june:townDiner.counterPoint
+                        };
+                        if(stop==='drain')chapters.stage=4;
+                        const point=targets[stop];
+                        const x=point.x+(stop==='vent'?.75:0),z=point.z+(stop==='june'?1.85:1.4);
+                        const y=stop==='key'?quest.base.y+.91:stop==='june'?townDiner.counterPoint.y-.12:height(x,z)+.87;
+                        const aim=point.clone().sub(new T.Vector3(x,y+.58,z));
+                        walker.teleport([x,y,z]);
+                        yaw=Math.atan2(-aim.x,-aim.z);
+                        pitch=Math.atan2(aim.y,Math.hypot(aim.x,aim.z));
+                      };
+                      window.__stormAtTurn=()=>floodedHouse.active&&floodedHouse.z<-1.18;
+                      window.__stormAtRelease=()=>floodedHouse.active&&floodedHouse.x<-1.25;
+                      window.__stormHasKey=()=>Boolean(floodedHouse.key);
                       window.__poseFounders=stop=>{
                         const point=stop==='float'?founders.recorder:stop==='receipt'?founders.receipt:
                           stop==='ring'?founders.ringPoint:
@@ -316,6 +335,31 @@ jobs:
                   await page.locator('#hint').filter({hasText:'Archive tape case'}).waitFor();
                   await page.locator('#use').tap();
                   await page.locator('#guide').filter({hasText:'Take the tape case to the clerk'}).waitFor();
+                  // Clear the carried archive case before talking to the resident.
+                  await page.locator('#throw').tap();
+                  await aimAndUse('mailbox','resident','Talk to the resident at the mailbox');
+                  await page.locator('#guide').filter({hasText:'Storm Gate'}).waitFor();
+                  const useStorm=async (stop,label)=>{
+                    await page.evaluate(point=>window.__poseStorm(point),stop);
+                    await page.locator('#hint').filter({hasText:label}).waitFor();
+                    await page.locator('#use').tap();
+                  };
+                  await useStorm('drain','Drain the submerged street');
+                  await useStorm('vent','Connect crawler at the storm vent');
+                  await page.keyboard.down('w');
+                  try{await page.waitForFunction(()=>window.__stormAtTurn());}
+                  finally{await page.keyboard.up('w');}
+                  await page.keyboard.down('a');
+                  try{await page.waitForFunction(()=>window.__stormAtRelease());}
+                  finally{await page.keyboard.up('a');}
+                  await page.locator('#use').tap();
+                  await page.waitForFunction(()=>window.__stormHasKey());
+                  await capture(page,'storm-gate');
+                  await useStorm('key','Storm gate key on a cork float');
+                  await aimAndUse('mailbox','resident','Show the resident the cork key');
+                  await useStorm('june','Talk to June at the diner counter');
+                  await page.locator('#notice').filter({hasText:'relief porch safe'}).waitFor();
+                  console.log('touch storm-gate crawler, physical key, witness handoff and diner correction passed');
                 }
                 assert.deepEqual(errors,[]);
                 console.log(name+' interaction checks passed');

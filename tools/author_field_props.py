@@ -102,7 +102,32 @@ def author_diner_mug():
     export("diner-ceramic-mug.glb")
 
 
+def author_storm_key():
+    reset()
+    cork = material("Water-darkened cork", (.36,.19,.075), roughness=.94)
+    brass = material("Oxidized key brass", (.54,.36,.12), .7,.47)
+    thread = material("Green binding thread", (.055,.22,.12), roughness=.83)
+    wax = material("Cuts in the cork", (.15,.072,.022), roughness=.96)
+    box("Rounded cork float",(-.08,0,.059),(.23,.17,.112),cork,.039)
+    for offset in (-.047,0,.047):
+        box("Hand-cut notch",(-.08+offset,-.083,.077),(.019,.015,.05),wax,.006)
+    for x in (-.138,-.111):
+        box("Green wrap",(x,0,.060),(.012,.176,.117),thread,.004)
+    bpy.ops.mesh.primitive_torus_add(major_segments=24,minor_segments=8,
+        location=(.077,0,.032),major_radius=.045,minor_radius=.008)
+    finish(bpy.context.object,"Key bow",brass)
+    box("Key stem",(.164,0,.033),(.11,.023,.014),brass,.004)
+    box("Long tooth",(.204,-.021,.033),(.018,.044,.014),brass,.003)
+    box("Short tooth",(.177,-.014,.033),(.012,.031,.014),brass,.003)
+    box("COL_storm_key",(0,0,.056),(.43,.166,.112),brass,0)
+    export("storm-gate-key.glb")
+
+
 # A targeted export leaves existing checked-in GLBs untouched.
+if sys.argv[-2:] == ["--", "storm-key"]:
+    author_storm_key()
+    sys.exit(0)
+
 if sys.argv[-2:] == ["--", "diner-mug"]:
     author_diner_mug()
     sys.exit(0)
@@ -607,3 +632,5 @@ bpy.ops.export_scene.gltf(filepath=str(OUT / "villager-fieldworker.glb"),export_
 
 
 author_diner_mug()
+
+author_storm_key()

@@ -191,6 +191,7 @@ A completed row below means its implementation and automated checks are in the r
 - [x] Keep the east-marker observation across reload, prioritize the opening rescue in the guide, and distinguish releasing the Second Address test ball from watching it roll.
 - [x] Walk Inez and Wes alongside the memorial float to a longer route and a bell stop on the upper ford approach. Pause and resume for foot traffic or a parked wagon, and update Wes’s memorial dialogue after the tape is filed.
 - [x] Show each extraction plan’s time and marker count, warn once near expiry, and point the player to the ranger after the last marker.
+- [x] Add the Storm Gate investigation after Second Address, with a physical wagon winch route, a timed crawler route, a Blender-authored cork key, a resident handoff and a corrected diner ledger. Recover the key on another drain if it floods.
 - [ ] Finish the remaining diner art, verify the crowd along the full procession, and add follow-ups for villagers who still repeat earlier dialogue.
 
 ### Verification

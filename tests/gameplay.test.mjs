@@ -2672,3 +2672,119 @@ test('the chase camera clears the wagon roof and ignores interaction triggers ne
   mechanics.wagonView(camera);
   assert.ok(camera.position.y>7 && camera.position.z<1.7);
 });
+
+test('Storm Gate has a physical winch route, a recoverable crawler route and a witness payoff',async t=>{
+  const {FloodedHouse,floodIdentified,floodFiled}=await import('../src/flooded-house.js');
+  const {SalvageClock}=await import('../src/salvage-street.js');
+  const {TowLine}=await import('../src/tow-line.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker,STEP}=await import('../src/walker.js');
+  const {AssetPipeline}=await import('../src/assets.js');
+  const {height,makeTerrain}=await import('../src/terrain.js');
+  await R.init();
+  for(const route of ['winch','crawler'])await t.test(route,async sub=>{
+    const world=new R.World({x:0,y:-9.81,z:0});
+    world.timestep=STEP;
+    sub.after(()=>world.free());
+    const scene=new T.Scene(),walker=new Walker(world,[-35,4,27]);
+    const m=new Mechanics(world,walker,scene,new T.Scene());
+    makeTerrain(scene,world,{floor:null,normal:null});
+    const pipeline=new AssetPipeline(scene,world);
+    const models={};
+    for(const [key,file] of [['floodKey','storm-gate-key'],['fordRescueBracket','ford-rescue-bracket']]){
+      const bytes=await readFile(new URL('../assets/'+file+'.glb',import.meta.url));
+      models[key]=(await pipeline.loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'')).scene;
+    }
+    const records=new Map();
+    const bag={records,record:(key,name,description)=>records.set(key,{name,description})};
+    const clock=new SalvageClock();
+    const control=new T.Vector3(-31,2,34);
+    const salvage={clock,control};
+    const tow=new TowLine(m),robot=new T.Group();
+    scene.add(robot);
+    const messages=[];
+    const quest=new FloodedHouse(m,bag,salvage,tow,robot,pipeline,models,message=>messages.push(message));
+    assert.equal(quest.speak(),'');
+    records.set('second-address-filed',{});
+    assert.match(quest.speak(),/cork float/);
+    assert.equal(quest.objective().target,control);
+    assert.equal(quest.gate.collider.isEnabled(),true);
+    clock.start();
+    quest.tick();
+    for(let frame=0;frame<30;frame++)world.step(m.events);
+    if(route==='winch'){
+      const x=quest.home.x,z=quest.home.z+4;
+      m.makeCar([x,height(x,z)+.59,z]);
+      const camera=new T.PerspectiveCamera();
+      const aim=point=>{
+        camera.position.copy(point).add(new T.Vector3(0,2,0));
+        camera.lookAt(point);
+        camera.updateMatrixWorld(true);
+      };
+      world.step(m.events);
+      aim(new T.Vector3().copy(quest.jam.body.translation()));
+      assert.match(tow.select(camera),/First hook attached/);
+      aim(new T.Vector3().copy(m.car.body.translation()));
+      assert.match(tow.select(camera),/Tow line rigged/);
+      m.driving=true;
+      walker.body.setEnabled(false);
+      assert.match(tow.select(camera),/Winch reeling/);
+      for(let frame=0;frame<480&&!quest.isOpen;frame++){
+        world.step(m.events);
+        tow.tick(STEP,{z:0});
+        quest.tick();
+      }
+      m.driving=false;
+      walker.body.setEnabled(true);
+      tow.clear();
+    }else{
+      walker.teleport(quest.control.clone().add(new T.Vector3(0,.2,0)).toArray());
+      assert.match(quest.toggle(),/Crawler connected/);
+      for(let i=0;i<42;i++)quest.step({x:0,z:1},STEP);
+      assert.match(quest.step({x:-1,z:0},.6),/tipped into the sump/);
+      assert.equal(quest.active,false);
+      assert.match(quest.toggle(),/Crawler connected/);
+      clock.advance(86);
+      quest.tick();
+      assert.equal(quest.active,false,'reflood recalls the active crawler');
+      clock.start();
+      quest.tick();
+      quest.toggle();
+      for(let i=0;i<115;i++)quest.step({x:0,z:1},STEP);
+      for(let i=0;i<137;i++)quest.step({x:-1,z:0},STEP);
+      assert.match(quest.use(),/gate is clear/);
+    }
+    assert.equal(quest.gate.collider.isEnabled(),false,JSON.stringify(quest.jam?.body.translation()));
+    assert.equal(records.get('flood-house-gate-open').description,route);
+    quest.tick();
+    const lost=quest.key;
+    clock.advance(86);
+    quest.tick();
+    assert.ok(!m.items.has(lost.collider.handle));
+    clock.start();
+    quest.tick();
+    assert.notEqual(quest.key,lost);
+    assert.match(quest.key.name,/cork float/);
+    const camera=new T.PerspectiveCamera();
+    const x=quest.shelf.x,z=quest.base.z+2.35;
+    walker.teleport([x,height(x,z)+.85,z]);
+    for(let i=0;i<140&&walker.current.z>quest.shelf.z+1.3;i++)walker.step({x:0,z:1},0,m.events);
+    assert.ok(walker.current.z<quest.base.z+.7,'the open storm gate must admit a walking player');
+    camera.position.copy(walker.current).add(new T.Vector3(0,.58,0));
+    camera.lookAt(new T.Vector3().copy(quest.key.body.translation()).add(new T.Vector3(0,.063,0)));
+    camera.updateMatrixWorld(true);
+    assert.match(m.use(camera),/Carrying Storm gate key/);
+    assert.match(quest.identify(quest.key),/Cricket/);
+    assert.ok(records.has(floodIdentified));
+    assert.equal(m.carried,null);
+    assert.match(quest.compare(''),/relief porch/);
+    assert.ok(records.has(floodFiled));
+    assert.match(quest.compare('seal'),/Cricket/);
+    assert.match(quest.compare('hold'),/Two check-ins/);
+    const restored=new FloodedHouse(m,bag,salvage,tow,robot,pipeline,models,()=>{});
+    restored.tick();
+    assert.equal(restored.gate.collider.isEnabled(),false);
+    assert.equal(restored.key,undefined);
+    assert.equal(restored.objective(),null);
+  });
+});

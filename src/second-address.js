@@ -82,6 +82,8 @@ export class SecondAddress {
       if(!this.unlocked())return '“Can I help you? The utility office is across town.”';
       const statement=this.crossingResident?.();
       if(statement)return statement;
+      const gateLead=this.floodWitness?.();
+      if(gateLead)return gateLead;
       if(chapters?.ending&&!bag.records.has('extraction-return')){
         return chapters.ending==='seal'?
           '“I finally slept through nine o’clock. I miss hearing him, though. I still leave the lamp on when it rains.”':

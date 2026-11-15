@@ -131,3 +131,9 @@ The central question is who returned after the reservoir evacuation. People who 
 - [x] On the open route, collect the spare check-in lamp from the far-bank gear rack and carry it to the bracket. A lost or misplaced lamp can be reset or reissued. The lamp and updated radio report persist.
 - [x] After filing a report with no survivor, ask the ranger what the tape establishes and record that identity remains unresolved. If the survivor returns later, file the amended report, collect his sketch, inspect the dry-house clock, and compare the sketch against the original porch tape. Corroborate the crossing without equating private memories with identity.
 - [ ] Verify the postgame handoffs and lamp visibility in an uninterrupted rendered desktop and touch playthrough.
+
+### Storm Gate
+
+- [x] After filing Second Address, talk to the dry-house resident about the key Cal borrowed. Drain Submerged Street and visit the annex beside the low house.
+- [x] Winch the wedged timber toward the ramp or drive the crawler along the dry edge of the sump to the release. Recover the cork key from the shelf and deliver it to the resident. If the water takes it, drain the street again.
+- [x] Ask June to compare the resident’s identification with the relief-porch entry. The corrected ledger separates the low-house check from the safe-bank roll call, and June’s later dialogue reflects the arch choice.
