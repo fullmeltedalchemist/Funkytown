@@ -192,4 +192,6 @@ A completed row below means its implementation and automated checks are in the r
 
 ### Verification
 
+- [x] Hosted Chromium with software WebGL reaches the fresh-save objective on desktop and touch. The positioned desktop fixture starts the Submerged Street drain and resolves the ford rescue at the high-bank tow stand.
+- [x] Automated winch checks cover a shelf strike, a successful haul, braking on the zip line and reaching its landing.
 - [ ] Reach both arch endings continuously from fresh saves. Exercise retries and alternate routes for the ford, zip line, Second Address, procession, crawler, archive winch, cooler, and far-bank lamp. Verify in portrait and landscape, including the audio lifecycle.

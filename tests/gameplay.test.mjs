@@ -2587,3 +2587,38 @@ test('the wagon brake overrides held throttle and a sensor beside the door does 
   assert.equal(mechanics.exitCar(),'Exited wagon.');
   assert.equal(mechanics.driving,false);
 });
+
+
+test('the rescue winch recovers from a shelf strike, hauls the stretcher, and lands the rider',async t=>{
+  const {RescueLine}=await import('../src/rigging.js');
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker,STEP}=await import('../src/walker.js');
+  const previous=globalThis.document;
+  globalThis.document={createElement:()=>({getContext:()=>({fillRect(){},fillText(){}})})};
+  t.after(()=>{globalThis.document=previous;});
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  t.after(()=>world.free());
+  const walker=new Walker(world,[0,0,0]);
+  const mechanics=new Mechanics(world,walker,new T.Scene(),new T.Scene());
+  const messages=[];
+  let completed=false;
+  const line=new RescueLine(mechanics,message=>messages.push(message),()=>true,
+    ()=>completed,()=>{completed=true;});
+  assert.match(line.start(),/Haul forward/);
+  line.step({x:0,z:0,jump:true},STEP);
+  for(let frame=0;frame<600&&line.active;frame++)line.step({x:0,z:1},STEP);
+  assert.match(messages.at(-1),/stretcher hit the shelf/);
+  assert.equal(completed,false);
+  line.start();
+  for(let frame=0;frame<600&&line.active;frame++)line.step({x:0,z:1},STEP);
+  assert.equal(completed,true);
+  assert.match(line.start(),/release the trolley/);
+  for(let frame=0;frame<90;frame++)line.step({x:0,z:1},STEP);
+  const speed=line.speed;
+  for(let frame=0;frame<15;frame++)line.step({x:0,z:-1},STEP);
+  assert.ok(line.speed<speed);
+  for(let frame=0;frame<600&&line.active;frame++)line.step({x:0,z:1},STEP);
+  assert.match(messages.at(-1),/Clipped off at the landing/);
+  assert.ok(walker.current.distanceTo(line.bank(line.landing.x,line.landing.z+1.3,.88))<.001);
+});
