@@ -167,6 +167,7 @@ A completed row below means its implementation and automated checks are in the r
 - [x] Add diner footings where the floor clears the terrain. Fit wall shelves with collision and visible brackets, and add the counter coffee urn.
 - [x] Add terrain-derived, colliding plinths beneath raised porch posts and stairs on the ranger cabin and reused town and salvage house models.
 - [x] Leave a bounded trail of bootprints when walking from creek or floodwater onto level ground. Marks persist after reload.
+- [x] Match creek rack legs and the cut-rope stand to solid geometry, seat restocked jugs and cans from their model bounds, extend the downhill archive-bay footing, and make the dry-house grapple target pass-through.
 - [ ] Check the visible feet, floors, and collision through Vale House, Foxglove, the dry house, creek racks, loading bay and Submerged Street in one rendered route. Fix any remaining gaps and replace prominent placeholder art with authored models.
 
 ### Audio
@@ -178,6 +179,7 @@ A completed row below means its implementation and automated checks are in the r
 
 - [x] Fit one bulky load or two compact loads in a padded rack. Strap both loads together. Unload one at a time. Keep salvage and tow checks aware of both slots.
 - [x] Add low-speed traction on steep slopes, stronger lateral grip under braking, and separate buoyancy for boards, tires, and lanterns. Limit temporary solid debris to 60 active pieces.
+- [x] Add separate touch brake and drift controls. Braking takes priority over held throttle, and wagon exits ignore non-solid triggers.
 - [ ] Verify lodging at gates, loaded body lean, gravel and ditch recovery on touch, and persistence or task-specific replacement for recoverable key props across a continuous playthrough.
 
 ### Town and story
@@ -185,6 +187,7 @@ A completed row below means its implementation and automated checks are in the r
 - [x] Add June’s coffee-urn conversation with relay and arch-choice reactions.
 - [x] Fit the diner shelves, counter and booth with hollow ceramic mugs authored in Blender. Let the player flick the hanging booth runner and see it settle.
 - [x] Recover a lost mill time slip at the wheel. After June identifies it, ask Inez which bell she rang and record the answer alongside her evacuation statement.
+- [x] Keep the east-marker observation across reload, prioritize the opening rescue in the guide, and distinguish releasing the Second Address test ball from watching it roll.
 - [ ] Finish the remaining diner art, verify the crowd along the full procession, and add follow-ups for villagers who still repeat earlier dialogue.
 
 ### Verification

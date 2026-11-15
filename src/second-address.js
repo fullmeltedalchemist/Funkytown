@@ -54,9 +54,9 @@ export class SecondAddress {
     }));
     latch.position.copy(latchPoint);scene.add(latch);
     part(scene,[.055,.29,.068],at(1.36,2.94,4.56).toArray(),0x5a5444);
-    const latchTarget=mechanics.staticBox([.34,.33,.16],latchPoint.toArray(),0x87774f);
-    latchTarget.visual.visible=false;
-    mechanics.tag(latchTarget.collider,{name:'Grapple the porch service latch',onGrapple:()=>this.open('grapple latch')});
+    const latchTarget=mechanics.world.createCollider(R.ColliderDesc.ball(.20)
+      .setTranslation(...latchPoint.toArray()).setSensor(true).setCollisionGroups((128<<16)|2));
+    mechanics.tag(latchTarget,{name:'Grapple the porch service latch',onGrapple:()=>this.open('grapple latch')});
 
     const resident=person(0x765247);
     scene.add(resident.root);
@@ -301,6 +301,7 @@ export class SecondAddress {
     }
     if(this.hasBothClues())return {text:'The Second Address · Compare records at the post office',target:this.drop};
     if(this.route&&!clock)return {text:'The Second Address · Inspect the stopped clock',target:this.clockPoint};
+    if(this.route&&['control','echo'].includes(this.trial.phase))return {text:'The Second Address · Watch where the ball rolls',target:this.tray};
     if(this.route)return {text:this.trial.phase==='control-ready'?'The Second Address · Run the experiment with the receiver on':
       'The Second Address · Release the test ball from the receiver stand',target:this.trayControl};
     if(this.follow!==undefined)return {text:'The Second Address · Follow the resident to the porch',target:this.resident.root.position};

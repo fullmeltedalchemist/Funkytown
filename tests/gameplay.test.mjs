@@ -271,6 +271,10 @@ test('field prop GLBs load and real impacts shatter a jug and detonate a fuel ca
   const bag={records,record:id=>records.set(id,true)};
   const sounds=[];
   const props=new FieldProps(mechanics,pipeline,models,{rangerSensor:sensor,story:{state:4}},bag,()=>{},event=>sounds.push(event));
+  for(const site of props.sites){
+    const bounds=new T.Box3().setFromObject(site.item.visual);
+    assert.ok(Math.abs(bounds.min.y-site.top-.004)<.0001);
+  }
   mechanics.staticBox([20,.2,20],[0,-.1,0],0x555555);
   const frame=()=>{
     mechanics.before(camera,{},{actions:new Set()});
@@ -282,7 +286,7 @@ test('field prop GLBs load and real impacts shatter a jug and detonate a fuel ca
   camera.position.set(0,.4,2);
   camera.lookAt(0,.4,0);
   camera.updateMatrixWorld(true);
-  const jug={type:'water',position:[0,.36,0]};
+  const jug={type:'water',x:0,top:0,z:0};
   props.stock(jug);
   world.step(mechanics.events);
   mechanics.fire(camera);
@@ -291,14 +295,14 @@ test('field prop GLBs load and real impacts shatter a jug and detonate a fuel ca
   assert.ok(mechanics.drops.length>0);
   assert.ok(!mechanics.items.has(jug.item.collider.handle));
 
-  const thrown={type:'water',position:[4,1,0]};
+  const thrown={type:'water',x:4,top:.65,z:0};
   props.stock(thrown);
   mechanics.grab(thrown.item);
   mechanics.release(new T.Vector3(0,-8,0));
   for(let i=0;i<15;i++)frame();
   assert.ok(!mechanics.items.has(thrown.item.collider.handle));
 
-  const fuel={type:'fuel',position:[2,.36,0]};
+  const fuel={type:'fuel',x:2,top:0,z:0};
   props.stock(fuel);
   camera.position.x=2;
   camera.lookAt(2,.4,0);
@@ -309,7 +313,7 @@ test('field prop GLBs load and real impacts shatter a jug and detonate a fuel ca
   assert.ok(sounds.includes('blast'));
   assert.ok(!mechanics.items.has(fuel.item.collider.handle));
 
-  const delivery={type:'water',position:[7,.36,0]};
+  const delivery={type:'water',x:7,top:0,z:0};
   props.stock(delivery);
   mechanics.grab(delivery.item);
   assert.match(mechanics.fixed.get(sensor.handle).accept(delivery.item),/Thanks/);
@@ -319,7 +323,7 @@ test('field prop GLBs load and real impacts shatter a jug and detonate a fuel ca
   const pump=[...mechanics.fixed.values()].find(tag=>tag.name==='Listen at the creek pump');
   const relay=[...mechanics.fixed.values()].find(tag=>tag.name==='Inspect the silent relay by the ford');
   assert.match(relay.action(),/cold/);
-  const deliveryFuel={type:'fuel',position:[7,.36,0]};
+  const deliveryFuel={type:'fuel',x:7,top:0,z:0};
   props.stock(deliveryFuel);
   mechanics.grab(deliveryFuel.item);
   assert.match(pump.accept(deliveryFuel.item),/delivered/);
@@ -330,8 +334,8 @@ test('field prop GLBs load and real impacts shatter a jug and detonate a fuel ca
   assert.match(relay.action(),/copied/);
   assert.ok(records.has('creek-pump-echo'));
   assert.equal(props.objective(),null);
-  const full={type:'water',position:[-9,-1.55,-3]};
-  const empty={type:'empty',position:[-9,-1.55,-5]};
+  const full={type:'water',x:-9,top:-1.89,z:-3};
+  const empty={type:'empty',x:-9,top:-1.89,z:-5};
   props.stock(full);props.stock(empty);
   let hiddenFill=false;
   empty.item.visual.traverse(node=>{
@@ -1087,11 +1091,13 @@ test('the rescue markers recognize each approach and the recovered rope stays go
   const use=name=>[...m.fixed.values()].findLast(item=>item.name===name).action();
   for(const route of ['Wagon','Creek','Grapple']){
     saved.clear();
-    const rescue=start();
+    let rescue=start();
     use('Speak to the woman');
     use('Speak to the ranger');
     assert.match(use('West rescue marker'),/Compare this with the east marker/);
     assert.match(use('East rescue marker'),/one bell/);
+    assert.match(rescue.objective().text,/west bank/);
+    rescue=start();
     assert.match(rescue.objective().text,/west bank/);
     m.driving=route==='Wagon';
     m.anchor=route==='Grapple'?{}:null;
@@ -2551,4 +2557,33 @@ test('wet boots leave alternating marks on walkable surfaces and keep a bounded 
   const restored=new Bootprints(new T.Scene(),storage);
   assert.deepEqual(restored.prints,prints.prints);
   assert.equal(restored.mesh.count,48);
+});
+
+
+test('the wagon brake overrides held throttle and a sensor beside the door does not prevent exit',async t=>{
+  const {Mechanics}=await import('../src/mechanics.js');
+  const {Walker}=await import('../src/walker.js');
+  await R.init();
+  const world=new R.World({x:0,y:-9.81,z:0});
+  t.after(()=>world.free());
+  const walker=new Walker(world,[6,.88,0]);
+  const mechanics=new Mechanics(world,walker,new T.Scene(),new T.Scene());
+  mechanics.staticBox([36,.2,36],[0,-.1,0],0x594e42);
+  mechanics.makeCar([0,.5,0]);
+  walker.body.setEnabled(false);
+  mechanics.driving=true;
+  const car=mechanics.car.body;
+  car.setLinvel({x:2.5,y:0,z:-8},true);
+  const movement={x:0,z:1,drift:true,brake:true};
+  for(let i=0;i<30;i++){
+    mechanics.drive(movement);
+    world.step(mechanics.events);
+  }
+  assert.ok(Math.hypot(car.linvel().x,car.linvel().z)<1);
+  const {x,z}=car.translation();
+  world.createCollider(R.ColliderDesc.ball(.6).setTranslation(x-2.05,.88,z).setSensor(true));
+  world.createCollider(R.ColliderDesc.ball(.6).setTranslation(x+2.05,.88,z).setSensor(true));
+  world.step(mechanics.events);
+  assert.equal(mechanics.exitCar(),'Exited wagon.');
+  assert.equal(mechanics.driving,false);
 });

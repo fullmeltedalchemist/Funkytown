@@ -71,7 +71,10 @@ button:disabled{opacity:.45}.buttons{display:flex;gap:8px;flex-wrap:wrap}
 #actions button{width:49px;height:49px;border-radius:50%}
 #actions #fire,#actions #throw{grid-area:1/2}
 #actions #grapple{grid-area:1/1}
-#actions #jump{grid-area:2/1}
+#actions #jump,#actions #brake{grid-area:2/1}
+#actions #drift{grid-area:1/1}
+#actions #brake,#actions #drift{font-size:11px;font-weight:750}
+#actions #brake{width:55px;height:55px;background:#783b32f2;border-color:#ffb291}
 #actions #use{grid-area:2/2;width:61px;height:61px;background:#e5c48bf2;color:#1a2d27;border-color:#ffe4b4}
 #actions #use svg{width:26px;height:26px}
 #actions #use:not(.has-target){background:#21332cc2;color:#fff1d5;border-color:#c9b48e63}

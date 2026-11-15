@@ -97,6 +97,7 @@ export class Rescue {
     this.mechanics=mechanics;this.story=story;
     let saved=0;try{saved=Number(localStorage.getItem('bellwether-rescue-v1'));}catch{}
     this.stage=Number.isInteger(saved)&&saved>=0&&saved<=4?saved:0;
+    try{this.checkedEast=this.stage>=2&&localStorage.getItem('bellwether-east-marker-v1')==='1';}catch{}
     this.bank=point(cabinX-3.4,cabinZ-6);
     this.fire=point(cabinX+4.3,cabinZ+6.7);
     this.route=[this.fire.clone().add(new T.Vector3(1,0,0)),point(4.2,2.7),point(-4.6,-6.1)];
@@ -151,10 +152,10 @@ export class Rescue {
     });
     const rack=point(this.fire.x+2.6,this.fire.z-1.1);
     const rackTop=rack.y+.95;
-    part(town,[1.1,.1,.45],[rack.x,rackTop-.05,rack.z],0x64452e);
+    mechanics.staticBox([1.1,.1,.45],[rack.x,rackTop-.05,rack.z],0x64452e);
     for(const x of [-.44,.44])for(const z of [-.16,.16]){
-      const ground=height(rack.x+x,rack.z+z);
-      part(town,[.085,rackTop-ground,.085],[rack.x+x,(ground+rackTop)/2,rack.z+z],0x64452e);
+      const top=rackTop-.1,ground=Math.min(top-.02,height(rack.x+x,rack.z+z)-.045);
+      mechanics.staticBox([.085,top-ground,.085],[rack.x+x,(ground+top)/2,rack.z+z],0x64452e);
     }
     const gun=fieldPistol(true);
     gun.rotation.set(0,Math.PI/2,Math.PI/2);
@@ -168,7 +169,14 @@ export class Rescue {
       gun.visible=false;
       return 'Scattergun added. Use X or the weapon button to equip it.';
     });
-    this.marker(east,0x929784,'East rescue marker',()=>{this.checkedEast=true;return 'East station: one bell. The dispatch claimed this was the pickup point.';});
+    this.marker(east,0x929784,'East rescue marker',()=>{
+      if(this.stage===2){
+        this.checkedEast=true;
+        try{localStorage.setItem('bellwether-east-marker-v1','1');}catch{}
+        return 'East station: one bell. The dispatch claimed this was the pickup point. Find the two-bell post on the west bank.';
+      }
+      return 'East station: one bell. The dispatch claimed this was the pickup point.';
+    });
     this.marker(west,0x9b7b55,'West rescue marker',()=>{
       if(this.stage<2)return 'Two bells hang from a weathered rescue post.';
       if(this.stage===2){
@@ -183,17 +191,12 @@ export class Rescue {
     const line=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3([
       new T.Vector3(-.58,.03,0),new T.Vector3(-.25,.08,.13),new T.Vector3(.05,.02,-.02),new T.Vector3(.38,.09,.09)
     ]),24,.041,8,false),new T.MeshStandardMaterial({color:0xe99248,roughness:.9}));
-    const stand=new T.Group();
-    stand.position.copy(this.evidence);
-    const wood=new T.MeshStandardMaterial({color:0x775136,roughness:.88});
-    const board=new T.Mesh(new T.BoxGeometry(1.27,.1,.56),wood);
-    board.position.y=-.065;stand.add(board);
+    const {x:standX,y:standY,z:standZ}=this.evidence;
+    mechanics.staticBox([1.27,.10,.56],[standX,standY-.065,standZ],0x775136);
     for(const x of [-.49,.49])for(const z of [-.19,.19]){
-      const bottom=height(this.evidence.x+x,this.evidence.z+z)-this.evidence.y;
-      const leg=new T.Mesh(new T.BoxGeometry(.095,-.1-bottom,.095),wood);
-      leg.position.set(x,(bottom-.1)/2,z);stand.add(leg);
+      const top=standY-.115,bottom=Math.min(top-.02,height(standX+x,standZ+z)-.045);
+      mechanics.staticBox([.095,top-bottom,.095],[standX+x,(top+bottom)/2,standZ+z],0x775136);
     }
-    town.add(stand);
     line.position.copy(this.evidence);town.add(line);this.line=line;
     line.visible=this.stage<4;
     this.register(this.evidence.clone().add(new T.Vector3(0,-.98,0)),line,'Recover the cut rescue line',()=>{

@@ -140,7 +140,7 @@ export class Mechanics {
     if(target?.kind==='car'){
       if(this.canUnloadCargo())return this.unloadCargo();
       this.anchor=null;this.driving=true;this.walker.body.setEnabled(false);
-      return 'Wagon controls: steer and accelerate with movement. Space or Jump drifts under throttle and brakes with the throttle released. Use exits.';
+      return 'Wagon controls: steer and accelerate with movement. Touch Brake works even while accelerating. Use Drift for a slide. On keyboard, Space drifts under throttle and brakes when you release it. Use exits.';
     }
     if(target?.kind==='prop')return this.grab(target);
     return '';
@@ -367,7 +367,7 @@ export class Mechanics {
     const right=new T.Vector3(1,0,0).applyQuaternion(rot);
     const current=vec(body.linvel()),along=current.dot(front),side=current.dot(right);
     const target=movement.z*(movement.z<0?6:15);
-    const braking=movement.drift&&Math.abs(movement.z)<.15;
+    const braking=movement.brake||movement.drift&&Math.abs(movement.z)<.15;
     const accel=braking?T.MathUtils.clamp(-along*8,-25,25):
       T.MathUtils.clamp((target-along)*(movement.z<0?4.8:3),-18,13);
     const p=body.translation();
@@ -378,7 +378,7 @@ export class Mechanics {
     const driveForce=!braking&&Math.abs(movement.z)>.2&&Math.abs(along)<2&&slope<.91?accel*1.17:accel;
     const impulse=front.multiplyScalar(driveForce).addScaledVector(right,-side*grip).multiplyScalar(STEP*body.mass());
     body.applyImpulse(impulse,true);
-    body.setAngvel({x:0,y:-movement.x*Math.min(1,Math.abs(along)*.45)*(along<0?-1:1)*(movement.drift?2.1:1.55),z:0},true);
+    body.setAngvel({x:0,y:-movement.x*Math.min(1,Math.abs(along)*.45)*(along<0?-1:1)*(!braking&&movement.drift?2.1:1.55),z:0},true);
   }
   exitCar(){
     const car=this.car;
@@ -392,7 +392,7 @@ export class Mechanics {
       if(!hit||hit.normal.y<.64)continue;
       pos.y-=hit.timeOfImpact-.88;
       const blocked=this.world.intersectionWithShape(pos,new T.Quaternion(),new R.Capsule(.51,.30),
-        undefined,undefined,this.walker.collider,this.walker.body);
+        R.QueryFilterFlags.EXCLUDE_SENSORS,undefined,this.walker.collider,this.walker.body);
       if(blocked)continue;
       this.driving=false;this.walker.body.setEnabled(true);
       car.body.sleep();

@@ -626,7 +626,8 @@ async function boot(){
       water.uniforms.ripple.value.set(player.x,player.z,now*.001);lastWake=now;
     }
     story.animate(now*.001);
-    const objective=fordRescue.objective()??loopRoad.objective()??salvage.objective()??
+    const objective=fordRescue.objective()??(rescue.stage<4&&!salvage.clock.running?rescue.objective():null)??
+      loopRoad.objective()??salvage.objective()??
       address.objective()??founders.objective()??extraction.objective()??storehouseRelay.objective()??archiveWindow.objective()??wagonRecovery.objective()??baitCooler.objective()??distress.objective()??townDiner.objective()??crossingReport.objective()??aftermath.objective()??creekWildlife.objective()??chapters.objective()??
       (rescue.showPractice?rescue.objective():null)??fieldProps.objective()??finale.objective()??rescue.objective();
     $('guide').textContent=activeCrawler()?.hint()??(objective?.text??story.guide(player));
@@ -662,7 +663,10 @@ async function boot(){
     $('fire').hidden=mechanics.driving||handsBusy||inRide;
     $('throw').hidden=mechanics.driving||!handsBusy||inRide;
     $('grapple').hidden=mechanics.driving||inRide;
-    $('jump').setAttribute('aria-label',mechanics.driving?'Brake or drift':inRide?'Switch zip-line anchor':'Jump');
+    input.touchDriving(mechanics.driving);
+    $('jump').hidden=mechanics.driving||rescue.zipline.active==='ride';
+    $('brake').hidden=$('drift').hidden=!mechanics.driving;
+    $('jump').setAttribute('aria-label',inRide?'Switch zip-line anchor':'Jump');
     const reticle=$('reticle');
     reticle.hidden=mechanics.driving||!input.active||input.toolsOpen;
     reticle.classList.toggle('on-target',Boolean(target?.name));

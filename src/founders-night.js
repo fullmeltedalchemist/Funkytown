@@ -54,6 +54,11 @@ export class FoundersNight {
     if(this.unlocked())this.installParade();
     const location=groundPoint(7.8,7.7);
     pipeline.place(models.archiveLoadingBay,{position:location.toArray(),collider:'authored'});
+    for(const dx of [-1.28,1.28])for(const dz of [-.92,.89]){
+      const x=location.x+dx,z=location.z+dz;
+      const foot=height(x,z)-.095,cap=location.y-.64;
+      if(cap-foot>.04)mechanics.staticBox([.28,cap-foot,.27],[x,(foot+cap)/2,z],0x5d554a);
+    }
     const depot=station(mechanics,0,location,'Inspect the archive loading cage',()=>{
       if(bag.records.has(tapeKey))return 'The archive tape has already been recovered.';
       if(!bag.records.has(leadKey))return 'The cage is tagged with an archive delivery number. Find the matching dispatch first.';

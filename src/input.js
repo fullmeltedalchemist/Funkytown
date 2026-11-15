@@ -8,6 +8,7 @@ export class Input {
   touch=matchMedia('(pointer:coarse)').matches;
   dragMode=false;
   toolsOpen=false;
+  drivePointers=new Map();
   constructor(canvas,onUse,onBag,onGear,onPhoto,onWeapon,onLantern,onDrink,onStrap,onMic,onRig,onPlayback,onMagnet,onCrawler,onCamp,onHarness,onCutters){
     this.canvas=canvas;
     const menu=document.querySelector('#menu'),pad=document.querySelector('#pad');
@@ -16,7 +17,7 @@ export class Input {
     let drag=null,pointer=null;
     const clear=()=>{
       drag=null;pointer=null;
-      this.held.clear();this.actions.clear();this.stick=[0,0];this.look=[0,0];this.jump=false;
+      this.drivePointers.clear();this.held.clear();this.actions.clear();this.stick=[0,0];this.look=[0,0];this.jump=false;
       pad.firstElementChild.style.transform='';
     };
     const showTools=open=>{
@@ -126,12 +127,26 @@ export class Input {
       if(pointer!==e.pointerId)return;
       pointer=null;this.stick=[0,0];pad.firstElementChild.style.transform='';
     });
-    const jumpButton=document.querySelector('#jump');
-    jumpButton.addEventListener('pointerdown',e=>{
-      e.preventDefault();if(this.toolsOpen)return;
-      jumpButton.setPointerCapture(e.pointerId);this.jump=true;this.held.add('Space');
-    });
-    jumpButton.addEventListener('lostpointercapture',()=>this.held.delete('Space'));
+    for(const id of ['jump','brake','drift']){
+      const button=document.querySelector('#'+id);
+      button.addEventListener('pointerdown',e=>{
+        e.preventDefault();
+        if(!this.active||this.toolsOpen||this.drivePointers.has(id))return;
+        button.setPointerCapture(e.pointerId);
+        this.drivePointers.set(id,e.pointerId);
+        if(id==='jump')this.jump=true;
+      });
+      const release=e=>{
+        if(this.drivePointers.get(id)===e.pointerId)this.drivePointers.delete(id);
+      };
+      for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,release);
+    }
+    this.touchDriving=driving=>{
+      if(!driving){
+        this.drivePointers.delete('brake');
+        this.drivePointers.delete('drift');
+      }
+    };
     document.querySelector('#use').onclick=()=>{if(!this.toolsOpen)onUse();};
     document.querySelector('#bag-button').onclick=()=>{showTools(false);onBag();};
     const kitActions={
@@ -151,6 +166,6 @@ export class Input {
     const jump=this.jump;this.jump=false;
     return {x:this.stick[0]+Number(this.held.has('KeyD'))-Number(this.held.has('KeyA')),
       z:this.stick[1]+Number(this.held.has('KeyW'))-Number(this.held.has('KeyS')),
-      sprint:this.held.has('ShiftLeft'),drift:this.held.has('Space'),jump};
+      sprint:this.held.has('ShiftLeft'),brake:this.drivePointers.has('brake'),drift:this.drivePointers.has('drift')||this.held.has('Space'),jump};
   }
 }

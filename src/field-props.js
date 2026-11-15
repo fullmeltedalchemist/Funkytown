@@ -5,9 +5,9 @@ import {cabinX,cabinZ,plots,height} from './terrain.js';
 import {groundPoint,station} from './field-stations.js';
 
 const props={
-  water:{model:'waterJug',name:'Glass water jug',size:[.56,.72,.56],minY:-.34,impactLimit:4.2},
-  empty:{model:'waterJug',name:'Empty glass jug',size:[.56,.72,.56],minY:-.34,impactLimit:3.6},
-  fuel:{model:'fuelCan',name:'Red fuel can',size:[.49,.36,.7],minY:-.34,impactLimit:Infinity}
+  water:{model:'waterJug',name:'Glass water jug',size:[.56,.72,.56],impactLimit:4.2},
+  empty:{model:'waterJug',name:'Empty glass jug',size:[.56,.72,.56],impactLimit:3.6},
+  fuel:{model:'fuelCan',name:'Red fuel can',size:[.49,.36,.7],impactLimit:Infinity}
 };
 
 export class FieldProps {
@@ -99,20 +99,20 @@ export class FieldProps {
   }
 
   rack(x,z,type){
-    const scene=this.mechanics.scenes[0],y=height(x,z);
+    const y=height(x,z);
     const top=y+.44;
     this.mechanics.staticBox([.86,.08,.65],[x,top-.04,z],0x775437);
     for(const dx of [-.34,.34])for(const dz of [-.23,.23]){
       const base=Math.min(top-.1,height(x+dx,z+dz));
-      part(scene,[.08,top-base,.08],[x+dx,(base+top)/2,z+dz],0x614830,.009);
+      this.mechanics.staticBox([.08,top-.08-base,.08],[x+dx,(base+top-.08)/2,z+dz],0x614830);
     }
-    const slot={type,position:[x,top-props[type].minY+.015,z],wait:0};
+    const slot={type,x,z,top,wait:0};
     this.sites.push(slot);
     this.stock(slot);
   }
 
   stock(slot){
-    const {type,position}=slot;
+    const {type,x,z,top}=slot;
     const {model,name,size,impactLimit}=props[type];
     const m=this.mechanics;
     const asset=this.pipeline.loose(this.models[model],1);
@@ -122,6 +122,8 @@ export class FieldProps {
         if(node.isMesh&&node.material.name==='Creek water behind glass')node.visible=false;
       });
     }
+    const bottom=new T.Box3().setFromObject(asset.visual).min.y;
+    const position=[x,top-bottom+.004,z];
     const item=m.dynamic({...asset,position,home:new T.Vector3(...position),name,size,area:0,impactLimit,
       breakEffect:(origin,velocity)=>type==='fuel'?this.blast(origin):this.shatter(origin,velocity,type==='water')});
     if(type!=='fuel'){
