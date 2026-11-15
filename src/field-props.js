@@ -59,7 +59,7 @@ export class FieldProps {
       message:this.heardEcho?'The microphone reads zero vibration. The sound came through the air.':
         'The microphone reads zero vibration. The relay casing is still.'
     });
-    const pumpModel=pipeline.prepare(models.transferPump,{position:[0,.944,0]});
+    const pumpModel=pipeline.prepare(models.transferPump,{groundY:.945});
     pumpModel.traverse(node=>{if(node.isMesh)node.castShadow=node.receiveShadow=true;});
     pump.body.add(pumpModel);
     const refill=mechanics.fixed.get(pump.collider.handle);

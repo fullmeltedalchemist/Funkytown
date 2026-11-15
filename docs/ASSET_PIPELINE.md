@@ -50,3 +50,16 @@ so buildings remain enterable. Single convex hulls suit small loose props.
 For irregular source origins, `prepare()` and `place()` accept `groundY` to align the
 visible geometry's lowest point before generating collision. Omit it for wall-mounted
 and suspended objects.
+
+## Dialogue audio
+
+Edit `tools/voice-lines.json` and run `python3 tools/build_voice.py` on a machine
+with FFmpeg built with libflite and libmp3lame. The generator writes mono MP3s
+to `assets/voice/` and applies a radio filter. Keep the subtitle and clip text
+in sync. The Tower Two relay is the first voiced cue. Mobile browsers fetch
+the finished clip when the player uses the relay. Playback uses the same
+master audio bus as the game effects.
+
+Compare new clips against the script, verify they decode, and exercise their
+in-game triggers with sound enabled. The shipped clips require no speech API,
+speech-model download, account, or network call outside the game host.

@@ -14,7 +14,7 @@ p{line-height:1.45;margin:12px 0}.help{color:#c6d1bc;font-size:13px}
 button{border:1px solid #ffd5979c;background:#ead09a;color:#1d322e;border-radius:7px;font:700 13px system-ui;padding:11px 14px;cursor:pointer;touch-action:none}
 button:disabled{opacity:.45}.buttons{display:flex;gap:8px;flex-wrap:wrap}
 .import{display:block;margin-top:14px;font-size:12px}.import input{font-size:11px;max-width:235px}
-#status{font-size:13px;color:#ffcb9b;min-height:1em}
+#status,#audio-status{font-size:13px;color:#ffcb9b;min-height:1em}
 #notice{max-width:min(76vw,475px);margin-top:7px;color:#ffe0a2;font-size:14px;line-height:1.35}
 #objective{display:flex;align-items:center;gap:7px;margin-top:8px}
 #objective #guide{margin:0}

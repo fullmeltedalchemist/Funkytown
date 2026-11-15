@@ -72,7 +72,7 @@ export class SalvageStreet {
       stone.rotation.y=Math.sin(z*1.8)*.09;
     }
     const control=station(mechanics,0,groundPoint(x+3.05,34),'Drain the submerged street',()=>this.start(),{color:0x778474});
-    control.body.add(pipeline.prepare(models.transferPump,{position:[0,.944,0],scale:1.1}));
+    control.body.add(pipeline.prepare(models.transferPump,{groundY:.945,scale:1.1}));
     this.control=control.point;
     this.warning=new T.PointLight(0xff923d,0,7,2);
     this.warning.position.set(0,1.5,0);
@@ -80,7 +80,7 @@ export class SalvageStreet {
     const drop=station(mechanics,0,groundPoint(x-3.05,33),'Inspect the high-bank salvage drop',()=>
       this.bag.records.has('pond-water')?this.campLife.refill():
         'Unload your wagon here. Bring one intact find to the drop before opening another run.',{color:0xba854f});
-    drop.body.add(pipeline.prepare(models.lantern,{position:[.11,.945,0],scale:.73}));
+    drop.body.add(pipeline.prepare(models.lantern,{position:[.11,0,0],groundY:.945,scale:.73}));
     this.drop=drop.point;
     this.mechanics.fixed.get(drop.collider.handle).acceptName='Turn in this salvage';
     this.mechanics.fixed.get(drop.collider.handle).accept=item=>this.deliver(item);

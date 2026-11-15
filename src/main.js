@@ -189,20 +189,24 @@ async function boot(){
   let audio=null,ambient=null,master=null,engine=null,foreground=true;
   let audioWanted=false,footstepTime=0;
   const effects=new Set();
+  let voice=null,voiceRequest=0,towerClip;
   const syncAudio=()=>{
     if(!audio)return;
     const enabled=foreground&&audioWanted;
     master.gain.setValueAtTime(Number(enabled),audio.currentTime);
     if(enabled){audio.resume().catch(()=>{});return;}
+    voiceRequest++;
+    if(voice){voice.stop();voice=null;}
     for(const tone of effects){try{tone.stop();}catch{}}
     audio.suspend().catch(()=>{});
   };
   watchAudioFocus(visible=>{foreground=visible;syncAudio();});
   const unlockAudio=()=>{
     const Audio=window.AudioContext||window.webkitAudioContext;
-    if(!Audio||!foreground)return;
+    if(!Audio||!foreground)return null;
     try{
       if(!audio){
+        towerClip=null;
         audio=new Audio();
         master=audio.createGain();
         master.gain.value=0;
@@ -226,15 +230,53 @@ async function boot(){
         engine={motor,gain};
       }
       audioWanted=true;
-      syncAudio();
+      master.gain.setValueAtTime(1,audio.currentTime);
+      return audio.state==='running'?Promise.resolve():audio.resume();
     }catch(error){
       audio?.close().catch(()=>{});
       audio=ambient=master=engine=null;
       audioWanted=false;
       console.warn('Game audio unavailable',error);
+      return null;
     }
   };
-  for(const id of ['start','touch-mode'])$(id).addEventListener('click',unlockAudio);
+  const enableSound=()=>unlockAudio()?.catch(()=>{});
+  for(const id of ['start','touch-mode'])$(id).addEventListener('click',enableSound,{capture:true});
+  $('audio-test').addEventListener('click',async()=>{
+    const status=$('audio-status');
+    status.textContent='Starting sound…';
+    try{
+      const ready=unlockAudio();
+      if(!ready){status.textContent='Sound is unavailable in this browser.';return;}
+      const running=await Promise.race([
+        ready.then(()=>foreground&&audio?.state==='running'),
+        new Promise(resolve=>setTimeout(()=>resolve(false),1500))
+      ]);
+      if(!running){status.textContent='Sound is still blocked. Tap Test sound again.';return;}
+      playToolSound(620,410,.31,.34);
+      status.textContent='Test chime played. Check your media volume if you didn’t hear it.';
+    }catch{status.textContent='Couldn’t start audio. Tap Test sound to retry.';}
+  });
+  const playTowerVoice=async()=>{
+    if(!audio||audio.state!=='running'||!foreground)return;
+    const context=audio,request=++voiceRequest;
+    try{
+      towerClip??=fetch('./assets/voice/tower-two.mp3').then(response=>{
+        if(!response.ok)throw Error('Tower Two voice unavailable');
+        return response.arrayBuffer();
+      }).then(bytes=>context.decodeAudioData(bytes)).catch(error=>{towerClip=null;throw error;});
+      const buffer=await towerClip;
+      if(request!==voiceRequest||!foreground||audio!==context||context.state!=='running')return;
+      if(voice)voice.stop();
+      const source=context.createBufferSource(),gain=context.createGain();
+      source.buffer=buffer;
+      gain.gain.value=.86;
+      source.connect(gain).connect(master);
+      voice=source;
+      source.onended=()=>{if(voice===source)voice=null;source.disconnect();gain.disconnect();};
+      source.start();
+    }catch{if(request===voiceRequest&&foreground)playToolSound(270,103,.66,.21);}
+  };
   const playToolSound=(from,to,duration,volume,position)=>{
     if(!foreground||!audioWanted||audio?.state!=='running')return;
     const time=audio.currentTime;
@@ -252,7 +294,7 @@ async function boot(){
       const distance=offset.length();
       pan.pan.value=T.MathUtils.clamp(offset.normalize().dot(right),-1,1);
       gain.gain.setValueAtTime(volume*Math.max(.26,1-distance*.022),time);
-      gain.connect(pan).connect(audio.destination);
+      gain.connect(pan).connect(master);
     }else gain.connect(master);
     effects.add(tone);
     tone.onended=()=>{effects.delete(tone);tone.disconnect();gain.disconnect();pan?.disconnect();};
@@ -316,7 +358,7 @@ async function boot(){
   const towLine=new TowLine(mechanics);
   const archiveWindow=new ArchiveWindow(mechanics,bag,towLine,pipeline,models,notice);
   const storehouseRelay=new StorehouseRelay(mechanics,bag,workshop.robot,pipeline,models.receiver,
-    point=>playToolSound(270,103,.66,.21,point));
+    playTowerVoice);
   archiveWindow.relayBrief=()=>storehouseRelay.brief();
   const activeCrawler=()=>storehouseRelay.active?storehouseRelay:workshop.active?workshop:null;
   const toggleCrawler=()=>activeCrawler()?.toggle()??(walker.current.distanceTo(storehouseRelay.control)<4?
@@ -371,6 +413,7 @@ async function boot(){
     ()=>{if(!rescue.zipline.active&&!activeCrawler())notice(portableCamp.toggle(camera));},
     ()=>{if(!rescue.zipline.active&&!activeCrawler())notice(mechanics.toggleHarness());},
     ()=>{if(!rescue.zipline.active&&!activeCrawler())notice(serviceGate.cut(camera));});
+  $('audio-test').disabled=false;
   $('start').disabled=false;
   $('start').textContent='Walk the ridge';
   $('touch-mode').disabled=false;
