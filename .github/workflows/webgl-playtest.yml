@@ -155,16 +155,19 @@ jobs:
                         };
                         const place=positions[stop];
                         const aim=points[target].clone().sub(new T.Vector3(place[0],place[1]+.58,place[2]));
-                        const carried=mechanics.carried;
-                        const displacement=new T.Vector3(...place).sub(walker.current);
                         walker.teleport(place);
-                        if(carried){
-                          // Keep the hand-carried body with the player during a fixture-only teleport.
-                          carried.body.setTranslation(new T.Vector3().copy(carried.body.translation()).add(displacement),true);
-                          carried.body.setLinvel({x:0,y:0,z:0},true);
-                        }
                         yaw=Math.atan2(-aim.x,-aim.z);
                         pitch=Math.atan2(aim.y,Math.hypot(aim.x,aim.z));
+                        camera.position.set(place[0],place[1]+.58,place[2]);
+                        camera.rotation.set(pitch,yaw,0,'YXZ');
+                        camera.updateMatrixWorld(true);
+                        const carried=mechanics.carried;
+                        if(carried){
+                          // The first physics step uses this camera and carried pose.
+                          const hand=camera.position.clone().addScaledVector(camera.getWorldDirection(new T.Vector3()),1.1);
+                          carried.body.setTranslation(hand,true);
+                          carried.body.setLinvel({x:0,y:0,z:0},true);
+                        }
                       };
                       window.__poseMemorial=()=>{
                         founders.bellTime=18.9;
